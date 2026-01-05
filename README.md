@@ -104,31 +104,31 @@ On **Termux**, just run it locally:
 ### Basic TCP test
 
 ```bash
-cyph3r --target localhost --port 80 --proto tcp
+./cyph3r --target localhost --port 80 --proto tcp
 ```
 
 ### UDP test
 
 ```bash
-cyph3r --target 127.0.0.1 --port 53 --proto udp
+./cyph3r --target 127.0.0.1 --port 53 --proto udp
 ```
 
 ### HTTP / HTTPS test
 
 ```bash
-cyph3r --target example.com --port 443 --proto https
+./cyph3r --target example.com --port 443 --proto https
 ```
 
 ### JSON output mode
 
 ```bash
-cyph3r --target example.com --proto https --json
+./cyph3r --target example.com --proto https --json
 ```
 
 ### Phone metadata lookup (optional)
 
 ```bash
-cyph3r --phone +14155552671
+./cyph3r --phone +14155552671
 ```
 
 ### Version info
