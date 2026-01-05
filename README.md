@@ -46,7 +46,10 @@ apt update && apt upgrade
 apt install git
 ```
 ```
-apt golang
+curl -LO https://go.dev/dl/go1.23.0.linux-arm64.tar.gz
+```
+```
+tar -xzf go.dev/dl/go1.23.0.linux-arm64.tar.gz
 ```
 
 
