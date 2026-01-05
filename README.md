@@ -50,6 +50,11 @@ curl -LO https://go.dev/dl/go1.23.0.linux-arm64.tar.gz
 ```
 ```
 tar -xzf go.dev/dl/go1.23.0.linux-arm64.tar.gz
+sudo tar -C /usr/local -xzf go1.23.0.linux-arm64.tar.gz
+```
+
+```
+tar -xzf go1.23.0.linux-arm64.tar.gz
 ```
 
 
