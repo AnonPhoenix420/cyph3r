@@ -40,9 +40,15 @@
 ### 1️⃣ Install dependencies
 
 ```bash
-pkg update && pkg upgrade
-pkg install git golang
+apt update && apt upgrade
 ```
+```
+apt install git
+```
+```
+apt golang
+```
+
 
 Verify Go:
 
