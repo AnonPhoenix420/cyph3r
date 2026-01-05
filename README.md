@@ -134,7 +134,7 @@ On **Termux**, just run it locally:
 ### Version info
 
 ```bash
-cyph3r --version
+./cyph3r --version
 ```
 
 ---
