@@ -90,7 +90,7 @@ apt install git
 git clone https://github.com/AnonPhoenix420/Cyph3r
 ```
 ```
-cd Cyph3r
+cd cyph3r
 ```
 
 ---
