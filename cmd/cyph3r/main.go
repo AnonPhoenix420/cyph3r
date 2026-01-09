@@ -1,8 +1,4 @@
-
 package main
-
-output.Banner()
-fmt.Println("\033[1;35mCOLOR TEST\033[0m")
 
 import (
 	"encoding/json"
@@ -16,6 +12,19 @@ import (
 
 	"github.com/nyaruka/phonenumbers"
 )
+
+func main() {
+	// 🔥 Banner MUST be called inside main
+	output.Banner()
+
+	// Color proof test
+	fmt.Println(output.PinkBoldText("PINK OK"))
+	fmt.Println(output.YellowBoldText("YELLOW OK"))
+	fmt.Println(output.BlueText("BLUE OK"))
+
+	// Your program continues below...
+}
+
 
 // --- GEOIP ---
 type GeoResult struct {
