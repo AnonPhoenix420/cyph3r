@@ -60,6 +60,30 @@ To see all available options and usage info, run
 ```
 ./cyph3r
 ```
+You will see output like:
+
+```
+CYPH3R: Network Diagnostics Utility
+
+Usage:
+  cyph3r [options]
+
+Options:
+  --target        Target host or IP (default: localhost)
+  --port          Port number (default: 80)
+  --proto         Protocol: tcp | udp | http | https | dns (default: tcp)
+  --geoip         Lookup GeoIP and ASN info for the target
+  --phone         Show phone number info (region, type, validity)
+  --json          Print output in JSON
+  --monitor       Continuously monitor the target
+  --interval      Check interval in seconds (default: 5)
+  --version       Show program version info
+  --portscan      Scan ports on IP/localhost (default range 1-1024)
+  --scanstart     Port scan range start (default: 1)
+  --scanend       Port scan range end (default: 1024)
+  -h, --help      Show this help and exit
+
+```
 ---
 
 ## 📦 Requirements
@@ -192,17 +216,6 @@ sudo install -m 755 cyph3r /usr/local/bin/cyph3r
 ./cyph3r --target 192.168.1.10 --portscan --scanstart 1 --scanend 10000
 
 ```
-
-### Help shown on 
-```
--h
-
-```
-```
---help
-
-```
-or no arg
 
 ### Version info
 
