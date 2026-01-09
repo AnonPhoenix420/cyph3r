@@ -109,7 +109,6 @@ git clone https://github.com/nyaruka/phonenumbers.git
 ```bash
 go mod tidy
 go build -o cyph3r ./cmd/cyph3r
-./cyph3r
 ```
 
 ### System-wide install (Linux only)
