@@ -98,8 +98,7 @@ git clone https://github.com/AnonPhoenix420/Cyph3r
 cd cyph3r
 ```
 ```
-git clone
-https://github.com/nyaruka/phonenumbers
+git clone https://github.com/nyaruka/phonenumbers
 ```
 ---
 
