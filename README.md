@@ -92,13 +92,13 @@ apt install git
 ## 📥 Clone Repository
 
 ```bash
-git clone https://github.com/AnonPhoenix420/Cyph3r
+git clone https://github.com/AnonPhoenix420/cyph3r.git
 ```
 ```
 cd cyph3r
 ```
 ```
-git clone https://github.com/nyaruka/phonenumbers
+git clone https://github.com/nyaruka/phonenumbers.git
 ```
 ---
 
