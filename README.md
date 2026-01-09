@@ -161,29 +161,35 @@ sudo install -m 755 cyph3r /usr/local/bin/cyph3r
 ./cyph3r --phone +14155552671
 ```
 
-###How To Use Port Scanner 
+### How To Use Port Scanner 
 ```
 
 ./cyph3r --target 127.0.0.1 --portscan
+
 ```
-###Or Change To Custom Port Range
+### Change To Custom Port Range
 ```
 ./cyph3r --target 192.168.1.10 --portscan --scanstart 1 --scanend 10000
+
 ```
 
-Help shown on 
+### Help shown on 
 ```
 -h
+
 ```
 ```
 --help
+
 ```
 or no arg
 
 ### Version info
 
 ```bash
+
 ./cyph3r --version
+
 ```
 
 ---
