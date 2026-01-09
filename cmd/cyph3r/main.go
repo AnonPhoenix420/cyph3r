@@ -1,3 +1,9 @@
+output.Banner()
+
+
+fmt.Println("\033[1;35mCOLOR TEST\033[0m")
+
+
 package main
 
 import (
