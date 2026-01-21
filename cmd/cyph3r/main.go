@@ -89,6 +89,7 @@ func (m *Metrics) percentiles() (time.Duration, time.Duration, time.Duration) {
 }
 
 
+
 // ================= PROMETHEUS =================
 var (
 	pSent    = prometheus.NewCounter(prometheus.CounterOpts{Name: "tester_requests_total"})
@@ -103,10 +104,15 @@ var (
 func initProm(ctx context.Context, wg *sync.WaitGroup) {
 	prometheus.MustRegister(pSent, pSuccess, pFail, pLatency)
 
-	server := &http.Server{Addr: ":2112"}
+	server := &http.Server{
+		Addr:    ":2112",
+		Handler: promhttp.Handler(), // <-- use promhttp.Handler here
+	}
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		// shut down gracefully when context is cancelled
 		go func() {
 			<-ctx.Done()
 			_ = server.Shutdown(context.Background())
