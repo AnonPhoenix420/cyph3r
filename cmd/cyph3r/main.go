@@ -16,10 +16,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"cyph3r/output"
+	"cyph3r/internal/intel"
+	"cyph3r/internal/output"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"sort"
 )
 
 // ================= CONFIG =================
@@ -127,6 +129,7 @@ func worker(ctx context.Context, jobs <-chan struct{}, cfg Config, m *Metrics, w
 		case <-jobs:
 			start := time.Now()
 			ok := false
+
 			switch cfg.Proto {
 			case "tcp":
 				c, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", cfg.Target, cfg.Port), 2*time.Second)
@@ -153,7 +156,10 @@ func worker(ctx context.Context, jobs <-chan struct{}, cfg Config, m *Metrics, w
 						resp.Body.Close()
 					}
 				}
+			case "icmp":
+				ok = intel.CheckICMP(cfg.Target)
 			}
+
 			lat := time.Since(start)
 			m.record(lat, ok)
 			pSent.Inc()
@@ -203,23 +209,23 @@ func main() {
 	output.Banner()
 
 	cfg := Config{}
-	flag.StringVar(&cfg.Target, "target", "localhost", "target host")
-	flag.IntVar(&cfg.Port, "port", 80, "port")
+	flag.StringVar(&cfg.Target, "target", "localhost", "Target host")
+	flag.IntVar(&cfg.Port, "port", 80, "Port")
 	flag.StringVar(&cfg.Proto, "proto", "http", "tcp|http|https|icmp")
 	flag.StringVar(&cfg.Method, "method", "GET", "HTTP method")
-	flag.StringVar(&cfg.Payload, "payload", "", "HTTP payload/body")
+	flag.StringVar(&cfg.Payload, "payload", "", "HTTP payload")
 	flag.Var(&cfg.Headers, "H", "HTTP header key:value")
 	flag.BoolVar(&cfg.Whois, "whois", false, "WHOIS lookup")
-	flag.DurationVar(&cfg.Duration, "duration", 30*time.Second, "test duration")
-	flag.IntVar(&cfg.RPS, "rps", 200, "requests per second")
-	flag.IntVar(&cfg.Workers, "workers", runtime.NumCPU()*4, "workers")
-	flag.DurationVar(&cfg.Ramp, "ramp", 10*time.Second, "ramp up duration")
-	flag.BoolVar(&cfg.JSON, "json", false, "json output")
-	flag.BoolVar(&cfg.Monitor, "monitor", true, "live dashboard")
-	flag.DurationVar(&cfg.Interval, "interval", 2*time.Second, "dashboard interval")
-	flag.Float64Var(&cfg.FailRateThreshold, "failrate", 0.1, "failure threshold")
+	flag.DurationVar(&cfg.Duration, "duration", 30*time.Second, "Test duration")
+	flag.IntVar(&cfg.RPS, "rps", 200, "Requests per second")
+	flag.IntVar(&cfg.Workers, "workers", runtime.NumCPU()*4, "Workers")
+	flag.DurationVar(&cfg.Ramp, "ramp", 10*time.Second, "Ramp up duration")
+	flag.BoolVar(&cfg.JSON, "json", false, "JSON output")
+	flag.BoolVar(&cfg.Monitor, "monitor", true, "Live dashboard")
+	flag.DurationVar(&cfg.Interval, "interval", 2*time.Second, "Dashboard interval")
+	flag.Float64Var(&cfg.FailRateThreshold, "failrate", 0.1, "Failure threshold")
 	flag.DurationVar(&cfg.LatencyThreshold, "latency", 2*time.Second, "p95 latency threshold")
-	flag.StringVar(&cfg.Scenario, "scenario", "", "mixed scenario mode")
+	flag.StringVar(&cfg.Scenario, "scenario", "", "Mixed scenario")
 	flag.BoolVar(&cfg.ASNFanout, "asn-fanout", false, "ASN fan-out mode")
 	flag.Parse()
 
