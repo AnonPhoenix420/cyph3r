@@ -16,8 +16,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"cyph3r/internal/intel"
-	"cyph3r/internal/output"
+	
+    "github.com/AnonPhoenix420/cyph3r/internal/intel"
+    "github.com/AnonPhoenix420/cyph3r/internal/output"
+
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
