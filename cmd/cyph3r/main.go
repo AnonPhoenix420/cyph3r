@@ -88,30 +88,32 @@ func (m *Metrics) percentiles() (time.Duration, time.Duration, time.Duration) {
 		time.Duration(m.lats[idx(0.99)]) * time.Microsecond
 }
 
-/* ================= PROMETHEUS ================= */
 
+// ================= PROMETHEUS =================
 var (
-	pSent = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "cyph3r_requests_total",
-	})
-	pSuccess = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "cyph3r_success_total",
-	})
-	pFail = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "cyph3r_failure_total",
-	})
+	pSent    = prometheus.NewCounter(prometheus.CounterOpts{Name: "tester_requests_total"})
+	pSuccess = prometheus.NewCounter(prometheus.CounterOpts{Name: "tester_success_total"})
+	pFail    = prometheus.NewCounter(prometheus.CounterOpts{Name: "tester_failure_total"})
 	pLatency = prometheus.NewHistogram(prometheus.HistogramOpts{
-		Name:    "cyph3r_latency_ms",
+		Name:    "tester_latency_ms",
 		Buckets: prometheus.DefBuckets,
 	})
 )
 
-func initProm() {
+func initProm(ctx context.Context, wg *sync.WaitGroup) {
 	prometheus.MustRegister(pSent, pSuccess, pFail, pLatency)
 
+	server := &http.Server{Addr: ":2112"}
+	wg.Add(1)
 	go func() {
-		http.Handle("/metrics", promhttp.Handler())
-		_ = http.ListenAndServe(":2112", nil)
+		defer wg.Done()
+		go func() {
+			<-ctx.Done()
+			_ = server.Shutdown(context.Background())
+		}()
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			output.Down(fmt.Sprintf("Prometheus server error: %v", err))
+		}
 	}()
 }
 
