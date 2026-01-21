@@ -7,6 +7,31 @@
 | |____     | |     | |      | |  | |  ___) |  | | \ \
  \_____|    |_|     \_|      |_|  |_|  |____/   \_|  \_|
 
+
+
+
+
+│          CYPH3R: Network Diagnostics & Intel Tool
+│
+└──────────────────────────────────────────────┘
+
+            [ Hacker at Work ]
+
+                 _________
+                |  _____  |
+                | |     | |
+                | | CLI | |
+                | |_____| |
+                |_________|
+                    ||
+        (•_•)      ||
+       <|   |>=====||
+        / \        ||
+                  /__\
+
+
+
+
 ```
 
 ⚠️ Disclaimer  
@@ -166,12 +191,17 @@ go mod tidy
 go build -o cyph3r ./cmd/cyph3r
 
 ```
+Single One-liner Install:
+```
 
+git clone https://github.com/AnonPhoenix420/cyph3r.git ~/cyph3r && cd ~/cyph3r && go mod tidy && go build -o cyph3r ./cmd/cyph3r && echo "[✔] Build complete! Run ./cyph3r from this directory"
+```
 System-wide install:
 
 ```
 
-sudo install -m 755 cyph3r /usr/local/bin/cyph3r
+sudo install -m 755 ~/cyph3r/cyph3r /usr/local/bin/cyph3r
+
 ```
 
 or one click build:
@@ -180,7 +210,6 @@ or one click build:
 
 chmod +x install.sh
 ./install.sh
-./cyph3r --help
 
 ```
 
