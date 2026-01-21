@@ -42,7 +42,7 @@ For Educational and Professional Services Use Only. Always ensure you have expli
 ### Clone the repository
 
 ```bash
-git clone https://github.com/AnonPhoenix420/cyph3r.git
+git clone https://github.com/AnonPhoenix420/cyph3r
 ```
 ```
 cd cyph3r
@@ -51,8 +51,12 @@ cd cyph3r
 ### Build
 
 ```bash
+
 go mod tidy
+```
+```
 go build -o cyph3r main.go intel.go
+
 ```
 
 (Optional system-wide install on Linux)
