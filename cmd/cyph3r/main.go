@@ -247,9 +247,9 @@ func main() {
 		go worker(ctx, jobs, cfg, metrics, wg)
 	}
 
-	start := time.Now()
 	tick := time.NewTicker(time.Second / time.Duration(max(1, cfg.RPS)))
-	defer tick.Stop()
+defer tick.Stop()
+
 
 LOOP:
 	for {
