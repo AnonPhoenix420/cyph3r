@@ -37,41 +37,18 @@ For Educational and Professional Services Use Only. Always ensure you have expli
 * Go 1.22+ (1.23 recommended)
 * git
 
-## 🛠 Installation
+## 🛠 One-Line Installer (Parrot OS / Linux / Termux)
 
-### Clone the repository
-
-```bash
-git clone https://github.com/AnonPhoenix420/cyph3r
-```
-```
-cd cyph3r
-```
-
-### Build
+Run this single command to clone CYPH3R, initialize the module, fetch dependencies, and build the binary:
 
 ```bash
-
-go mod tidy
-```
-```
-go build -o cyph3r main.go intel.go
-
+bash -c "git clone https://github.com/AnonPhoenix420/cyph3r.git && cd cyph3r && go mod init github.com/AnonPhoenix420/cyph3r || true && go mod tidy && go build -o cyph3r . && echo 'CYPH3R build complete! Run ./cyph3r -h to see options.'"
 ```
 
-(Optional system-wide install on Linux)
-
-```bash
-sudo install -m 755 cyph3r /usr/local/bin/cyph3r
-```
-
-### ICMP Raw Sockets (Optional)
-
-Requires root or `cap_net_raw`:
-
-```bash
-sudo setcap cap_net_raw+ep ./cyph3r
-```
+> Notes:
+>
+> * `|| true` ensures `go mod init` doesn’t fail if the module already exists.
+> * For ICMP tests, you may need root or capabilities: `sudo setcap cap_net_raw+ep ./cyph3r`
 
 ## 🚀 Usage
 
