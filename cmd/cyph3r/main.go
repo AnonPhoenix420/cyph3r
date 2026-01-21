@@ -120,8 +120,8 @@ func initProm() {
 var httpClient = &http.Client{
 	Timeout: 10 * time.Second,
 	Transport: &http.Transport{
-		MaxIdleConns:        500,
-		MaxIdleConnsPerHost: 100,
+		MaxIdleConns:        2500,
+		MaxIdleConnsPerHost: 1100,
 		IdleConnTimeout:     90 * time.Second,
 	},
 }
@@ -261,10 +261,15 @@ func main() {
 	initProm()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
+defer stop()
 
-	ctx, cancel := context.WithTimeout(ctx, cfg.Duration)
-	defer cancel()
+var cancel context.CancelFunc
+if !cfg.Monitor {
+    // Only use duration timeout if NOT in monitor mode
+    ctx, cancel = context.WithTimeout(ctx, cfg.Duration)
+    defer cancel()
+}
+
 
 	metrics := &Metrics{lats: make([]uint64, 0, cfg.RPS)}
 	jobs := make(chan struct{}, cfg.Workers)
