@@ -220,7 +220,7 @@ If you encounter a checksum mismatch during install, run:
 
 
 ```bash
-
+rm -f go.sum
 go clean -modcache
 go mod tidy
 
