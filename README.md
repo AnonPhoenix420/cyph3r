@@ -64,11 +64,10 @@ or just
 
 
 ```
-Example output:
 
+### Example Output
 
-
-
+```text
 CYPH3R: Network Diagnostics Utility
 
 Usage:
@@ -84,12 +83,11 @@ Options:
   --monitor       Continuously monitor the target
   --interval      Check interval in seconds (default: 5)
   --version       Show program version info
-  --portscan      Scan ports on IP/localhost (default range 1-1024)
+  --portscan      Scan ports on IP/localhost (default range 1–1024)
   --scanstart     Port scan range start (default: 1)
   --scanend       Port scan range end (default: 1024)
   -h, --help      Show this help and exit
-
-
+```
 
 
 📦 Requirements
@@ -235,6 +233,7 @@ When ```--monitor``` is enabled:
 
 
 📁 Project Structure
+```text
 
 
 cyph3r/
@@ -251,7 +250,7 @@ cyph3r/
 └── README.md
 
 
-
+```
 
 
 ⚖️ License
