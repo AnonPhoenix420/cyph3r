@@ -172,6 +172,22 @@ System-wide install:
 
 sudo install -m 755 cyph3r /usr/local/bin/cyph3r
 ```
+
+
+
+### Go Module Security Note
+
+CYPH3R uses Go’s built-in module checksum verification.  
+If you encounter a checksum mismatch during install, run:
+
+```bash
+go clean -modcache
+go mod tidy
+
+```
+
+
+
 🚀 Usage Examples
 
 Basic TCP test
