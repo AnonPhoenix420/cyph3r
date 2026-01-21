@@ -1,0 +1,6 @@
+github.com/kr/text v0.2.0 h1:XixvHkcdZVEA5E3yP4dEIV1vZl1pY/SlmZr1mcF0roI=
+github.com/kr/text v0.2.0/go.mod h1:1pK/2kckD8YcHbSEU6fzfY0VdhlHEg3y4N58mXU2wX4=
+github.com/nyaruka/phonenumbers v1.1.0 h1:9kW3ZYnYjv1M8j6Qx7+1XhTSxkwj5s1j6nzE/1zp4Hw=
+github.com/nyaruka/phonenumbers v1.1.0/go.mod h1:SkA5aI9/X5wmp+TeG+a0Dqyk+cLw5VksK09oedx3/BM=
+github.com/prometheus/client_golang v1.23.2 h1:8FMRaV+ZwoZqUCM6q9q1KfFYpMf8ICq0+XIL2+HUBqU=
+github.com/prometheus/client_golang v1.23.2/go.mod h1:KX/hkBR6fSx5Yt25/PuBMe2XsoL3z7CRUPOY8TtX5uw=
