@@ -16,14 +16,13 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
+	
 	"github.com/AnonPhoenix420/cyph3r/internal/output"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-/* ================= CONFIG ================= */
-
+// ================= CONFIG =================
 type Config struct {
 	Target            string
 	Port              int
@@ -31,18 +30,21 @@ type Config struct {
 	Method            string
 	Payload           string
 	Headers           headerList
+	Whois             bool
 	Duration          time.Duration
 	RPS               int
 	Workers           int
+	Ramp              time.Duration
 	JSON              bool
 	Monitor           bool
 	Interval          time.Duration
 	FailRateThreshold float64
 	LatencyThreshold  time.Duration
+	Scenario          string
+	ASNFanout         bool
 }
 
-/* ================= METRICS ================= */
-
+// ================= METRICS =================
 type Metrics struct {
 	Sent     uint64
 	Success  uint64
@@ -67,28 +69,19 @@ func (m *Metrics) record(lat time.Duration, ok bool) {
 	m.latMu.Unlock()
 }
 
-func (m *Metrics) percentiles() (time.Duration, time.Duration, time.Duration) {
+func (m *Metrics) percentiles() (p50, p95, p99 time.Duration) {
 	m.latMu.Lock()
 	defer m.latMu.Unlock()
-
 	if len(m.lats) == 0 {
-		return 0, 0, 0
+		return
 	}
-
-	sort.Slice(m.lats, func(i, j int) bool {
-		return m.lats[i] < m.lats[j]
-	})
-
-	idx := func(q float64) int {
-		return int(float64(len(m.lats)-1) * q)
-	}
-
-	return time.Duration(m.lats[idx(0.50)]) * time.Microsecond,
-		time.Duration(m.lats[idx(0.95)]) * time.Microsecond,
-		time.Duration(m.lats[idx(0.99)]) * time.Microsecond
+	sort.Slice(m.lats, func(i, j int) bool { return m.lats[i] < m.lats[j] })
+	idx := func(q float64) int { return int(float64(len(m.lats)-1) * q) }
+	p50 = time.Duration(m.lats[idx(0.50)]) * time.Microsecond
+	p95 = time.Duration(m.lats[idx(0.95)]) * time.Microsecond
+	p99 = time.Duration(m.lats[idx(0.99)]) * time.Microsecond
+	return
 }
-
-
 
 // ================= PROMETHEUS =================
 var (
@@ -106,13 +99,12 @@ func initProm(ctx context.Context, wg *sync.WaitGroup) {
 
 	server := &http.Server{
 		Addr:    ":2112",
-		Handler: promhttp.Handler(), // <-- use promhttp.Handler here
+		Handler: promhttp.Handler(),
 	}
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		// shut down gracefully when context is cancelled
 		go func() {
 			<-ctx.Done()
 			_ = server.Shutdown(context.Background())
@@ -123,28 +115,19 @@ func initProm(ctx context.Context, wg *sync.WaitGroup) {
 	}()
 }
 
-/* ================= HTTP CLIENT ================= */
-
+// ================= HTTP CLIENT =================
 var httpClient = &http.Client{
 	Timeout: 10 * time.Second,
 	Transport: &http.Transport{
-		MaxIdleConns:        2500,
-		MaxIdleConnsPerHost: 1100,
+		MaxIdleConns:        500,
+		MaxIdleConnsPerHost: 100,
 		IdleConnTimeout:     90 * time.Second,
 	},
 }
 
-/* ================= WORKER ================= */
-
-func worker(
-	ctx context.Context,
-	jobs <-chan struct{},
-	cfg Config,
-	m *Metrics,
-	wg *sync.WaitGroup,
-) {
+// ================= WORKER =================
+func worker(ctx context.Context, jobs <-chan struct{}, cfg Config, m *Metrics, wg *sync.WaitGroup) {
 	defer wg.Done()
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -152,29 +135,23 @@ func worker(
 		case <-jobs:
 			start := time.Now()
 			ok := false
-
 			switch cfg.Proto {
 			case "tcp":
-				conn, err := net.DialTimeout(
-					"tcp",
-					fmt.Sprintf("%s:%d", cfg.Target, cfg.Port),
-					2*time.Second,
-				)
+				c, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", cfg.Target, cfg.Port), 2*time.Second)
 				if err == nil {
-					conn.Close()
+					c.Close()
 					ok = true
 				}
-
 			case "http", "https":
-				url := cfg.Proto + "://" + cfg.Target
+				scheme := cfg.Proto
+				url := scheme + "://" + cfg.Target
 				var body io.Reader
 				if cfg.Payload != "" {
 					body = strings.NewReader(cfg.Payload)
 				}
-
 				req, err := http.NewRequest(cfg.Method, url, body)
 				if err == nil {
-					req.Header.Set("User-Agent", "cyph3r")
+					req.Header.Set("User-Agent", "cyph3r/2.1")
 					for k, v := range cfg.Headers {
 						req.Header.Set(k, v)
 					}
@@ -185,10 +162,8 @@ func worker(
 					}
 				}
 			}
-
 			lat := time.Since(start)
 			m.record(lat, ok)
-
 			pSent.Inc()
 			pLatency.Observe(float64(lat.Milliseconds()))
 			if ok {
@@ -200,12 +175,10 @@ func worker(
 	}
 }
 
-/* ================= DASHBOARD ================= */
-
+// ================= DASHBOARD =================
 func dashboard(ctx context.Context, m *Metrics, cfg Config) {
 	t := time.NewTicker(cfg.Interval)
 	defer t.Stop()
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -214,28 +187,16 @@ func dashboard(ctx context.Context, m *Metrics, cfg Config) {
 			sent := atomic.LoadUint64(&m.Sent)
 			ok := atomic.LoadUint64(&m.Success)
 			fail := atomic.LoadUint64(&m.Failure)
-
 			avg := time.Duration(0)
 			if sent > 0 {
 				avg = time.Duration(atomic.LoadUint64(&m.LatSumUs)/sent) * time.Microsecond
 			}
-
-			_, p95, _ := m.percentiles()
-
-			output.Info(
-				fmt.Sprintf(
-					"sent=%d ok=%d fail=%d avg=%s p95=%s",
-					sent, ok, fail, avg, p95,
-				),
-			)
-
-			if cfg.FailRateThreshold > 0 && sent > 0 {
-				failRate := float64(fail) / float64(sent)
-				if failRate > cfg.FailRateThreshold {
-					output.Down("FAILURE THRESHOLD BREACHED")
-				}
+			p50, p95, p99 := m.percentiles()
+			output.Info(fmt.Sprintf("sent=%d ok=%d fail=%d avg=%s p50=%s p95=%s p99=%s", sent, ok, fail, avg, p50, p95, p99))
+			failRate := float64(fail) / float64(max(1, int(sent)))
+			if cfg.FailRateThreshold > 0 && failRate > cfg.FailRateThreshold {
+				output.Down("FAILURE THRESHOLD BREACHED")
 			}
-
 			if cfg.LatencyThreshold > 0 && p95 > cfg.LatencyThreshold {
 				output.Down("LATENCY THRESHOLD BREACHED")
 			}
@@ -243,94 +204,87 @@ func dashboard(ctx context.Context, m *Metrics, cfg Config) {
 	}
 }
 
-/* ================= MAIN ================= */
-
+// ================= MAIN =================
 func main() {
 	output.Banner()
 
 	cfg := Config{}
-
 	flag.StringVar(&cfg.Target, "target", "localhost", "target host")
 	flag.IntVar(&cfg.Port, "port", 80, "port")
-	flag.StringVar(&cfg.Proto, "proto", "http", "tcp|http|https")
+	flag.StringVar(&cfg.Proto, "proto", "http", "tcp|http|https|icmp")
 	flag.StringVar(&cfg.Method, "method", "GET", "HTTP method")
-	flag.StringVar(&cfg.Payload, "payload", "", "HTTP body")
+	flag.StringVar(&cfg.Payload, "payload", "", "HTTP payload/body")
 	flag.Var(&cfg.Headers, "H", "HTTP header key:value")
+	flag.BoolVar(&cfg.Whois, "whois", false, "WHOIS lookup")
 	flag.DurationVar(&cfg.Duration, "duration", 30*time.Second, "test duration")
-	flag.IntVar(&cfg.RPS, "rps", 100, "requests per second")
+	flag.IntVar(&cfg.RPS, "rps", 200, "requests per second")
 	flag.IntVar(&cfg.Workers, "workers", runtime.NumCPU()*4, "workers")
+	flag.DurationVar(&cfg.Ramp, "ramp", 10*time.Second, "ramp up duration")
 	flag.BoolVar(&cfg.JSON, "json", false, "json output")
-	flag.BoolVar(&cfg.Monitor, "monitor", true, "dashboard")
+	flag.BoolVar(&cfg.Monitor, "monitor", true, "live dashboard")
 	flag.DurationVar(&cfg.Interval, "interval", 2*time.Second, "dashboard interval")
-	flag.Float64Var(&cfg.FailRateThreshold, "failrate", 0.0, "fail threshold")
-	flag.DurationVar(&cfg.LatencyThreshold, "latency", 0, "latency threshold")
+	flag.Float64Var(&cfg.FailRateThreshold, "failrate", 0.1, "failure threshold")
+	flag.DurationVar(&cfg.LatencyThreshold, "latency", 2*time.Second, "p95 latency threshold")
+	flag.StringVar(&cfg.Scenario, "scenario", "", "mixed scenario mode")
+	flag.BoolVar(&cfg.ASNFanout, "asn-fanout", false, "ASN fan-out mode")
 	flag.Parse()
 
-	initProm()
-
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-defer stop()
+	defer stop()
 
-var cancel context.CancelFunc
-if !cfg.Monitor {
-    // Only use duration timeout if NOT in monitor mode
-    ctx, cancel = context.WithTimeout(ctx, cfg.Duration)
-    defer cancel()
-}
-
-
-	metrics := &Metrics{lats: make([]uint64, 0, cfg.RPS)}
-	jobs := make(chan struct{}, cfg.Workers)
-
-	var wg sync.WaitGroup
-	for i := 0; i < cfg.Workers; i++ {
-		wg.Add(1)
-		go worker(ctx, jobs, cfg, metrics, &wg)
-	}
+	wg := &sync.WaitGroup{}
+	initProm(ctx, wg)
 
 	if cfg.Monitor {
-		go dashboard(ctx, metrics, cfg)
+		go dashboard(ctx, &Metrics{lats: make([]uint64, 0)}, cfg)
 	}
 
-	tick := time.NewTicker(time.Second / time.Duration(maxInt(1, cfg.RPS)))
+	metrics := &Metrics{lats: make([]uint64, 0, cfg.RPS*int(cfg.Duration.Seconds()))}
+	jobs := make(chan struct{}, cfg.Workers)
+
+	for i := 0; i < cfg.Workers; i++ {
+		wg.Add(1)
+		go worker(ctx, jobs, cfg, metrics, wg)
+	}
+
+	start := time.Now()
+	tick := time.NewTicker(time.Second / time.Duration(max(1, cfg.RPS)))
 	defer tick.Stop()
 
+LOOP:
 	for {
 		select {
 		case <-ctx.Done():
-			close(jobs)
-			wg.Wait()
-
-			p50, p95, p99 := metrics.percentiles()
-			result := map[string]interface{}{
-				"sent":    metrics.Sent,
-				"success": metrics.Success,
-				"failure": metrics.Failure,
-				"p50":     p50.String(),
-				"p95":     p95.String(),
-				"p99":     p99.String(),
-			}
-
-			if cfg.JSON {
-				b, _ := json.MarshalIndent(result, "", "  ")
-				fmt.Println(string(b))
-			} else {
-				output.Success("Completed")
-			}
-			return
-
+			break LOOP
 		case <-tick.C:
 			jobs <- struct{}{}
 		}
 	}
+
+	close(jobs)
+	wg.Wait()
+
+	p50, p95, p99 := metrics.percentiles()
+	out := map[string]interface{}{
+		"sent":    metrics.Sent,
+		"success": metrics.Success,
+		"failure": metrics.Failure,
+		"p50":     p50.String(),
+		"p95":     p95.String(),
+		"p99":     p99.String(),
+	}
+	if cfg.JSON {
+		b, _ := json.MarshalIndent(out, "", "  ")
+		fmt.Println(string(b))
+	} else {
+		output.Success("Completed")
+	}
 }
 
-/* ================= HELPERS ================= */
-
+// ================= HELPERS =================
 type headerList map[string]string
 
 func (h *headerList) String() string { return "" }
-
 func (h *headerList) Set(v string) error {
 	if *h == nil {
 		*h = make(map[string]string)
@@ -342,9 +296,4 @@ func (h *headerList) Set(v string) error {
 	return nil
 }
 
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
+func max(a, b int) int { if a > b { return a }; return b }
