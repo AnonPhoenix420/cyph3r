@@ -1,6 +1,7 @@
 package intel
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
