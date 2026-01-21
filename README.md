@@ -162,9 +162,8 @@ go mod tidy
 
 ```
 ```
-go build -o cyph3r ./main.go ./intel.go
-./cyph3r --help
 
+go build -o cyph3r ./cmd/cyph3r
 
 ```
 
@@ -175,14 +174,24 @@ System-wide install:
 sudo install -m 755 cyph3r /usr/local/bin/cyph3r
 ```
 
+or one click build:
 
+```
+
+chmod +x install.sh
+./install.sh
+./cyph3r --help
+
+```
 
 ### Go Module Security Note
 
 CYPH3R uses Go’s built-in module checksum verification.  
 If you encounter a checksum mismatch during install, run:
 
+
 ```bash
+
 go clean -modcache
 go mod tidy
 
@@ -256,16 +265,15 @@ When ```--monitor``` is enabled:
 
 cyph3r/
 ├── cmd/cyph3r/main.go
-├── internal/
-│   ├── netcheck/
-│   ├── geo/
-│   ├── phone/
-│   ├── output/
-│   └── version/
-├── install.sh
+├── internal/intel/intel.go
+├── internal/output/colors.go
+├── internal/output/banner.go
+├── internal/output/status.go
 ├── go.mod
-├── LICENSE
-└── README.md
+├── go.sum
+├── install.sh
+├── README.md
+
 
 
 ```
