@@ -162,7 +162,9 @@ go mod tidy
 
 ```
 ```
-go build -o cyph3r ./cmd/cyph3r
+go build -o cyph3r ./main.go ./intel.go
+./cyph3r --help
+
 
 ```
 
