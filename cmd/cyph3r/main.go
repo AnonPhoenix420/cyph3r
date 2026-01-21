@@ -48,46 +48,34 @@ type Config struct {
 	Scenario          string
 	ASNFanout         bool
 }
+// ---------- FIXED METRICS / STATS BLOCK ----------
 
-// ================= METRICS =================
+start := time.Now()
 
-type Metrics struct {
-	Sent     uint64
-	Success  uint64
-	Failure  uint64
-	LatSumUs uint64
+sent, received := runTrafficTest(target, port)
 
-	latMu sync.Mutex
-	lats  []uint64
-}
-
-func (m *Metrics) record(lat time.Duration, ok bool) {
-	atomic.AddUint64(&m.Sent, 1)
-	if ok {
-		atomic.AddUint64(&m.Success, 1)
-	} else {
-		atomic.AddUint64(&m.Failure, 1)
+// uint64-safe max function
+func maxUint64(a, b uint64) uint64 {
+	if a > b {
+		return a
 	}
-	atomic.AddUint64(&m.LatSumUs, uint64(lat.Microseconds()))
-
-	m.latMu.Lock()
-	m.lats = append(m.lats, uint64(lat.Microseconds()))
-	m.latMu.Unlock()
+	return b
 }
 
-func (m *Metrics) percentiles() (p50, p95, p99 time.Duration) {
-	m.latMu.Lock()
-	defer m.latMu.Unlock()
-	if len(m.lats) == 0 {
-		return
-	}
-	sort.Slice(m.lats, func(i, j int) bool { return m.lats[i] < m.lats[j] })
-	idx := func(q float64) int { return int(float64(len(m.lats)-1) * q) }
-	p50 = time.Duration(m.lats[idx(0.50)]) * time.Microsecond
-	p95 = time.Duration(m.lats[idx(0.95)]) * time.Microsecond
-	p99 = time.Duration(m.lats[idx(0.99)]) * time.Microsecond
-	return
-}
+total := maxUint64(sent, received)
+
+// Latency stats (use values so Go is happy)
+p50, p99 := calculateLatencyStats()
+
+fmt.Printf("Latency p50: %v ms\n", p50)
+fmt.Printf("Latency p99: %v ms\n", p99)
+
+elapsed := time.Since(start)
+fmt.Printf("Elapsed time: %s\n", elapsed)
+
+fmt.Printf("Packets sent: %d\n", sent)
+fmt.Printf("Packets received: %d\n", received)
+fmt.Printf("Total packets: %d\n", total)
 
 // ================= PROMETHEUS =================
 
