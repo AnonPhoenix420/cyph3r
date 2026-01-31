@@ -2,18 +2,7 @@ package output
 
 import "fmt"
 
-func Info(msg string) {
-	fmt.Println(BlueText("[INFO] " + msg))
-}
-
-func Success(msg string) {
-	fmt.Println(GreenText("[OK] " + msg))
-}
-
-func Warn(msg string) {
-	fmt.Println(YellowText("[WARN] " + msg))
-}
-
-func Down(msg string) {
-	fmt.Println(RedText("[DOWN] " + msg))
-}
+func Info(msg string)    { fmt.Printf("%s[*] %s%s\n", Cyan, msg, Reset) }
+func Success(msg string) { fmt.Printf("%s[+] %s%s\n", Green, msg, Reset) }
+func Warn(msg string)    { fmt.Printf("%s[!] %s%s\n", Yellow, msg, Reset) }
+func Down(msg string)    { fmt.Printf("%s[-] %s%s\n", Red, msg, Reset) }
