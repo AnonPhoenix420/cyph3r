@@ -1,20 +1,7 @@
-# 
-#   _____    __     __   ______    _    _    _____   ______
-#  / ____|  \ \   / /  | ___ \  | |  | |  |___  |  | ___ \
-# | |       \ \_/ /   | |_/ /  | |__| |    / /   | |_/ /
-# | |        \   /    |  __/   |  __  |  |_ \   |  _  \
-# | |____     | |     | |      | |  | |  ___) |  | | \ \
-#  \_____|    |_|     \_|      |_|  |_|  |____/   \_|  \_|
-#
-#   ┌──────────────────────────────────────────────┐
-#   │   CYPH3R v2.5: Network Intelligence & Probing │
-#   └──────────────────────────────────────────────┘
-#
-#             [ Modular • Powerful • Clean ]
 
----
 
 ## 🧠 Overview
+
 **CYPH3R** is a high-performance network diagnostic and intelligence tool written in Go. Unlike basic scanners, CYPH3R combines deep **OSINT (Open-Source Intelligence)** with a multi-protocol **Probing Engine**. 
 
 It is designed to be "Zero-Config"—no API keys, no passwords, and no complex setup required.
@@ -79,13 +66,9 @@ Test specific ports using different methods:
 ./cyph3r --target google.com --proto https
 
 ```
-
-
 Phone Metadata
 Verify international number status:
-
 ```
-
 ./cyph3r --phone +14155552671
 
 ```
@@ -108,24 +91,22 @@ cyph3r/
 ⚖️ Disclaimer
 For Educational and Professional Services Use Only. The creator is NOT responsible for misuse. Always ensure you have explicit permission before testing any network or service you do not own.
 
+
 Happy Hacking — Responsibly 🧠🚀
 
-```
-```
+
 
 🚨🚨 TECHNICAL ERRORS 🚨🚨
+
+
 
 How to generate the new go.sum "if you are having problems and a go.sum was automatically generated
 Run these three commands in your terminal inside the cyph3r directory:
 
 # 1. Remove any old, conflicting sum files
 ```
-
 rm -f go.sum
-
 ```
-
-
 # 2. Download and verify the exact versions required by the new code
 ```
 go mod tidy
@@ -133,6 +114,20 @@ go mod tidy
 # 3. Verify the hashes are locked
 ```
 go mod verify
-
-
-
+```
+# 1. Initialize the module (if not already done)
+```
+go mod init github.com/AnonPhoenix420/cyph3r 2>/dev/null || true
+```
+# 2. Fetch the specific OSINT and Phone libraries
+```
+go get github.com/nyaruka/phonenumbers
+go get github.com/prometheus/client_golang
+```
+# 3. Clean and verify the go.sum file
+```
+go mod tidy
+```
+# 4. Build the executable
+```
+go build -o cyph3r ./cmd/cyph3r
