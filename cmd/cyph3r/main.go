@@ -3,9 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net"
-	"net/http"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/AnonPhoenix420/cyph3r/internal/intel"
@@ -16,69 +15,53 @@ import (
 func main() {
 	output.Banner()
 
-	target := flag.String("target", "", "Target Domain/IP")
+	target := flag.String("target", "", "Target IP/Domain")
 	port := flag.Int("port", 80, "Port")
-	proto := flag.String("proto", "tcp", "tcp|udp|http|https|ack")
-	phone := flag.String("phone", "", "Phone number info")
+	proto := flag.String("proto", "tcp", "tcp|udp|http|https|ack|ping")
+	interval := flag.Duration("interval", 2*time.Second, "Delay between loops")
+	monitor := flag.Bool("monitor", false, "Enable continuous loop mode")
 	flag.Parse()
 
-	// 1. Phone Intelligence
-	if *phone != "" {
-		output.Info("Phone Metadata: " + intel.PhoneLookup(*phone))
-	}
-
 	if *target == "" {
-		if *phone == "" { output.Warn("Use -target or -phone. See --help"); os.Exit(1) }
+		output.Warn("Target is required.")
 		return
 	}
 
-	// 2. Deep Network Intel (The "Work Proper" Request)
-	data, err := intel.GetIntel(*target)
-	if err == nil && data.Status == "success" {
-		fmt.Printf("\n%s\n", output.BoldText("===== TARGET INTELLIGENCE ====="))
-		fmt.Printf("IP Address:   %s\n", data.IP)
-		fmt.Printf("Hostname:     %s\n", data.ReverseDNS)
-		fmt.Printf("ISP Handler:  %s\n", data.ISP)
-		fmt.Printf("Organization: %s\n", data.Org)
-		fmt.Printf("Location:     %s, %s (Zip: %s)\n", data.City, data.Country, data.Zip)
-		fmt.Printf("GPS Coords:   %f, %f\n", data.Lat, data.Lon)
-		fmt.Printf("Google Maps:  https://www.google.com/maps?q=%f,%f\n", data.Lat, data.Lon)
-		fmt.Printf("WHOIS:        %s\n", intel.Whois(*target))
-		fmt.Println("===============================\n")
+	// Run Intelligence once at start
+	data, _, _ := intel.GetIntel(*target)
+	if data != nil {
+		output.Info(fmt.Sprintf("Target: %s (%s) | ISP: %s", *target, data.IP, data.ISP))
 	}
 
-	// 3. The Multi-Protocol Probe
-	output.Info(fmt.Sprintf("Probing %s via %s on port %d...", *target, *proto, *port))
-	
-	start := time.Now()
-	success := false
-	address := fmt.Sprintf("%s:%d", *target, *port)
+	// Setting up Signal Handling for a clean exit
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt)
 
-	switch *proto {
-	case "tcp", "ack":
-		conn, err := net.DialTimeout("tcp", address, 3*time.Second)
-		if err == nil {
-			conn.Close()
-			success = true
-		}
-	case "udp":
-		conn, err := net.DialTimeout("udp", address, 3*time.Second)
-		if err == nil {
-			conn.Close()
-			success = true
-		}
-	case "http", "https":
-		client := http.Client{Timeout: 5 * time.Second}
-		resp, err := client.Get(fmt.Sprintf("%s://%s", *proto, *target))
-		if err == nil {
-			resp.Body.Close()
-			success = (resp.StatusCode < 400)
-		}
-	}
+	output.Success(fmt.Sprintf("Monitoring %s via %s...", *target, *proto))
 
-	if success {
-		output.Success(fmt.Sprintf("Target UP! Latency: %v", time.Since(start)))
-	} else {
-		output.Down("Target Unreachable or Port Closed.")
+	for {
+		select {
+		case <-sigChan:
+			fmt.Println("\n")
+			output.Warn("Monitoring stopped by user.")
+			return
+		default:
+			start := time.Now()
+			success, latency := probes.ExecuteProbe(*proto, *target, *port)
+
+			if success {
+				output.Success(fmt.Sprintf("[%s] %s is UP | Latency: %v", 
+					time.Now().Format("15:04:05"), *target, latency))
+			} else {
+				output.Down(fmt.Sprintf("[%s] %s is DOWN | Timeout", 
+					time.Now().Format("15:04:05"), *target))
+			}
+
+			if !*monitor {
+				return // Exit after one run if monitor is false
+			}
+
+			time.Sleep(*interval) // Wait for the next loop
+		}
 	}
 }
