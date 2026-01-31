@@ -5,43 +5,16 @@ import (
 	"runtime"
 )
 
-// Banner prints the updated CYPH3R branding to the console
 func Banner() {
-	// Standard CYPH3R Blue
-	color := Blue 
-
 	ascii := `
-  _____   __     __   _____   _    _    _____   _____
- / ____|  \ \   / /  | ___ \ | |  | |  |___ |  | ___ \
-| |       \ \_/ /   | |_/ /  | |__| |    / /   | |_/ /
-| |        \   /    |  __/   |  __  |  |_ \    |  _  \
-| |____     | |     | |      | |  | |  ___) |  |  | \ \
- \_____|    |_|     \_|      |_|  |_|  |____/   \_|  \_|
-`
+   ______      ____  __  __ _____ ____ 
+  / ____/_  __/ __ \/ / / /|__  // __ \
+ / /   / / / / /_/ / /_/ /  /_ </ /_/ /
+/ /___/ /_/ / ____/ __  / ___/ / _, _/ 
+\____/\__, /_/   /_/ /_/ /____/_/ |_|  
+     /____/         NETWORK_INTEL_SYSTEM`
 
-	fmt.Print(color + Bold + ascii + Reset)
-	fmt.Println(BlueText(" │          CYPH3R: Network Diagnostics & Intel Tool"))
-	fmt.Println(BlueText(" └──────────────────────────────────────────────────┘"))
-	
-	// Dynamic Metadata
-	fmt.Printf(" [OS: %s] | [Arch: %s] | [Status: Active]\n", runtime.GOOS, runtime.GOARCH)
-	
-	// The Hacker Mascot
-	fmt.Println(`
-            [ Hacker at Work ]
-                 _________
-                |  _____  |
-                | |     | |
-                | | CLI | |
-                | |_____| |
-                |_________|
-                    ||
-        (•_•)      ||
-       <|   |>=====||
-        / \        ||
-                  /__\
-	`)
-	
-	fmt.Println(RedText(" [!] Educational & Professional Use Only"))
-	fmt.Println(fmt.Sprintf(" [%s] Initializing internal modules...\n", "✔"))
+	fmt.Println(Cyan + Bold + ascii + Reset)
+	fmt.Println(Gray + " ────────────────────────────────────────────────────────" + Reset)
+	fmt.Printf(" %s[SYS]%s OS: %-7s | ARCH: %-7s | BUILD: 2.6\n", Bold, Reset, runtime.GOOS, runtime.GOARCH)
 }
