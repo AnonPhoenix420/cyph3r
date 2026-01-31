@@ -1,4 +1,37 @@
+_____    __     __   ______    _    _    _____   ______
+ / ____|  \ \   / /  | ___ \  | |  | |  |___  |  | ___ \
+| |       \ \_/ /   | |_/ /  | |__| |    / /   | |_/ /
+| |        \   /    |  __/   |  __  |  |_ \   |  _  \
+| |____     | |     | |      | |  | |  ___) |  | | \ \
+ \_____|    |_|     \_|      |_|  |_|  |____/   \_|  \_|
 
+
+│          CYPH3R: Network Diagnostics & Intel Tool
+│
+└──────────────────────────────────────────────┘
+
+            [ Hacker at Work ]
+
+                 _________
+                |  _____  |
+                | |     | |
+                | | CLI | |
+                | |_____| |
+                |_________|
+                    ||
+        (•_•)      ||
+       <|   |>=====||
+        / \        ||
+                  /__\
+
+------------------------------------------------------
+⚠️ Disclaimer  
+For Educational and Professional Services Use Only  
+The creator is NOT responsible for misuse of this tool  
+
+Always ensure you have explicit permission before testing 
+any network, host, or service you do not own.
+------------------------------------------------------
 
 ## 🧠 Overview
 
