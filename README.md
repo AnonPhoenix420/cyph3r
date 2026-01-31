@@ -1,27 +1,26 @@
+  _ _   _ ___ _  _ ____ ___ 
+ / __) \_/ |  _) || (____/ __)
+( (__ \   /| | | __ | _  \__ \
+ \___) |_| |_| |_||_|____/___/
 
+ [ CYPH3R : Network Intel & Diagnostics ]
+ 
+           [ Hacker at Work ]
+               _________
+              |  _____  |
+              | |     | |
+              | | CLI | |
+              | |_____| |
+              |_________|
+                  ||
+      (•_•)       ||
+     <|   |>======||
+      / \         ||
+                 /__\
 
-            [ Hacker at Work ]
+            
 
-                 _________
-                |  _____  |
-                | |     | |
-                | | CLI | |
-                | |_____| |
-                |_________|
-                    ||
-        (•_•)      ||
-       <|   |>=====||
-        / \        ||
-                  /__\
-
-------------------------------------------------------
-⚠️ Disclaimer  
-For Educational and Professional Services Use Only  
-The creator is NOT responsible for misuse of this tool  
-
-Always ensure you have explicit permission before testing 
-any network, host, or service you do not own.
-------------------------------------------------------
+------------------------------------------
 
 ## 🧠 Overview
 
