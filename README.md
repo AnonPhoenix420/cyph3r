@@ -47,7 +47,7 @@ It is designed to be "Zero-Config"—no API keys, no passwords, and no complex s
 Clone the repository and run the automated installer:
 
 ```bash
-git clone [https://github.com/AnonPhoenix420/cyph3r.git](https://github.com/AnonPhoenix420/cyph3r.git)
+git clone https://github.com/AnonPhoenix420/cyph3r.git
 cd cyph3r
 chmod +x install.sh
 ./install.sh
