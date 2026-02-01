@@ -19,16 +19,4 @@ echo -e "[*] Purging module cache..."
 go clean -modcache
 
 echo -e "${GREEN}[✔] Uninstall Complete. System Cleaned.${NC}"
-🧬 Final Project Integrity Check
-Banner Fixed: Used backticks in banner.go to preserve ASCII art.
 
-Go 1.23 Locked: All scripts and go.mod are synchronized to the 1.23 stable release.
-
-Modular Logic: Port scanner lives in internal/probes but is called from main.go via a clean HUD interface.
-
-Everything is now ready. You have the complete source code, the installer, the uninstaller, and the documentation. Would you like a final test command to run a full-spectrum scan on a test target?
-
-This tutorial on building a concurrent TCP scanner in Go provides a deep dive into the underlying networking principles you've just implemented in CYPH3R.
-
-Live Coding: Port scanners in C, Go, Python, Java - YouTube
-DevDungeon · 5.3K views
