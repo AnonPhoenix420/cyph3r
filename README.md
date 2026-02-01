@@ -27,7 +27,8 @@ CYPH3R is a professional-grade network reconnaissance and monitoring tool built 
 
 ---
 
-
+#
+```text
 cyph3r/
 ├── cmd/
 │   └── cyph3r/
@@ -44,7 +45,7 @@ cyph3r/
 ├── Makefile
 ├── install.sh
 └── uninstall.sh
-
+```
 
 ---
 
