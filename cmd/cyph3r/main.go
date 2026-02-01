@@ -1,4 +1,3 @@
-cat <<EOF > cmd/cyph3r/main.go
 package main
 
 import (
@@ -32,7 +31,6 @@ func main() {
 
 	if *target != "" {
 		output.ScanAnimation()
-
 		data, _ := intel.GetFullIntel(*target)
 		output.PrintIntelHUD(*target, data.IPs, data.ISP, fmt.Sprintf("%s, %s", data.City, data.Country))
 
@@ -58,4 +56,3 @@ func main() {
 		fmt.Println(output.YellowText(" [!] No target specified. Use --help for usage guides."))
 	}
 }
-EOF
