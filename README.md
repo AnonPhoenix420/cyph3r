@@ -233,13 +233,20 @@ wget https://go.dev/dl/go1.23.0.linux-amd64.tar.gz
 ```
 ---
 
+Download the Go 1.23.5.0 Arcive
+```
+wget https://go.dev/dl/go1.23.5.linux-amd64.tar.gz
+```
+
 
 # 2. Remove any previous Go installation and extract the new one
 ```
 sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.23.0.linux-amd64.tar.gz
 ```
 ---
-
+```
+sudo tar -C /usr/local -xzf go1.23.5.linux-amd64.tar.gz
+```
 
 # 3. Add Go to your PATH (Environment Variables)
 ```
