@@ -9,6 +9,9 @@
 
   v2.6 [STABLE] // Wireframe HUD Edition
   ───────────────────────────────────────
+![Version](https://img.shields.io/badge/Version-2.6--STABLE-cyan?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-magenta?style=for-the-badge)
+![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS-blue?style=for-the-badge)
 ```
 
 ---
