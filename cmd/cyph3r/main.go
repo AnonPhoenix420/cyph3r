@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/signal"
 	"time"
 
 	"github.com/AnonPhoenix420/cyph3r/internal/intel"
@@ -13,57 +12,57 @@ import (
 )
 
 func main() {
+	// Initialize HUD
 	output.Banner()
-	
-	target := flag.String("target", "", "Target Host")
-	port := flag.Int("port", 80, "Default Port")
-	proto := flag.String("proto", "tcp", "Protocol (tcp/udp/http/https)")
-	monitor := flag.Bool("monitor", false, "Continuous monitoring")
-	scan := flag.Bool("scan", false, "Run Port Scanner")
-	phone := flag.String("phone", "", "Phone metadata lookup")
+
+	// Define Flags
+	target := flag.String("target", "", "Target Domain or IP")
+	scan := flag.Bool("scan", false, "Perform accelerated port scan")
+	phone := flag.String("phone", "", "Lookup international phone metadata")
+	monitor := flag.Bool("monitor", false, "Enable live HUD latency feed")
+	proto := flag.String("proto", "tcp", "Protocol for monitor (tcp/http/https)")
+	port := flag.Int("port", 80, "Port for monitor/scan")
+	interval := flag.Duration("interval", 2*time.Second, "Monitoring refresh interval")
+
 	flag.Parse()
 
-	if *target == "" && *phone == "" {
-		output.Warn("Vector required. Use --target or --phone")
+	// Logic 1: Phone Metadata
+	if *phone != "" {
+		output.Info("Decrypting Phone Vector...")
+		fmt.Printf(" %s\n\n", output.MagText(intel.PhoneLookup(*phone)))
 		return
 	}
 
-	if *phone != "" {
-		output.Info("Decrypting Phone Metadata...")
-		fmt.Println(output.BlueText(intel.PhoneLookup(*phone)))
-	}
-
+	// Logic 2: Target Recon & Intelligence
 	if *target != "" {
 		output.ScanAnimation()
-		data, _ := intel.GetFullIntel(*target)
-		output.PrintIntelHUD(*target, data.IPs, data.NS, data.BornOn, data.Registrar, data.ISP, fmt.Sprintf("%s, %s", data.City, data.Country), data.Coords)
 
+		// OSINT Gathering
+		data, _ := intel.GetFullIntel(*target)
+		output.PrintIntelHUD(*target, data.IPs, data.ISP, fmt.Sprintf("%s, %s", data.City, data.Country))
+
+		// Optional Accelerated Port Scan
 		if *scan {
-			output.Info("Initiating Port Reconnaissance...")
+			output.Info("Initiating Accelerated Reconnaissance...")
 			results := probes.PortScanner(*target)
 			output.PrintPortScan(results)
 		}
 
-		// Live Feed
-		sigChan := make(chan os.Signal, 1)
-		signal.Notify(sigChan, os.Interrupt)
-		fmt.Printf("\n%s\n", output.BlueText(fmt.Sprintf("──[ LIVE FEED: %s // %s ]──", *target, *proto)))
-
-		for {
-			select {
-			case <-sigChan:
-				output.Warn("HUD Signal Lost.")
-				return
-			default:
-				success, latency := probes.ExecuteProbe(*proto, *target, *port)
-				if success {
-					output.Success(fmt.Sprintf("[%s] UP | Latency: %v", time.Now().Format("15:04:05"), latency))
-				} else {
-					output.Down("Node Unreachable")
+		// Optional Live HUD Monitor
+		if *monitor {
+			output.Info("Starting Live HUD Feed (Ctrl+C to exit)...")
+			for {
+				up, lat := probes.ExecuteProbe(*proto, *target, *port)
+				status := output.RedText("DOWN")
+				if up {
+					status = output.GreenText("ACTIVE")
 				}
-				if !*monitor { return }
-				time.Sleep(1 * time.Second)
+				fmt.Printf("\r [%s] Protocol: %s | Latency: %s   ", status, output.YellowText(*proto), output.CyanText(lat))
+				time.Sleep(*interval)
 			}
 		}
+	} else {
+		// No args provided
+		fmt.Println(output.YellowText(" [!] No target specified. Use --help for usage guides."))
 	}
 }
