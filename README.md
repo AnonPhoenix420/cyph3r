@@ -182,6 +182,7 @@ chmod +x install.sh
 1. Install Go (The Language)
 CYPH3R requires Go 1.23 or higher.
 
+``` Recommend 1.23.5 ```
 
 ---
 
@@ -220,50 +221,7 @@ Restart your terminal/PowerShell.
 
 ---
 
-
-
-****Run these commands one by one to remove old versions and install Go 1.23****
-
----
-
-
-# 1. Download the Go 1.23.0 Archive
-```
-wget https://go.dev/dl/go1.23.0.linux-amd64.tar.gz
-```
----
-
 Download the Go 1.23.5.0 Arcive
-```
-wget https://go.dev/dl/go1.23.5.linux-amd64.tar.gz
-```
-
-
-# 2. Remove any previous Go installation and extract the new one
-```
-sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.23.0.linux-amd64.tar.gz
-```
----
-```
-sudo tar -C /usr/local -xzf go1.23.5.linux-amd64.tar.gz
-```
-
-# 3. Add Go to your PATH (Environment Variables)
-```
-echo "export PATH=\$PATH:/usr/local/go/bin" >> ~/.bashrc
-echo "export PATH=\$PATH:/usr/local/go/bin" >> ~/.zshrc
-```
----
-
-
-# 4. Refresh your terminal
-```
-source ~/.bashrc
-```
----
-
-
-**"IF YOU DON'T HAVE GO YET JUST DOWNLOAD IT FORM THE PATH ABOVE AND INSTALL IT YOURSELF***
 
 ---
 
@@ -271,12 +229,16 @@ source ~/.bashrc
 wget https://go.dev/dl/go1.23.0.linux-amd64.tar.gz
 
 ```
+👇 Download Go 1.23.5 to your Terminal 
+
+---
+
+
 ```
-sudo tar -C /usr/local -xzf go1.23.0.linux-amd64.tar.gz
+sudo tar -xzf go1.23.0.linux-amd64.tar.gz.1
+
 ```
-```
-export PATH=$PATH:/usr/local/go/bin
-```
+
 
 ---
 
