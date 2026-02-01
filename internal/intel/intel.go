@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/likexian/whois-go"
+	"github.com/likexian/whois"      // Fixed: Removed the -go suffix
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -44,7 +44,7 @@ func GetFullIntel(target string) (*NodeIntel, error) {
 		data.NS = append(data.NS, strings.TrimSuffix(ns.Host, "."))
 	}
 
-	// 2. WHOIS Data Extraction
+	// 2. WHOIS Data Extraction (Using the fixed whois package)
 	rawWhois, err := whois.Whois(target)
 	if err == nil {
 		lines := strings.Split(rawWhois, "\n")
@@ -52,16 +52,20 @@ func GetFullIntel(target string) (*NodeIntel, error) {
 			lower := strings.ToLower(line)
 			if strings.Contains(lower, "registrar:") && data.Registrar == "" {
 				parts := strings.Split(line, ":")
-				if len(parts) > 1 { data.Registrar = strings.TrimSpace(parts[1]) }
+				if len(parts) > 1 {
+					data.Registrar = strings.TrimSpace(parts[1])
+				}
 			}
 			if (strings.Contains(lower, "creation date:") || strings.Contains(lower, "created:")) && data.BornOn == "" {
 				parts := strings.Split(line, ":")
-				if len(parts) > 1 { data.BornOn = strings.TrimSpace(strings.Join(parts[1:], ":")) }
+				if len(parts) > 1 {
+					data.BornOn = strings.TrimSpace(strings.Join(parts[1:], ":"))
+				}
 			}
 		}
 	}
 
-	// 3. Geo-IP & ISP Intelligence (Using ip-api.com)
+	// 3. Geo-IP & ISP Intelligence
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Get(fmt.Sprintf("http://ip-api.com/json/%s?fields=status,country,city,zip,lat,lon,isp,org", target))
 	if err == nil {
