@@ -7,7 +7,7 @@
 \____/\__, /_/   /_/ /_/ /____/_/ |_|  
      /____/         NETWORK_INTEL_SYSTEM
 
-  v2.6 [STABLE] // Wireframe HUD Edition
+ ⚡ v2.6 [STABLE] // Wireframe HUD Edition
   ───────────────────────────────────────
 ![Version](https://img.shields.io/badge/Version-2.6--STABLE-cyan?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-magenta?style=for-the-badge)
