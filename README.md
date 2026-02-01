@@ -43,7 +43,12 @@ make repair
 
 🛠️ CYPH3R Installation
 
+
+
 ****Clone the official repo****
+
+Standard Build (Recommended)
+
 ```
 git clone https://github.com/AnonPhoenix420/cyph3r.git
 ```
@@ -54,7 +59,19 @@ go build -o cyph3r ./cmd/cyph3r
 
 ```
 
+Automated Install (Linux/macOS Only)
+
+```
+
+chmod +x install.sh
+./install.sh
+```
+
+
 ****SINGLE STEP INSTRUCTIONS***
+
+
+
 
 1. Install Go (The Language)
 CYPH3R requires Go 1.23 or higher.
