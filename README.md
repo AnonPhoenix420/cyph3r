@@ -51,10 +51,15 @@ cyph3r/
 
 
 CYPH3R uses a modular internal structure to ensure high-speed execution and zero dependency clashing:
+
+#
+```text
 * `cmd/cyph3r/`: The primary CLI entry point.
 * `internal/intel/`: OSINT logic for IP/Domain and Phone metadata.
 * `internal/output/`: The HUD system (Split into Banners, Colors, and Status).
 * `internal/probes/`: The network engine (TCP/UDP/HTTP/ACK socket logic).
+```
+
 
 ---
 
