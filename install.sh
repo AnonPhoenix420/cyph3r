@@ -1,23 +1,31 @@
 #!/bin/bash
-set -e
 
-# Create folder structure
-mkdir -p cmd/cyph3r internal/intel internal/output
+# CYPH3R v2.6 - HUD Automated Installer
+# ------------------------------------
+CYAN='\033[0;36m'
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
 
-# Initialize Go module if not exists
-if [ ! -f go.mod ]; then
-    go mod init github.com/AnonPhoenix420/cyph3r
+echo -e "${CYAN}[*] Initializing CYPH3R HUD Installation...${NC}"
+
+# 1. Check for Go
+if ! command -v go &> /dev/null; then
+    echo -e "${RED}[!] Go 1.23+ not found. Please install Go first.${NC}"
+    exit 1
 fi
 
-echo "[*] Cleaning environment..."
-rm -f go.sum
-go clean -modcache
-
-echo "[*] Downloading dependencies..."
-go get github.com/nyaruka/phonenumbers
+# 2. Sync Dependencies
+echo -e "${CYAN}[*] Syncing HUD Modules...${NC}"
 go mod tidy
 
-echo "[*] Compiling CYPH3R..."
+# 3. Build Binary
+echo -e "${CYAN}[*] Compiling CYPH3R v2.6...${NC}"
 go build -o cyph3r ./cmd/cyph3r
 
-echo "[✔] Done! Run: ./cyph3r --target google.com --proto https"
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}[✔] Installation Complete!${NC}"
+    echo -e "${GREEN}[✔] Run with: ./cyph3r --target google.com${NC}"
+else
+    echo -e "${RED}[!] Build failed. Check your Go version (requires 1.23+).${NC}"
+fi
