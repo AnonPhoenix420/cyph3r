@@ -24,6 +24,28 @@ CYPH3R is a professional-grade network reconnaissance and monitoring tool built 
 
 ## 📂 Architecture Mapping
 
+
+---
+
+
+cyph3r/
+├── cmd/
+│   └── cyph3r/
+│       └── main.go
+├── internal/
+│   ├── intel/
+│   ├── output/
+│   └── probes/
+├── .gitignore       
+├── LICENSE          
+├── Dockerfile       
+├── go.mod
+├── go.sum
+├── Makefile
+├── install.sh
+└── uninstall.sh
+
+
 ---
 
 
