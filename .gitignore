@@ -4,9 +4,11 @@ cyph3r.exe
 
 # OS generated files
 .DS_Store
-.idea/
-.vscode/
+.directory
 
-# Build cache
-*.out
-*.test
+# Go specific
+go.sum
+vendor/
+
+# Local build caches
+.cache/
