@@ -1,4 +1,4 @@
-cat <<EOF > internal/output/banner.go
+
 package output
 
 import (
