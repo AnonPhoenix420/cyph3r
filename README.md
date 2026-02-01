@@ -140,12 +140,22 @@ Standard Build (Recommended)
 ```
 git clone https://github.com/AnonPhoenix420/cyph3r.git
 ```
-```
-cd cyph3r
-go mod tidy
-go build -o cyph3r ./cmd/cyph3r
+
+---
+
 
 ```
+cd cyph3r
+```
+
+---
+
+
+```
+go mod tidy
+go build -o cyph3r ./cmd/cyph3r
+```
+
 
 ---
 
@@ -182,7 +192,31 @@ chmod +x install.sh
 1. Install Go (The Language)
 CYPH3R requires Go 1.23 or higher.
 
-``` Recommend 1.23.5 ```
+---
+
+
+***Parrot 🦜 OS 🖥️ Termux 📱***
+
+
+---
+
+```
+wget https://go.dev/dl/go1.23.5.linux-arm64.tar.gz
+```
+```
+#tar -C /usr/local -xzf go1.23.5.linux-arm64.tar.gz
+```
+```
+#echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+source ~/.bashrc
+```
+
+```go version```
+
+you should get :
+
+go version go1.23.5 linux/arm64
+
 
 ---
 
@@ -219,26 +253,6 @@ Run the installer and follow the prompts.
 Restart your terminal/PowerShell.
 
 
----
-
-Download the Go 1.23.5.0 Arcive
-
----
-
-```
-wget https://go.dev/dl/go1.23.0.linux-amd64.tar.gz
-
-```
-👇 Download Go 1.23.5 to your Terminal 
-
----
-
-
-```
-sudo tar -xzf go1.23.0.linux-amd64.tar.gz.1
-
-```
-
 
 ---
 
@@ -254,6 +268,8 @@ go version
 
 Expected Output:
 ```go version go1.23.0 linux/amd64```
+
+
 
 ---
 
