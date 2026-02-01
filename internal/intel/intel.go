@@ -1,57 +1,59 @@
 package intel
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"net"
-	"net/http"
-	"time"
-
-	"github.com/nyaruka/phonenumbers" // Ensure this matches go.mod
+	"strings"
+	"github.com/likexian/whois-go"
 )
 
-type FullIntel struct {
-	IP         string  `json:"query"`
-	Status     string  `json:"status"`
-	Country    string  `json:"country"`
-	RegionName string  `json:"regionName"`
-	City       string  `json:"city"`
-	Zip        string  `json:"zip"`
-	Lat        float64 `json:"lat"`
-	Lon        float64 `json:"lon"`
-	ISP        string  `json:"isp"`
-	Org        string  `json:"org"`
-	AS         string  `json:"as"`
-	ReverseDNS string  `json:"reverse"`
+// NodeIntel holds the unified intelligence profile
+type NodeIntel struct {
+	IPs       []string
+	NS        []string
+	Registrar string
+	BornOn    string
+	ISP       string
+	Location  string
+	Coords    string
 }
 
-func GetIntel(target string) (*FullIntel, string, error) {
-	// IP-API for Geo + ISP + Zip + Org
-	url := fmt.Sprintf("http://ip-api.com/json/%s?fields=66846719", target)
-	resp, err := http.Get(url)
-	if err != nil { return nil, "", err }
-	defer resp.Body.Close()
+// GetFullIntel performs a deep-dive reconnaissance on a target
+func GetFullIntel(target string) (NodeIntel, error) {
+	data := NodeIntel{}
 
-	var data FullIntel
-	json.NewDecoder(resp.Body).Decode(&data)
-
-	// WHOIS for Handler details
-	whois := "Whois data unavailable"
-	conn, err := net.DialTimeout("tcp", "whois.iana.org:43", 5*time.Second)
-	if err == nil {
-		defer conn.Close()
-		fmt.Fprintf(conn, "%s\r\n", target)
-		res, _ := io.ReadAll(conn)
-		whois = string(res)
+	// 1. Resolve IP Addresses
+	ips, _ := net.LookupIP(target)
+	for _, ip := range ips {
+		data.IPs = append(data.IPs, ip.String())
 	}
 
-	return &data, whois, nil
-}
+	// 2. Resolve Name Servers
+	ns, _ := net.LookupNS(target)
+	for _, nameserver := range ns {
+		data.NS = append(data.NS, nameserver.Host)
+	}
 
-func PhoneLookup(number string) string {
-	num, err := phonenumbers.Parse(number, "")
-	if err != nil { return "Invalid Format" }
-	region := phonenumbers.GetRegionCodeForNumber(num)
-	return fmt.Sprintf("Region: %s | Valid: %v | Type: %s", region, phonenumbers.IsValidNumber(num), phonenumbers.GetNumberType(num))
+	// 3. WHOIS Lookup
+	w, err := whois.Whois(target)
+	if err == nil {
+		lines := strings.Split(w, "\n")
+		for _, line := range lines {
+			lowerLine := strings.ToLower(line)
+			if strings.Contains(lowerLine, "creation date:") || strings.Contains(lowerLine, "created:") {
+				parts := strings.Split(line, ":")
+				if len(parts) > 1 { data.BornOn = strings.TrimSpace(parts[1]) }
+			}
+			if strings.Contains(lowerLine, "registrar:") {
+				parts := strings.Split(line, ":")
+				if len(parts) > 1 { data.Registrar = strings.TrimSpace(parts[1]) }
+			}
+		}
+	}
+
+	// Fallback for empty WHOIS
+	if data.BornOn == "" { data.BornOn = "Protected/Unknown" }
+	if data.Registrar == "" { data.Registrar = "Private" }
+
+	return data, nil
 }
