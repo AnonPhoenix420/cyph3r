@@ -1,6 +1,9 @@
 package output
 
-import "github.com/fatih/color"
+import (
+	"fmt"
+	"github.com/fatih/color"
+)
 
 var (
 	CyanText   = color.New(color.FgCyan).SprintFunc()
@@ -12,7 +15,6 @@ var (
 	MagText    = color.New(color.FgMagenta).SprintFunc()
 )
 
-// Helper for generic info lines
 func Info(m string) {
 	fmt.Printf("%s %s\n", BlueText("[*]"), m)
 }
