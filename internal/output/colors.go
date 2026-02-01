@@ -1,15 +1,13 @@
 package output
 
-const (
-	Reset  = "\033[0m"
-	Bold   = "\033[1m"
-	Cyan   = "\033[38;5;51m" 
-	Gray   = "\033[38;5;244m"
-	Green  = "\033[32m"
-	Red    = "\033[31m"
-	Yellow = "\033[33m"
-)
+import "github.com/fatih/color"
 
-// Helper functions for easy colorizing
-func BlueText(s string) string { return Cyan + Bold + s + Reset }
-func RedText(s string) string  { return Red + s + Reset }
+var (
+	CyanText    = color.New(color.FgCyan).SprintFunc()
+	WhiteText   = color.New(color.FgWhite, color.Bold).SprintFunc()
+	YellowText  = color.New(color.FgYellow).SprintFunc()
+	MagentaText = color.New(color.FgMagenta).SprintFunc()
+	BlueText    = color.New(color.FgBlue).SprintFunc()
+	RedText     = color.New(color.FgRed).SprintFunc()
+	GreenText   = color.New(color.FgGreen).SprintFunc()
+)
