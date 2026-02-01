@@ -4,7 +4,7 @@ go 1.23
 
 require (
 	github.com/fatih/color v1.17.0
-	github.com/likexian/whois-go v1.15.5
+	github.com/likexian/whois v1.15.5
 	github.com/nyaruka/phonenumbers v1.5.0
 )
 
