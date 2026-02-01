@@ -1,6 +1,7 @@
 package intel
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -8,11 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/likexian/whois"      // Fixed: Removed the -go suffix
+	"github.com/likexian/whois"
 	"github.com/nyaruka/phonenumbers"
 )
 
-// NodeIntel represents the high-density target profile
 type NodeIntel struct {
 	IPs       []string
 	NS        []string
@@ -29,25 +29,36 @@ type NodeIntel struct {
 	Maps      string
 }
 
-// GetFullIntel is the primary engine for deep-dive reconnaissance
 func GetFullIntel(target string) (*NodeIntel, error) {
-	data := &NodeIntel{}
+	// Go 1.24 optimized: 5-second deadline for the entire recon phase
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	// 1. DNS Resolution (IPs & Name Servers)
-	ips, _ := net.LookupIP(target)
+	data := &NodeIntel{}
+	resolver := &net.Resolver{}
+
+	// 1. Context-Aware DNS Lookups
+	ips, _ := resolver.LookupIP(ctx, "ip", target)
 	for _, ip := range ips {
 		data.IPs = append(data.IPs, ip.String())
 	}
 
-	nss, _ := net.LookupNS(target)
+	nss, _ := resolver.LookupNS(ctx, target)
 	for _, ns := range nss {
 		data.NS = append(data.NS, strings.TrimSuffix(ns.Host, "."))
 	}
 
-	// 2. WHOIS Data Extraction (Using the fixed whois package)
-	rawWhois, err := whois.Whois(target)
-	if err == nil {
-		lines := strings.Split(rawWhois, "\n")
+	// 2. WHOIS Intelligence
+	// Note: whois library is not natively context-aware yet, so we wrap it
+	whoisChan := make(chan string, 1)
+	go func() {
+		w, _ := whois.Whois(target)
+		whoisChan <- w
+	}()
+
+	select {
+	case w := <-whoisChan:
+		lines := strings.Split(w, "\n")
 		for _, line := range lines {
 			lower := strings.ToLower(line)
 			if strings.Contains(lower, "registrar:") && data.Registrar == "" {
@@ -63,11 +74,14 @@ func GetFullIntel(target string) (*NodeIntel, error) {
 				}
 			}
 		}
+	case <-ctx.Done():
+		data.Registrar = "TIMEOUT"
 	}
 
-	// 3. Geo-IP & ISP Intelligence
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get(fmt.Sprintf("http://ip-api.com/json/%s?fields=status,country,city,zip,lat,lon,isp,org", target))
+	// 3. Optimized Geo-IP & ISP Intelligence
+	req, _ := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("http://ip-api.com/json/%s?fields=status,country,city,zip,lat,lon,isp,org", target), nil)
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err == nil {
 		defer resp.Body.Close()
 		var geo struct {
@@ -93,26 +107,19 @@ func GetFullIntel(target string) (*NodeIntel, error) {
 		}
 	}
 
-	// Fallbacks for missing data
-	if data.Registrar == "" { data.Registrar = "Private/Hidden" }
+	// Global Fallbacks
+	if data.Registrar == "" { data.Registrar = "Private/Protected" }
 	if data.BornOn == "" { data.BornOn = "Unknown" }
-	if data.ISP == "" { data.ISP = "Unknown ISP" }
+	if data.ISP == "" { data.ISP = "Unknown Provider" }
 
 	return data, nil
 }
 
-// PhoneLookup decrypts metadata for international phone numbers
 func PhoneLookup(number string) string {
 	parsed, err := phonenumbers.Parse(number, "")
 	if err != nil {
-		return fmt.Sprintf("Error: Invalid Number Format [%s]", number)
+		return fmt.Sprintf("Error: Invalid Format [%s]", number)
 	}
-
-	valid := "INVALID"
-	if phonenumbers.IsValidNumber(parsed) {
-		valid = "VALID"
-	}
-
 	region := phonenumbers.GetRegionCodeForNumber(parsed)
-	return fmt.Sprintf("STATUS: %s | REGION: %s | TYPE: %v", valid, region, phonenumbers.GetNumberType(parsed))
+	return fmt.Sprintf("STATUS: %v | REGION: %s | CARRIER: %v", phonenumbers.IsValidNumber(parsed), region, phonenumbers.GetNumberType(parsed))
 }
