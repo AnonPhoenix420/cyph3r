@@ -30,14 +30,23 @@ CYPH3R is a professional-grade network reconnaissance and monitoring tool built 
 
 ---
 
-#
-```text
-* **Node Intelligence:** Unified DNS (IPv4/v6), Name Server, and ISP reconnaissance.
-* **Infrastructure Audit:** Deep-dive WHOIS extraction (Registration & Lifecycle tracking).
-* **Live HUD Feed:** Continuous multi-protocol monitoring (TCP/UDP/HTTP/HTTPS) with real-time latency analytics.
-* **Geo-Spatial Mapping:** GPS coordinate extraction and instant Google Maps vectoring.
-* **Phone OSINT:** Global metadata decryption for international telecommunications.
+
 ```
+- **Node Intelligence:** Automated registrar, ISP, and geographic coordinate mapping.
+```
+```
+- **Accelerated Port Scanner:** Concurrent TCP scanning of common services (SSH, HTTP, DBs, etc.).
+```
+```
+- **Live HUD Feed:** Real-time latency and status monitoring with a wireframe terminal UI.
+```
+```
+- **Phone Decryption:** Metadata lookup for international phone vectors.
+```
+```
+**Go 1.23 Native:** Optimized for the stable Go 1.23 runtime.
+```
+
 
 ---
 
@@ -354,6 +363,15 @@ Example: ./cyph3r --target 8.8.8.8
 
 ---
 
+Full Reconnaissance (Intelligence + Port Scan)
+
+---
+
+Command:
+
+```./cyph3r --target google.com --scan```
+
+---
 
 
 📡 Tool 2: Continuous Monitor (HUD Feed)
