@@ -11,33 +11,49 @@ import (
 
 type NodeIntel struct {
 	IPs     []string
+	NS      []string
 	ISP     string
 	City    string
 	Country string
+	Lat     float64
+	Lon     float64
 }
 
 func GetFullIntel(target string) (*NodeIntel, error) {
 	data := &NodeIntel{}
+
+	// 1. IP Lookup
 	ips, _ := net.LookupIP(target)
 	for _, ip := range ips {
 		data.IPs = append(data.IPs, ip.String())
 	}
 
+	// 2. Name Server (NS) Lookup
+	nsRecords, _ := net.LookupNS(target)
+	for _, ns := range nsRecords {
+		data.NS = append(data.NS, ns.Host)
+	}
+
+	// 3. API Geo Lookup (Extended for Coordinates)
 	client := &http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Get(fmt.Sprintf("http://ip-api.com/json/%s", target))
 	if err == nil && resp != nil {
 		defer resp.Body.Close()
 		var geo struct {
-			Status  string `json:"status"`
-			ISP     string `json:"isp"`
-			City    string `json:"city"`
-			Country string `json:"country"`
+			Status  string  `json:"status"`
+			ISP     string  `json:"isp"`
+			City    string  `json:"city"`
+			Country string  `json:"country"`
+			Lat     float64 `json:"lat"`
+			Lon     float64 `json:"lon"`
 		}
 		json.NewDecoder(resp.Body).Decode(&geo)
 		if geo.Status == "success" {
 			data.ISP = geo.ISP
 			data.City = geo.City
 			data.Country = geo.Country
+			data.Lat = geo.Lat
+			data.Lon = geo.Lon
 		}
 	}
 	return data, nil
@@ -48,7 +64,5 @@ func PhoneLookup(num string) string {
 	if err != nil {
 		return "Invalid Format"
 	}
-	isValid := phonenumbers.IsValidNumber(p)
-	region := phonenumbers.GetRegionCodeForNumber(p)
-	return fmt.Sprintf("VALID: %v | REGION: %s", isValid, region)
+	return fmt.Sprintf("VALID: %v | REGION: %s", phonenumbers.IsValidNumber(p), phonenumbers.GetRegionCodeForNumber(p))
 }
