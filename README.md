@@ -22,6 +22,23 @@
 
 CYPH3R is a professional-grade network reconnaissance and monitoring tool built in Go. It operates on a **"Zero-Key" philosophy**, providing deep OSINT (ISP, Geo, Metadata) and multi-protocol connectivity testing without requiring external API subscriptions.
 
+
+---
+
+
+## 🚀 CORE CAPABILITIES 
+
+---
+
+#
+```text
+* **Node Intelligence:** Unified DNS (IPv4/v6), Name Server, and ISP reconnaissance.
+* **Infrastructure Audit:** Deep-dive WHOIS extraction (Registration & Lifecycle tracking).
+* **Live HUD Feed:** Continuous multi-protocol monitoring (TCP/UDP/HTTP/HTTPS) with real-time latency analytics.
+* **Geo-Spatial Mapping:** GPS coordinate extraction and instant Google Maps vectoring.
+* **Phone OSINT:** Global metadata decryption for international telecommunications.
+```
+
 ---
 
 
