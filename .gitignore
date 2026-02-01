@@ -1,0 +1,12 @@
+# Binaries
+cyph3r
+cyph3r.exe
+
+# OS generated files
+.DS_Store
+.idea/
+.vscode/
+
+# Build cache
+*.out
+*.test
