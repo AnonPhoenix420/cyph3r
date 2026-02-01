@@ -1,30 +1,13 @@
 package output
-
 import (
 	"fmt"
 	"time"
 )
-
 func Banner() {
-	banner := `
-   ______      ____  __  __ _____ ____ 
-  / ____/_  __/ __ \/ / / /|__  // __ \
- / /   / / / / /_/ / /_/ /  /_ </ /_/ /
-/ /___/ /_/ / ____/ __  / ___/ / _, _/ 
-\____/\__, /_/   /_/ /_/ /____/_/ |_|  
-     /____/         NETWORK_INTEL_SYSTEM`
-	
-	fmt.Println(CyanText(banner))
-	fmt.Printf("  %s\n", WhiteText("v2.6 [STABLE] // Wireframe HUD Edition"))
-	fmt.Println(CyanText("  ───────────────────────────────────────"))
+	fmt.Println(CyanText("\n   ______      ____  __  __ _____ ____ \n  / ____/_  __/ __ \\/ / / /|__  // __ \\\n / /   / / / / /_/ / /_/ /  /_ </ /_/ /\n/ /___/ /_/ / ____/ __  / ___/ / _, _/\n\\____/\\__, /_/   /_/ /_/ /____/_/ |_|  \n     /____/         NETWORK_INTEL_SYSTEM"))
 }
-
 func ScanAnimation() {
-	frames := []string{"◒", "◐", "◓", "◑"}
 	fmt.Print(WhiteText("[*] Calibrating HUD Sensors... "))
-	for i := 0; i < 10; i++ {
-		fmt.Printf("\r[*] Calibrating HUD Sensors... %s ", CyanText(frames[i%len(frames)]))
-		time.Sleep(100 * time.Millisecond)
-	}
-	fmt.Printf("\r[*] Calibrating HUD Sensors... %s\n", GreenText("[READY]"))
+	time.Sleep(500 * time.Millisecond)
+	fmt.Println(GreenText("[READY]"))
 }
