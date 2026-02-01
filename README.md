@@ -95,10 +95,11 @@ go build -o cyph3r ./cmd/cyph3r
 
 
 🧹⚙️🗑️
-Advanced Maintenance (Makefile)
-Self-Repair: make repair (Cleans cache and forces dependency sync)
+Advanced Maintenance (```Makefile```)
+Self-Repair: ```make repair``` (Cleans cache and forces dependency sync)
 
-Uninstall/Clean: make clean (Removes binary and clears build cache)
+Uninstall/Clean: ```make clean``` (Removes binary and clears build cache)
+
 
 ---
 
@@ -114,6 +115,8 @@ chmod +x install.sh
 ./install.sh
 ```
 
+---
+
 
 ****SINGLE STEP INSTRUCTIONS***
 
@@ -122,6 +125,10 @@ chmod +x install.sh
 
 1. Install Go (The Language)
 CYPH3R requires Go 1.23 or higher.
+
+
+---
+
 
 For Linux (Ubuntu/Debian/Kali)
 Run these commands in your terminal:
@@ -227,7 +234,7 @@ Expected Output:
 
 
 2. Install Build Tools
-CYPH3R uses a Makefile to handle the "Self-Repair" and automated building features.
+CYPH3R uses a ```Makefile``` to handle the "```Self-Repair```" and automated building features.
 
 
 ---
@@ -290,9 +297,13 @@ Retrieve ISP, Organization, City, Zip, and GPS coordinates for any IP or Domain.
 ---
 
 
-Command: ./cyph3r --target <host>
+Command: ```./cyph3r --target <host>```
+
+---
+
 
 Example: ./cyph3r --target 8.8.8.8
+
 
 ---
 
@@ -305,7 +316,8 @@ Track the uptime and latency of a target over time. Perfect for stress testing o
 ---
 
 
-Command: ./cyph3r --target <host> --proto <type> --monitor
+Command: ```./cyph3r --target <host> --proto <type> --monitor```
+
 
 ---
 
@@ -316,7 +328,7 @@ Example: ./cyph3r --target google.com --proto https --monitor --interval 5s
 ---
 
 
-Protocols supported: tcp, udp, http, https, ack, ping.
+Protocols supported: ```tcp```, ```udp```, ```http```, ```https```, ```ack```, ```ping```.
 
 
 ---
@@ -325,7 +337,7 @@ Protocols supported: tcp, udp, http, https, ack, ping.
 📱 Tool 3: Phone Metadata Lookup
 Validate international phone numbers and retrieve regional/carrier metadata.
 
-Command: ./cyph3r --phone <number>
+Command: ```./cyph3r --phone <number>```
 
 Example: ./cyph3r --phone +14155552671
 
@@ -336,6 +348,7 @@ Example: ./cyph3r --phone +14155552671
 ***UNINSTALL***
 
 Since CYPH3R v2.6 is a modular Go tool, it doesn't scatter files all over your system like a standard installer might. However, to keep your workspace pristine, a dedicated uninstaller is a professional touch.
+
 
 ---
 
@@ -350,7 +363,9 @@ chmod +x uninstall.sh
 
 ---
 
-💻⌨️🧑‍💻HAPPY HACKING📀🖥️🖱️
+
+💻⌨️🧑‍💻 ```HAPPY HACKING``` 📀🖥️🖱️
+
 
 ---
 
@@ -363,6 +378,10 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+
+
+
+---
 
 
 
