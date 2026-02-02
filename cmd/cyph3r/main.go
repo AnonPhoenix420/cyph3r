@@ -32,7 +32,8 @@ func main() {
 	if *target != "" {
 		output.ScanAnimation()
 		data, _ := intel.GetFullIntel(*target)
-		output.PrintIntelHUD(*target, data.IPs, data.NS, data.ISP, fmt.Sprintf("%s, %s", data.City, data.Country), data.Lat, data.Lon)
+		// Replace the old output.PrintIntelHUD call with this:
+output.PrintIntelHUD(*target, data)
 
 		if *scan {
 			output.Info("Initiating Accelerated Reconnaissance...")
