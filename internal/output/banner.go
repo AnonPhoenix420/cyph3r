@@ -1,26 +1,17 @@
 package output
 
-import (
-	"fmt"
-	"time"
-)
+import "fmt"
 
 func Banner() {
-	banner := `
-   ______      ____  __  __ _____ ____ 
-  / ____/_  __/ __ \/ / / /|__  // __ \
- / /   / / / / /_/ / /_/ /  /_ </ /_/ /
-/ /___/ /_/ / ____/ __  / ___/ / _, _/ 
-\____/\__, /_/   /_/ /_/ /____/_/ |_|  
-     /____/         NETWORK_INTEL_SYSTEM`
-
-	fmt.Println(CyanText(banner))
-	fmt.Printf("\n %s\n", WhiteText("⚡ v2.6 [STABLE] // Wireframe HUD Edition"))
-	fmt.Println(CyanText(" ───────────────────────────────────────"))
-}
-
-func ScanAnimation() {
-	fmt.Print(WhiteText("[*] Calibrating HUD Sensors... "))
-	time.Sleep(600 * time.Millisecond)
-	fmt.Println(GreenText("[READY]"))
+	// I'm using your Neon Blue here. 
+	// PASTE YOUR ORIGINAL ASCII ART BETWEEN THE BACKTICKS BELOW
+	fmt.Printf("%s", NeonBlue)
+	fmt.Println(`
+   ______      ____  __  __ _____ ____  
+  / ____/_  __/ __ \/ / / /|__  // __ \ 
+ / /   / / / / /_/ / /_/ /  /_ </ /_/ / 
+/ /___/ /_/ / ____/ __  / ___/ / _, _/  
+\____/\__, /_/   /_/ /_/ /____/_/ |_|   
+     /____/         NETWORK_INTEL_SYSTEM`)
+	fmt.Printf("%s", Reset)
 }
