@@ -1,62 +1,68 @@
 package intel
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"time"
-	"github.com/nyaruka/phonenumbers"
+	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-type NodeIntel struct {
-	IPs, NS, NSIPs                 []string
-	Country, CountryCode, Region   string
-	RegionCode, City, Zip, TZ      string
-	ISP, Org, ASN                  string
-	Lat, Lon                       float64
-}
+func GetFullIntel(target string) (models.IntelData, error) {
+	var data models.IntelData
 
-func GetFullIntel(target string) (*NodeIntel, error) {
-	data := &NodeIntel{}
-
-	// 1. Resolve Target IPs
-	ips, _ := net.LookupIP(target)
-	for _, ip := range ips { data.IPs = append(data.IPs, ip.String()) }
-
-	// 2. Resolve Name Servers and their IPs
-	nsRecords, _ := net.LookupNS(target)
-	for _, ns := range nsRecords {
-		data.NS = append(data.NS, ns.Host)
-		nsIPs, _ := net.LookupIP(ns.Host)
-		for _, nip := range nsIPs {
-			data.NSIPs = append(data.NSIPs, fmt.Sprintf("%s (%s)", ns.Host, nip.String()))
-		}
+	// Handle Localhost/Loopback detection
+	if target == "localhost" || target == "127.0.0.1" {
+		data.IPs = []string{"127.0.0.1"}
+		data.Nameservers = []string{"LOCAL_NODE_INTERNAL"}
+		data.City = "Localhost"
+		data.Country = "Loopback"
+		return data, nil
 	}
 
-	// 3. Deep Geo-IP Lookup
-	client := &http.Client{Timeout: 4 * time.Second}
-	resp, err := client.Get(fmt.Sprintf("http://ip-api.com/json/%s?fields=status,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as", target))
-	if err == nil && resp != nil {
+	// 1. Setup Custom Resolver (Bypasses system tool issues)
+	r := &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+			d := net.Dialer{Timeout: time.Second * 3}
+			return d.DialContext(ctx, "udp", "8.8.8.8:53")
+		},
+	}
+
+	// 2. Resolve IP Addresses
+	ips, _ := r.LookupIP(context.Background(), "ip", target)
+	for _, ip := range ips {
+		data.IPs = append(data.IPs, ip.String())
+	}
+
+	// 3. Resolve Nameservers (NS Records)
+	ns, _ := r.LookupNS(context.Background(), target)
+	for _, n := range ns {
+		data.Nameservers = append(data.Nameservers, n.Host)
+	}
+
+	// 4. Geographic Data Fetch
+	url := fmt.Sprintf("http://ip-api.com/json/%s?fields=status,country,city,lat,lon", target)
+	resp, err := http.Get(url)
+	if err == nil {
 		defer resp.Body.Close()
-		var geo struct {
-			Status, Country, CountryCode, Region, RegionName string
-			City, Zip, Timezone, ISP, Org, AS                string
-			Lat, Lon                                         float64
+		body, _ := io.ReadAll(resp.Body)
+		var apiRes struct {
+			Status  string  `json:"status"`
+			Country string  `json:"country"`
+			City    string  `json:"city"`
+			Lat     float64 `json:"lat"`
+			Lon     float64 `json:"lon"`
 		}
-		json.NewDecoder(resp.Body).Decode(&geo)
-		if geo.Status == "success" {
-			data.Country, data.CountryCode = geo.Country, geo.CountryCode
-			data.Region, data.RegionCode = geo.RegionName, geo.Region
-			data.City, data.Zip, data.TZ = geo.City, geo.Zip, geo.Timezone
-			data.ISP, data.Org, data.ASN = geo.ISP, geo.Org, geo.AS
-			data.Lat, data.Lon = geo.Lat, geo.Lon
-		}
+		json.Unmarshal(body, &apiRes)
+		data.Country = apiRes.Country
+		data.City = apiRes.City
+		data.Lat = apiRes.Lat
+		data.Lon = apiRes.Lon
 	}
-	return data, nil
-}
 
-func PhoneLookup(num string) string {
-	p, _ := phonenumbers.Parse(num, "")
-	return fmt.Sprintf("VALID: %v | REGION: %s", phonenumbers.IsValidNumber(p), phonenumbers.GetRegionCodeForNumber(p))
+	return data, nil
 }
