@@ -1,20 +1,10 @@
 package output
 
-import (
-	"fmt"
-	"github.com/fatih/color"
+const (
+	Reset      = "\033[0m"
+	White      = "\033[37m"
+	NeonPink   = "\033[38;5;201m" // Web Links
+	NeonBlue   = "\033[38;5;45m"  // IPs & Banner
+	NeonGreen  = "\033[38;5;82m"  // Port/Probe Info
+	NeonYellow = "\033[38;5;226m" // Geo/Location Info
 )
-
-var (
-	CyanText   = color.New(color.FgCyan).SprintFunc()
-	WhiteText  = color.New(color.FgWhite, color.Bold).SprintFunc()
-	YellowText = color.New(color.FgYellow).SprintFunc()
-	BlueText   = color.New(color.FgBlue).SprintFunc()
-	RedText    = color.New(color.FgRed).SprintFunc()
-	GreenText  = color.New(color.FgGreen).SprintFunc()
-	MagText    = color.New(color.FgMagenta).SprintFunc()
-)
-
-func Info(m string) {
-	fmt.Printf("%s %s\n", BlueText("[*]"), m)
-}
