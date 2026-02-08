@@ -1,41 +1,5 @@
-# --- Cyph3r Binaries ---
 cyph3r
 cyph3r.exe
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
-# --- Go Specifics ---
-# If you use 'go build', it creates temporary files
 bin/
-pkg/
-src/
 vendor/
-
-# --- Testing & Coverage ---
-*.test
-*.out
-coverage.txt
-
-# --- Operating System Files ---
-.DS_Store
-Thumbs.db
-*.swp
-*~
-
-# --- IDEs & Editors ---
-.idea/
-.vscode/
-*.sublime-project
-*.sublime-workspace
-*.vscode
-
-# --- Local Environment ---
 .env
-.env.local
-.env.*.local
-
-# --- Build Logs ---
-*.log
