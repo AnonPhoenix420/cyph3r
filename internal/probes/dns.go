@@ -1,24 +1,40 @@
-package probes
+package intel
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"time"
 )
 
-func CheckDNS(target string) string {
+// LookupNodes performs a forced DNS resolution to find A and NS records.
+func LookupNodes(target string) ([]string, []string) {
+	var ips []string
+	var nsNodes []string
+
+	// Force use of Google Public DNS to bypass local "Command Not Found" issues
 	resolver := &net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-			d := net.Dialer{Timeout: time.Second}
-			return d.DialContext(ctx, "udp", fmt.Sprintf("%s:53", target))
+			d := net.Dialer{Timeout: time.Second * 5}
+			return d.DialContext(ctx, "udp", "8.8.8.8:53")
 		},
 	}
-	// Try a real lookup; if it works, the port is truly open.
-	_, err := resolver.LookupHost(context.Background(), "google.com")
-	if err != nil {
-		return "FILTERED/NO_RECURSION"
+
+	// 1. Resolve IP Addresses (A Records)
+	foundIPs, err := resolver.LookupIP(context.Background(), "ip", target)
+	if err == nil {
+		for _, ip := range foundIPs {
+			ips = append(ips, ip.String())
+		}
 	}
-	return "DNS_ALIVE"
+
+	// 2. Resolve Nameservers (NS Records)
+	foundNS, err := resolver.LookupNS(context.Background(), target)
+	if err == nil {
+		for _, ns := range foundNS {
+			nsNodes = append(nsNodes, ns.Host)
+		}
+	}
+
+	return ips, nsNodes
 }
