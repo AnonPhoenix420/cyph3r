@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
-	"github.com/AnonPhoenix420/cyph3r/internal/intel"
-	"github.com/AnonPhoenix420/cyph3r/internal/output"
-	"github.com/AnonPhoenix420/cyph3r/internal/probes"
+	"cyph3r/internal/intel"
+	"cyph3r/internal/output"
+	"cyph3r/internal/probes"
 )
 
 func main() {
@@ -17,15 +17,8 @@ func main() {
 		return
 	}
 
-	output.PrintBanner()
 	output.PulseNode(*target)
-
-	data, err := intel.GetFullIntel(*target)
-	if err != nil {
-		output.Error("Intel retrieval failed")
-		return
-	}
-
+	data, _ := intel.GetFullIntel(*target)
 	output.DisplayHUD(data)
 
 	if *scan {
