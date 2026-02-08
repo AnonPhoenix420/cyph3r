@@ -28,12 +28,29 @@ func main() {
 		fmt.Printf(" %s\n\n", output.MagText(intel.PhoneLookup(*phone)))
 		return
 	}
-
 	if *target != "" {
 		output.ScanAnimation()
 		data, _ := intel.GetFullIntel(*target)
-		// Replace the old output.PrintIntelHUD call with this:
-output.PrintIntelHUD(*target, data)
+
+		// 📍 NEW: This now triggers the Google Maps Visual Link in the HUD
+		output.PrintGeoHUD(data.City, data.Country, data.Lat, data.Lon)
+
+		if *scan {
+			output.Info("Initiating Multi-Probe Wave Reconnaissance...")
+			
+			// Common ports to scan (you can expand this list)
+			commonPorts := []int{21, 22, 23, 25, 53, 80, 443, 8080}
+
+			for _, p := range commonPorts {
+				// ⚡ NEW: Using the Pulse Engine to "Shake Hands"
+				method, status, convo := probes.ConductWave(*target, p)
+				
+				// 🖥️ NEW: Rendering the detailed status table
+				output.PrintWaveStatus(p, method, status, convo)
+			}
+		}
+
+	
 
 		if *scan {
 			output.Info("Initiating Accelerated Reconnaissance...")
