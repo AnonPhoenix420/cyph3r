@@ -1,50 +1,29 @@
-package probes
+package output
 
 import (
 	"fmt"
-	"net"
 	"time"
 )
 
-// ConductWave sends multiple probe types to verify the service is "Alive"
-func ConductWave(target string, port int) (method, status, convo string) {
-	address := fmt.Sprintf("%s:%d", target, port)
-	timeout := 1500 * time.Millisecond
-
-	// 1. DNS Probe (Specialized for Port 53)
-	if port == 53 {
-		return "DNS", "OPEN", ProbeDNS(target)
+// ScanAnimation creates a pulsing "system calibration" effect in Neon Blue
+func ScanAnimation() {
+	frames := []string{"[■□□□□□□□□□]", "[■■□□□□□□□□]", "[■■■□□□□□□□]", "[■■■■□□□□□□]", "[■■■■■□□□□□]", "[■■■■■■□□□□]", "[■■■■■■■□□□]", "[■■■■■■■■□□]", "[■■■■■■■■■□]", "[■■■■■■■■■■]"}
+	
+	fmt.Printf("\n%s[*] INITIALIZING NEON TECH PULSE SEQUENCE...%s\n", White, Reset)
+	
+	for _, frame := range frames {
+		fmt.Printf("\r%s%s CALIBRATING_SENSORS...%s", NeonBlue, frame, Reset)
+		time.Sleep(100 * time.Millisecond)
 	}
-
-	// 2. The SYN/ACK Soldier (TCP Handshake)
-	conn, err := net.DialTimeout("tcp", address, timeout)
-	if err == nil {
-		defer conn.Close()
-		return "SYN/ACK", "OPEN", "Handshake Verified ✅"
-	}
-
-	// 3. The UDP Soldier (Bypass for Filtered ports)
-	uConn, err := net.DialTimeout("udp", address, 1*time.Second)
-	if err == nil {
-		defer uConn.Close()
-		return "UDP", "ALIVE", "Quiet Response 🔊"
-	}
-
-	return "ACK", "FILTERED", "No Response 🛡️"
+	fmt.Println("\n" + White + "[+] SYSTEM_READY: LINK_ESTABLISHED" + Reset)
 }
 
-// ProbeDNS performs a real A-record lookup to verify Port 53
-func ProbeDNS(target string) string {
-	r := &net.Resolver{
-		PreferGo: true,
-		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-			d := net.Dialer{Timeout: 1 * time.Second}
-			return d.DialContext(ctx, "udp", fmt.Sprintf("%s:53", target))
-		},
+// PulseNode creates a small delay to simulate a real-time "ping" to the target
+func PulseNode(target string) {
+	fmt.Printf("%s[*] PULSING TARGET NODE: %s%s%s", White, NeonBlue, target, Reset)
+	for i := 0; i < 3; i++ {
+		fmt.Printf("%s.%s", NeonBlue, Reset)
+		time.Sleep(400 * time.Millisecond)
 	}
-	_, err := r.LookupHost(context.Background(), "google.com")
-	if err != nil {
-		return "Port 53 Active (No Recursion)"
-	}
-	return "DNS Fully Responsive 🧠"
+	fmt.Println(" [ONLINE]")
 }
