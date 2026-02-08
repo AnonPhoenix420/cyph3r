@@ -2,7 +2,7 @@ package probes
 
 import (
 	"fmt"
-	"github.com/AnonPhoenix420/cyph3r/internal/output"
+	"cyph3r/internal/output"
 )
 
 func RunFullScan(target string) {
