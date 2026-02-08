@@ -1,49 +1,45 @@
 package probes
 
 import (
-	"fmt"
-	"net"
 	"sync"
-	"time"
+	"github.com/AnonPhoenix420/cyph3r/internal/output"
 )
 
-type ScanResult struct {
-	Port   int
-	Status string
-}
+// RunFullScan orchestrates the multi-threaded probe sequence.
+func RunFullScan(target string) {
+	// Define our target tech stack ports
+	ports := []int{
+		21, 22, 23, 25, 53, 80, 110, 135, 139, 
+		143, 443, 445, 993, 995, 1723, 3306, 
+		3389, 5900, 8080, 8443,
+	}
 
-// PortScanner executes a high-speed concurrent check
-func PortScanner(target string) []ScanResult {
-	var results []ScanResult
+	output.PrintScanHeader()
+
+	// WaitGroup to ensure we wait for all "Waves" to return
 	var wg sync.WaitGroup
 	
-	// Top 15 essential ports for rapid recon
-	commonPorts := []int{21, 22, 23, 25, 53, 80, 110, 143, 443, 445, 3306, 3389, 5432, 8080, 8443}
-	resultChan := make(chan ScanResult, len(commonPorts))
+	// Semaphore to limit concurrency (don't overwhelm the local network)
+	maxGuards := make(chan struct{}, 10) 
 
-	for _, port := range commonPorts {
+	for _, port := range ports {
 		wg.Add(1)
+		maxGuards <- struct{}{} // Occupy a slot
+
 		go func(p int) {
 			defer wg.Done()
-			address := fmt.Sprintf("%s:%d", target, p)
-			// Strict timeout for "Zero-Key" speed
-			conn, err := net.DialTimeout("tcp", address, 1500*time.Millisecond)
-			
-			if err == nil {
-				conn.Close()
-				resultChan <- ScanResult{Port: p, Status: "OPEN"}
+			defer func() { <-maxGuards }() // Release slot
+
+			// Call the logic from your probes.go
+			_, status, _ := ConductWave(target, p)
+
+			// Only report if the port is ALIVE to keep the HUD clean, 
+			// or you can remove the 'if' to show everything.
+			if status == "ALIVE" {
+				output.PrintWaveStatus(p, status)
 			}
 		}(port)
 	}
 
-	// Wait for workers in the background
-	go func() {
-		wg.Wait()
-		close(resultChan)
-	}()
-
-	for res := range resultChan {
-		results = append(results, res)
-	}
-	return results
+	wg.Wait()
 }
