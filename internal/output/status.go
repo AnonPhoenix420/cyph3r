@@ -2,44 +2,28 @@ package output
 
 import (
 	"fmt"
-	"strings"
-	"time"
-	"github.com/AnonPhoenix420/cyph3r/internal/intel"
-	"github.com/AnonPhoenix420/cyph3r/internal/probes"
+	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-func PrintIntelHUD(target string, d *intel.NodeIntel) {
-	currentTime := time.Now().Format("January 2, 2006, 3:04 pm")
-
-	fmt.Println(CyanText("\n──[ NODE INTELLIGENCE ]──"))
-	fmt.Printf(" %-15s %s\n", WhiteText("TARGET:"), YellowText(target))
-	fmt.Printf(" %-15s %s\n", WhiteText("IP ADDRESSES:"), strings.Join(d.IPs, " | "))
-	fmt.Printf(" %-15s %s\n", WhiteText("NS NODES:"), strings.Join(d.NSIPs, "\n                "))
-	
-	fmt.Println(CyanText("──[ GEOGRAPHIC METADATA ]──"))
-	fmt.Printf(" %-15s %s (%s)\n", WhiteText("COUNTRY:"), d.Country, d.CountryCode)
-	fmt.Printf(" %-15s %s (%s)\n", WhiteText("REGION:"), d.Region, d.RegionCode)
-	fmt.Printf(" %-15s %s, %s\n", WhiteText("CITY/ZIP:"), d.City, d.Zip)
-	fmt.Printf(" %-15s %s\n", WhiteText("TIMEZONE:"), d.TZ)
-	fmt.Printf(" %-15s %s\n", WhiteText("SCAN DATE:"), currentTime)
-	
-	fmt.Println(CyanText("──[ NETWORK INFRASTRUCTURE ]──"))
-	fmt.Printf(" %-15s %s\n", WhiteText("ISP:"), d.ISP)
-	fmt.Printf(" %-15s %s\n", WhiteText("ORG:"), d.Org)
-	fmt.Printf(" %-15s %s\n", WhiteText("ASN:"), d.ASN)
-	fmt.Printf(" %-15s %.4f, %.4f\n", WhiteText("LOCATION:"), d.Lat, d.Lon)
-	fmt.Println()
+// PrintWaveStatus displays the results of the port reconnaissance in Neon Green.
+func PrintWaveStatus(port int, status string) {
+	// Label in White, Port number in Neon Blue, Status in Neon Green
+	fmt.Printf("%sPROBE %s[%-5d]%s | STATUS: %s%-12s%s\n", 
+		White, NeonBlue, port, Reset, NeonGreen, status, Reset)
 }
 
-// This is the function that was missing causing the build error:
-func PrintPortScan(results []probes.ScanResult) {
-	fmt.Println(CyanText("──[ OPEN SERVICES ]──"))
-	if len(results) == 0 {
-		fmt.Printf(" %s\n", YellowText("No common ports open."))
-		return
+// PrintStatus handles general node identification messages.
+func PrintStatus(data models.IntelData) {
+	if len(data.IPs) > 0 {
+		fmt.Printf("%s[*] Node Identified: %s%s%s\n", 
+			NeonGreen, NeonBlue, data.IPs[0], Reset)
+	} else {
+		fmt.Printf("%s[!] Target resolution failed.%s\n", 
+			NeonPink, Reset)
 	}
-	for _, res := range results {
-		fmt.Printf(" %-15s %-10d %s\n", WhiteText("PORT:"), res.Port, GreenText("[OPEN]"))
-	}
-	fmt.Println()
+}
+
+// PrintScanHeader creates a clean transition into the probe phase.
+func PrintScanHeader() {
+	fmt.Printf("\n%s──[ MULTI-PROBE WAVE ANALYSIS ]──%s\n", White, Reset)
 }
