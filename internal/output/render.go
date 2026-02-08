@@ -2,7 +2,7 @@ package output
 
 import (
 	"fmt"
-	"github.com/AnonPhoenix420/cyph3r/internal/models"
+	"cyph3r/internal/models"
 )
 
 func DisplayHUD(data models.IntelData) {
