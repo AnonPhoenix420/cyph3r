@@ -6,7 +6,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
-	"github.com/AnonPhoenix420/cyph3r/internal/models"
+
+	"cyph3r/internal/models"
 	"github.com/likexian/whois"
 )
 
