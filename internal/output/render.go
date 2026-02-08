@@ -2,19 +2,21 @@ package output
 
 import "fmt"
 
-// PrintGeoHUD renders the geo-intelligence with a visual map link
-func PrintGeoHUD(city, country, lat, lon string) {
-	// Google Maps URL format for direct coordinate pin
-	mapURL := fmt.Sprintf("https://www.google.com/maps?q=%s,%s", lat, lon)
+// PrintNodeIntelligence formats the target and all its discovered addresses
+func PrintNodeIntelligence(target string, ips []string, ns []string) {
+    fmt.Printf("%s──[ NODE INTELLIGENCE ]──%s\n", White, Reset)
+    fmt.Printf(" TARGET: %s\n", target)
+    
+    // Join IPs with a clean separator
+    fmt.Print(" IP ADDRESSES: ")
+    for i, ip := range ips {
+        fmt.Print(CyanText(ip))
+        if i < len(ips)-1 { fmt.Print(" | ") }
+    }
+    fmt.Println()
 
-	fmt.Printf("\n%s[🛰️ DEEP NODE INTELLIGENCE]%s\n", Cyan, Reset)
-	fmt.Printf("📍 Location: %s, %s\n", city, country)
-	fmt.Printf("🗺️  Map Link: %s\n", mapURL)
-	fmt.Println("------------------------------------------------")
-}
-
-// PrintWaveStatus displays the multi-probe results in a table format
-func PrintWaveStatus(port int, method, status, conversation string) {
-	fmt.Printf("%sPORT %-5d%s | %-8s | %-10s | %s\n", 
-		Blue, port, Reset, method, status, conversation)
+    // Render NS records in a clean list
+    for _, node := range ns {
+        fmt.Printf(" NS NODE:    %s\n", YellowText(node))
+    }
 }
