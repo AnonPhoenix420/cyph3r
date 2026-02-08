@@ -1,22 +1,38 @@
-
 #!/bin/bash
-# CYPH3R v2.6 // Final Cleanup Script
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-NC='\033[0m'
+# --- Color Definitions ---
+BLUE='\033[38;5;33m'
+GREEN='\033[38;5;82m'
+PINK='\033[38;5;201m'
+RESET='\033[0m'
 
-echo -e "${RED}[!] Initiating CYPH3R Decommissioning...${NC}"
+INSTALL_PATH="/usr/local/bin/cyph3r"
 
-# 1. Remove the binary
-if [ -f "./cyph3r" ]; then
-    rm ./cyph3r
-    echo -e "${GREEN}[✔] Binary removed.${NC}"
+echo -e "${PINK}──────────────────────────────────────────────────${RESET}"
+echo -e "${PINK}         CYPH3R: SYSTEM DECOMMISSION             ${RESET}"
+echo -e "${PINK}──────────────────────────────────────────────────${RESET}"
+
+# 1. Check if binary exists in the system path
+if [ -f "$INSTALL_PATH" ]; then
+    echo -e "${BLUE}[*] Found system binary at $INSTALL_PATH${RESET}"
+    echo -e "${BLUE}[*] Requesting sudo permissions for removal...${RESET}"
+    
+    sudo rm "$INSTALL_PATH"
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}[+] SUCCESS: Binary removed from system path.${RESET}"
+    else
+        echo -e "${PINK}[!] ERROR: Failed to remove system binary.${RESET}"
+        exit 1
+    fi
+else
+    echo -e "${BLUE}[*] No system binary found in $INSTALL_PATH. Skipping...${RESET}"
 fi
 
-# 2. Clean Go Cache (Optional but recommended)
-echo -e "[*] Purging module cache..."
-go clean -modcache
+# 2. Local Cleanup (Optional but recommended)
+echo -e "${BLUE}[*] Cleaning local build artifacts and Go cache...${RESET}"
+rm -f cyph3r
+go clean -cache
 
-echo -e "${GREEN}[✔] Uninstall Complete. System Cleaned.${NC}"
-
+echo -e "${GREEN}[+] DECOMMISSION COMPLETE.${RESET}"
+echo -e "${PINK}──────────────────────────────────────────────────${RESET}"
