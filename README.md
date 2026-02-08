@@ -59,19 +59,15 @@ CYPH3R is a professional-grade network reconnaissance and monitoring tool built 
 #
 ```text
 cyph3r/
+├── go.mod
+├── .gitignore
 ├── cmd/cyph3r/main.go
 ├── internal/
-│   ├── intel/intel.go
-│   ├── output/
-│   │   ├── colors.go
-│   │   ├── banner.go
-│   │   └── status.go
-│   └── probes/
-│       ├── probes.go
-│       └── scanner.go
-├── go.mod
-├── install.sh
-└── uninstall.sh
+│   ├── models/models.go
+│   ├── intel/ (intel.go, dns.go)
+│   ├── probes/ (probes.go, scanner.go)
+│   └── output/ (banner.go, colors.go, pulse.go, render.go, status.go)
+
 ```
 
 ---
