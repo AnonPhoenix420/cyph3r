@@ -3,8 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"time"
-
 	"github.com/AnonPhoenix420/cyph3r/internal/intel"
 	"github.com/AnonPhoenix420/cyph3r/internal/output"
 	"github.com/AnonPhoenix420/cyph3r/internal/probes"
@@ -14,63 +12,35 @@ func main() {
 	output.Banner()
 
 	target := flag.String("target", "", "Target Domain or IP")
-	scan := flag.Bool("scan", false, "Perform accelerated port scan")
-	phone := flag.String("phone", "", "Lookup international phone metadata")
-	monitor := flag.Bool("monitor", false, "Enable live HUD latency feed")
-	proto := flag.String("proto", "tcp", "Protocol for monitor (tcp/http/https)")
-	port := flag.Int("port", 80, "Port for monitor/scan")
-	interval := flag.Duration("interval", 2*time.Second, "Monitoring refresh interval")
-
+	scan := flag.Bool("scan", false, "Enable Multi-Probe Wave Recon")
 	flag.Parse()
 
-	if *phone != "" {
-		output.Info("Decrypting Phone Vector...")
-		fmt.Printf(" %s\n\n", output.MagText(intel.PhoneLookup(*phone)))
+	if *target == "" {
+		fmt.Println("\033[31m[!] Error: No target specified. Use --target\033[0m")
 		return
 	}
-	if *target != "" {
-		output.ScanAnimation()
-		data, _ := intel.GetFullIntel(*target)
 
-		// 📍 NEW: This now triggers the Google Maps Visual Link in the HUD
-		output.PrintGeoHUD(data.City, data.Country, data.Lat, data.Lon)
+	// 1. Calibration Sequence
+	output.ScanAnimation()
 
-		if *scan {
-			output.Info("Initiating Multi-Probe Wave Reconnaissance...")
-			
-			// Common ports to scan (you can expand this list)
-			commonPorts := []int{21, 22, 23, 25, 53, 80, 443, 8080}
+	// 2. Gather Intelligence
+	data, _ := intel.GetFullIntel(*target)
 
-			for _, p := range commonPorts {
-				// ⚡ NEW: Using the Pulse Engine to "Shake Hands"
-				method, status, convo := probes.ConductWave(*target, p)
-				
-				// 🖥️ NEW: Rendering the detailed status table
-				output.PrintWaveStatus(p, method, status, convo)
-			}
-		}
-
+	// 3. 🛰️ DISPLAY IDENTITY (NS & IP) FIRST
+	output.PrintNodeIntel(data, *target)
 	
+	// 4. DISPLAY LOCATION (Map Link)
+	output.PrintGeoHUD(data.City, data.Country, data.Lat, data.Lon)
 
-		if *scan {
-			output.Info("Initiating Accelerated Reconnaissance...")
-			results := probes.PortScanner(*target)
-			output.PrintPortScan(results)
+	// 5. 🌊 INITIATE PROBE WAVE (Last)
+	if *scan {
+		fmt.Println("\n[*] Initiating Multi-Probe Wave Reconnaissance...")
+		fmt.Println("──[ PROBE ANALYSIS ]──")
+		
+		ports := []int{21, 22, 23, 25, 53, 80, 443, 8080}
+		for _, p := range ports {
+			method, status, convo := probes.ConductWave(*target, p)
+			output.PrintWaveStatus(p, method, status, convo)
 		}
-
-		if *monitor {
-			output.Info("Starting Live HUD Feed (Ctrl+C to exit)...")
-			for {
-				up, lat := probes.ExecuteProbe(*proto, *target, *port)
-				status := output.RedText("DOWN")
-				if up {
-					status = output.GreenText("ACTIVE")
-				}
-				fmt.Printf("\r [%s] Protocol: %s | Latency: %s   ", status, output.YellowText(*proto), output.CyanText(lat))
-				time.Sleep(*interval)
-			}
-		}
-	} else {
-		fmt.Println(output.YellowText(" [!] No target specified. Use --help for usage guides."))
 	}
 }
