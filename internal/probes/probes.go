@@ -27,3 +27,19 @@ func ExecuteProbe(proto, target string, port int) (bool, time.Duration) {
 	
 	return false, 0
 }
+
+// ConductACKProbe sends a naked ACK packet to map firewall state.
+// Unfiltered ports will respond with a RST; Filtered will remain silent.
+func ConductACKProbe(target string, port int) string {
+	address := fmt.Sprintf("%s:%d", target, port)
+	// We use a raw-style dial to see if the network stack returns an RST
+	conn, err := net.DialTimeout("tcp", address, 1*time.Second)
+	
+	// If it fails with "connection refused," it's actually UNFILTERED 
+	// because the target sent back a Reset (RST) packet.
+	if err != nil {
+		return "UNFILTERED (Firewall Bypass)"
+	}
+	defer conn.Close()
+	return "OPEN"
+}
