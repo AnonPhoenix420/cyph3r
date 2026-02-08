@@ -1,32 +1,47 @@
-# CYPH3R v2.6 Makefile
+# Project Variables
 BINARY_NAME=cyph3r
-GO_FILES=cmd/cyph3r/main.go
+SOURCE_PATH=./cmd/cyph3r
+INSTALL_PATH=/usr/local/bin
 
-all: build
+# Colors for terminal output
+BLUE=\033[38;5;33m
+GREEN=\033[38;5;82m
+PINK=\033[38;5;201m
+RESET=\033[0m
 
-build:
-	@echo "🛰️  Building CYPH3R Binary..."
-	go build -o $(BINARY_NAME) $(GO_FILES)
-	chmod +x $(BINARY_NAME)
+.PHONY: all build sync install clean help
 
-repair:
-	@echo "🔧  Initiating Self-Repair..."
-	rm -f go.sum
-	go clean -modcache
+all: sync build
+
+## sync: Download dependencies and tidy go.mod
+sync:
+	@echo "$(BLUE)[*] Syncing Neon Tech Dependencies...$(RESET)"
 	go mod tidy
-	@echo "🛰️  Rebuilding..."
-	go build -o $(BINARY_NAME) $(GO_FILES)
-	chmod +x $(BINARY_NAME)
-	@echo "[✔] Repair Complete."
 
-clean:
-	@echo "🧹  Cleaning workspace..."
-	rm -f $(BINARY_NAME)
-	rm -f go.sum
-	go clean -cache
-	@echo "[✔] Workspace pristine."
+## build: Compile the binary
+build:
+	@echo "$(BLUE)[*] Compiling $(BINARY_NAME)...$(RESET)"
+	go build -o $(BINARY_NAME) $(SOURCE_PATH)
+	@echo "$(GREEN)[+] Build Complete: ./$(BINARY_NAME)$(RESET)"
 
+## install: Move binary to /usr/local/bin (Requires sudo)
 install: build
-	@cp $(BINARY_NAME) /usr/local/bin/ 2>/dev/null || echo "Run 'sudo make install' to move to /usr/local/bin"
+	@echo "$(BLUE)[*] Installing $(BINARY_NAME) to $(INSTALL_PATH)...$(RESET)"
+	@sudo cp $(BINARY_NAME) $(INSTALL_PATH)
+	@sudo chmod +x $(INSTALL_PATH)/$(BINARY_NAME)
+	@echo "$(GREEN)[+] Installation Successful. You can now run 'cyph3r' from anywhere.$(RESET)"
 
-.PHONY: all build repair clean install
+## clean: Remove binary and cached files
+clean:
+	@echo "$(PINK)[!] Cleaning workspace...$(RESET)"
+	rm -f $(BINARY_NAME)
+	go clean -cache
+	@echo "$(GREEN)[+] Workspace cleared.$(RESET)"
+
+## help: Display available commands
+help:
+	@echo "$(BLUE)Cyph3r Build System - Commands:$(RESET)"
+	@echo "  $(GREEN)make sync$(RESET)    - Tidy go.mod and download libraries"
+	@echo "  $(GREEN)make build$(RESET)   - Build the cyph3r binary"
+	@echo "  $(GREEN)make install$(RESET) - Build and install to system path"
+	@echo "  $(GREEN)make clean$(RESET)   - Remove binary and build cache"
