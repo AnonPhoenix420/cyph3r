@@ -2,24 +2,16 @@ package probes
 
 import (
 	"fmt"
-	"net"
-	"time"
+	"github.com/AnonPhoenix420/cyph3r/internal/output"
 )
 
-// ConductWave performs a high-speed TCP handshake probe on a specific port.
-func ConductWave(target string, port int) (string, string, string) {
-	address := fmt.Sprintf("%s:%d", target, port)
-	
-	// Setting a 2-second timeout to keep the "Wave" moving fast
-	conn, err := net.DialTimeout("tcp", address, 2*time.Second)
-	
-	if err != nil {
-		// If the connection is refused or times out
-		return "TCP_STEALTH", "OFFLINE", "NO_RESPONSE"
+func RunFullScan(target string) {
+	ports := []int{21, 22, 25, 53, 80, 443, 3306, 8080}
+	output.PrintScanHeader()
+	for _, port := range ports {
+		alive, status := DialTarget(target, port)
+		if alive {
+			fmt.Printf("%s[+] PORT %d: %s%s\n", output.NeonGreen, port, status, output.Reset)
+		}
 	}
-	
-	// If we successfully connected, the port is open
-	defer conn.Close()
-	
-	return "TCP_FULL_HANDSHAKE", "ALIVE", "SYN_ACK_RECEIVED"
 }
