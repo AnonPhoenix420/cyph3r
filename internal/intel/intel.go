@@ -1,47 +1,58 @@
 package intel
 
 import (
-	"os/exec"
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"strings"
-	"flote64"
+	"time"
+
 	"cyph3r/internal/models"
+	"github.com/likexian/whois"
 )
 
 func GetFullIntel(target string) (models.IntelData, error) {
-	var d models.IntelData
-	d.Target = target
+	var data models.IntelData
+	data.IPs, data.Nameservers = LookupNodes(target)
 
-	// 1. System WHOIS
-	out, _ := exec.Command("whois", target).Output()
-	raw := string(out)
-	for _, line := range strings.Split(raw, "\n") {
-		if strings.Contains(line, "Registrar:") {
-			parts := strings.Split(line, ":")
-			if len(parts) > 1 {
-				d.Registrar = strings.TrimSpace(parts[1])
-				break
-			}
+	rawWhois, err := whois.Whois(target)
+	if err == nil {
+		data.WhoisRaw = rawWhois
+		data.Registrar = extractField(rawWhois, "Registrar:")
+	}
+
+	query := target
+	if len(data.IPs) > 0 { query = data.IPs[0] }
+
+	client := http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(fmt.Sprintf("http://ip-api.com/json/%s?fields=status,country,city,lat,lon,isp,org,as", query))
+	if err == nil {
+		defer resp.Body.Close()
+		var res struct {
+			Status string `json:"status"`
+			Country string `json:"country"`
+			City string `json:"city"`
+			Lat float64 `json:"lat"`
+			Lon float64 `json:"lon"`
+			ISP string `json:"isp"`
+			Org string `json:"org"`
+			ASN string `json:"as"`
+		}
+		json.NewDecoder(resp.Body).Decode(&res)
+		if res.Status == "success" {
+			data.Country, data.City, data.Lat, data.Lon = res.Country, res.City, res.Lat, res.Lon
+			data.ISP, data.Org, data.ASN = res.ISP, res.Org, res.ASN
 		}
 	}
-
-	// 2. System DIG (Get IP)
-	ipOut, _ := exec.Command("dig", "+short", target).Output()
-	d.IP = strings.TrimSpace(string(ipOut))
-
-	// 3. System CURL (Check Web Status)
-	curlOut, _ := exec.Command("curl", "-Is", "--max-time", "2", target).Output()
-	if len(curlOut) > 0 {
-		d.HTTPStatus = strings.Split(string(curlOut), "\n")[0]
-	}
-
-	return d, nil
+	return data, nil
 }
 
-func RunSystemScan(target string) string {
-	// Tactical Fast Scan: Top 100 ports, service detection, no ping
-	out, err := exec.Command("nmap", "-F", "--open", target).Output()
-	if err != nil {
-		return "Error: nmap not found or failed. Install with: apt install nmap"
+func extractField(raw, field string) string {
+	for _, line := range strings.Split(raw, "\n") {
+		if strings.Contains(strings.ToLower(line), strings.ToLower(field)) {
+			parts := strings.Split(line, ":")
+			if len(parts) > 1 { return strings.TrimSpace(parts[1]) }
+		}
 	}
-	return string(out)
+	return "UNKNOWN"
 }
