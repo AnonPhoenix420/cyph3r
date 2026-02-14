@@ -1,4 +1,4 @@
-module import "github.com/AnonPhoenix420/cyph3r/internal/models"
+module "github.com/AnonPhoenix420/cyph3r/internal/models"
 
 go 1.23
 
