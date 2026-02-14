@@ -13,9 +13,3 @@ type IntelData struct {
 	Org         string
 	ASN         string
 }
-
-type ProbeResult struct {
-	Port    int
-	State   string
-	Service string
-}
