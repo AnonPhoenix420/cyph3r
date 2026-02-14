@@ -9,24 +9,28 @@ import (
 
 func RunFullScan(target string) {
 	output.Info("Initializing Tactical Scan: " + target)
-	ports := []int{21, 22, 23, 25, 53, 80, 443, 3306, 8080}
+	
+	// Comprehensive port list for server testing
+	ports := []struct {
+		num   int
+		proto string
+	}{
+		{21, "FTP"}, {22, "SSH"}, {23, "TELNET"}, {25, "SMTP"},
+		{53, "DNS"}, {80, "HTTP"}, {110, "POP3"}, {143, "IMAP"},
+		{443, "HTTPS"}, {3306, "MYSQL"}, {5432, "POSTGRES"}, {8080, "HTTP-ALT"},
+	}
 
-	for _, port := range ports {
-		address := fmt.Sprintf("%s:%d", target, port)
-		conn, err := net.DialTimeout("tcp", address, 2*time.Second)
+	for _, p := range ports {
+		address := fmt.Sprintf("%s:%d", target, p.num)
+		conn, err := net.DialTimeout("tcp", address, 1500*time.Millisecond)
 		
 		if err != nil {
-			continue // Port Closed
+			continue 
 		}
 		conn.Close()
 		
-		// Signaling the specific protocol and ACK
-		protocol := "TCP"
-		if port == 53 { protocol = "DNS/UDP" }
-		if port == 443 { protocol = "HTTPS" }
-		
 		fmt.Printf("%s[+] PORT %d/%s: %sOPEN %s[ACK/SYN]%s\n", 
-			output.White, port, protocol, output.NeonGreen, output.NeonBlue, output.Reset)
+			output.White, p.num, p.proto, output.NeonGreen, output.NeonBlue, output.Reset)
 	}
 	output.Info("Tactical scan complete.")
 }
