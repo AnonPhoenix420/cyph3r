@@ -5,7 +5,8 @@ import "fmt"
 func Banner() {
 	// Using NeonBlue from your colors.go
 	fmt.Printf("%s", NeonBlue)
-	fmt.Println('
+	// MUST use backticks (`) on both sides for multi-line strings
+	fmt.Println(`
    ______      ____  __  __ _____ ____  
   / ____/_  __/ __ \/ / / /|__  // __ \ 
  / /   / / / / /_/ / /_/ /  /_ </ /_/ / 
