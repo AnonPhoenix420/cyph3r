@@ -1,63 +1,64 @@
-🛰️ CYPH3R v2.6: Project Status Summary
-Session Date: February 1, 2026 Environment: Parrot OS (ARM64) via Termux
+# CYPH3R: Tactical Network Intelligence System
 
-✅ Completed Features
-Deep Node Intelligence: * Resolves target IPv4 and IPv6 addresses.
+**CYPH3R** is a high-performance reconnaissance engine built in Go, designed for deep intelligence gathering and tactical server testing. It focuses exclusively on remote target transparency while maintaining complete local host privacy.
 
-Fetches full geographic metadata: Country (Code), Region (Code), City, Zip, and Timezone.
+---
 
-Captures Network Infrastructure: ISP, Organization name, and ASN.
+## ⚡ Core Capabilities
 
-Provides high-precision Latitude/Longitude coordinates.
+### 🔍 Deep Recon Intelligence
+* **Reversible Targeting:** Automatically detects and resolves both Domain-to-IP and IP-to-Domain (Reverse DNS).
+* **IP Enumeration:** Discovers and displays every associated IPv4 and IPv6 address for a target node.
+* **Recursive DNS Spidering:** Maps authoritative name servers and resolves their specific IP addresses in real-time.
+* **Geo-Intelligence:** Pulls granular geographic data including Organization/ISP, City, State, Country Code, and Postal Code.
 
-DNS Pivot Resolution: * Identifies Name Servers (NS) for a domain.
+### 🛡️ Tactical Probing
+* **Signal Identification:** Scans for open ports with active [ACK/SYN] signaling verification.
+* **Protocol Fingerprinting:** Automatically identifies standard service protocols (SSH, HTTP, HTTPS, DNS, MySQL, etc.).
+* **Speed-Optimized:** Utilizes 1.5s dial timeouts for efficient scanning without triggering basic rate-limiters.
 
-Automatically resolves the IP addresses for each found Name Server.
+---
 
-Accelerated Port Scanner: * Scans common ports using a concurrent worker pool.
+## 🏗️ Project Architecture
 
-Banner Grabbing: Reads service headers to identify software versions (e.g., SSH, FTP, etc.).
+```text
+cyph3r/
+├── bin/              # Compiled binary artifacts
+├── cmd/
+│   └── cyph3r/       # Entry point (main.go)
+├── internal/
+│   ├── intel/        # DNS and Geo-API logic
+│   ├── models/       # Data structures and type definitions
+│   ├── output/       # HUD rendering and UI status logic
+│   └── probes/       # Tactical port scanning and protocol detection
+├── Makefile          # Build, repair, and install automation
+└── Dockerfile        # Multi-stage containerization
+```
 
-Build Stability:
+🚀 Deployment & Usage
+​Fast Install
+```
+make install
+```
 
-Optimized for ARM64 architecture (Android/Phone hardware).
+Basic Recon
+```
+cyph3r -target google.com
+```
+Reverse IP Recon
+```
+cyph3r -target 8.8.4.4
+```
 
-Cleaned all "syntax ghosts" and unused imports.
+🛠️ Maintenance Commands
 
-Manual build process verified (bypassing cat issues with nano).
+```text
+Command Action
+make repair Forces a deep-clean of Go caches and resets modules.
+make build Compiles a fresh binary to the ./bin directory.
+make backup Creates a timestamped .tar.gz archive of the source code.
+make docker Builds a minimal Alpine-based Docker image.
+```
 
-📂 Current Project Architecture
-cmd/cyph3r/main.go: The execution entry point and flag controller.
-
-internal/intel/: The OSINT engine (Geo-IP, NS-lookup, Phone-lookup).
-
-internal/output/: The HUD rendering logic (Banner, Colors, Status Tables).
-
-internal/probes/: The active reconnaissance logic (Port Scanning, Banner Grabbing).
-
-🛠️ How to Resume (Cheat Sheet)
-When you return, follow these steps to get back into the flow:
-
-Enter Environment: Open your Parrot terminal.
-
-Navigate: cd cyph3r
-
-Verify Binary: ./cyph3r --target google.com --scan
-
-Rebuild (if you made changes):
-
-go mod tidy
-go build -o cyph3r ./cmd/cyph3r
-
-🚀 Planned for Next Session
-HTTP Fingerprinting: Upgrade the banner grabber to specifically identify Nginx, Apache, or Cloudflare via HTTP headers.
-
-Recon Logging: Add the -o <filename> flag to auto-save results.
-
-Safety Filter: Add a "Safe Mode" toggle to limit scan speed on sensitive networks.
-
-
-if shit hits the fan...back it up...
-
-
-cyph3r_backup_feb1.tar.gz
+🔐 Privacy & Security Policy
+CYPH3R is hard-coded to ignore local system information. It does not gather, print, or transmit your hostname, local interface IPs, or internal network topology. All output is strictly limited to the specified remote target.
