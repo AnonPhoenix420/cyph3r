@@ -12,7 +12,6 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 	var data models.IntelData
 	data.NameServers = make(map[string]string)
 
-	// 1. REVERSIBLE TARGETING & IP ENUMERATION
 	parsedIP := net.ParseIP(input)
 	if parsedIP != nil {
 		data.IP = input
@@ -28,7 +27,6 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		if len(data.TargetIPs) > 0 { data.IP = data.TargetIPs[0] }
 	}
 
-	// 2. NAME SERVER SPIDERING (Name -> IP Mapping)
 	nsRecords, _ := net.LookupNS(data.TargetName)
 	for _, ns := range nsRecords {
 		nsIPs, _ := net.LookupIP(ns.Host)
@@ -39,7 +37,6 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		}
 	}
 
-	// 3. REMOTE GEO RECON (Using target IP only)
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Get("http://ip-api.com/json/" + data.IP + "?fields=status,country,countryCode,regionName,city,zip,lat,lon,isp,org")
 	if err == nil {
