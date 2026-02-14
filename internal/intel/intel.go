@@ -1,40 +1,73 @@
 package intel
 
 import (
+	"encoding/json"
 	"net"
+	"net/http"
 	"os"
+	"time"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
 func GetTargetIntel(target string) (models.IntelData, error) {
 	var data models.IntelData
-	
+
 	// 1. Resolve Target IP
-	ips, _ := net.LookupIP(target)
-	if len(ips) > 0 {
-		data.IP = ips[0].String()
+	ips, err := net.LookupIP(target)
+	if err != nil || len(ips) == 0 {
+		return data, err
+	}
+	data.IP = ips[0].String()
+
+	// 2. Localhost Identity (Notation)
+	hostname, _ := os.Hostname()
+	data.LocalHost = hostname
+	ifaces, _ := net.Interfaces()
+	for _, i := range ifaces {
+		addrs, _ := i.Addrs()
+		for _, addr := range addrs {
+			if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+				if ipnet.IP.To4() != nil {
+					data.LocalIPs = append(data.LocalIPs, ipnet.IP.String())
+				}
+			}
+		}
 	}
 
-	// 2. Fetch Name Servers
+	// 3. DNS Name Servers
 	ns, _ := net.LookupNS(target)
 	for _, nameserver := range ns {
 		data.NameServers = append(data.NameServers, nameserver.Host)
 	}
 
-	// 3. Get Localhost Identity (Always included)
-	hostname, _ := os.Hostname()
-	data.LocalHost = hostname
-	addrs, _ := net.InterfaceAddrs()
-	for _, addr := range addrs {
-		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				data.LocalIPs = append(data.LocalIPs)
-			}
+	// 4. Deep Recon API (Geo + Org + Postal)
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get("http://ip-api.com/json/" + data.IP + "?fields=status,message,country,countryCode,regionName,city,zip,lat,lon,isp,org,as,reverse")
+	if err == nil {
+		defer resp.Body.Close()
+		var apiResult struct {
+			Country     string  `json:"country"`
+			CountryCode string  `json:"countryCode"`
+			RegionName  string  `json:"regionName"`
+			City        string  `json:"city"`
+			Zip         string  `json:"zip"`
+			Lat         float64 `json:"lat"`
+			Lon         float64 `json:"lon"`
+			ISP         string  `json:"isp"`
+			Org         string  `json:"org"`
 		}
+		json.NewDecoder(resp.Body).Decode(&apiResult)
+
+		data.Country = apiResult.Country
+		data.CountryCode = apiResult.CountryCode
+		data.RegionName = apiResult.RegionName
+		data.Zip = apiResult.Zip
+		data.City = apiResult.City
+		data.Lat = apiResult.Lat
+		data.Lon = apiResult.Lon
+		data.ISP = apiResult.ISP
+		data.Org = apiResult.Org
 	}
 
-	// Placeholder: In a real scenario, you'd call an API here to populate 
-	// Org, Lat, Lon, Zip, etc. For now, we initialize the fields.
-	data.Org = "Pending Query..." 
 	return data, nil
 }
