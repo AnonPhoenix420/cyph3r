@@ -2,48 +2,41 @@ package main
 
 import (
 	"flag"
+	"os"
+
 	"github.com/AnonPhoenix420/cyph3r/internal/intel"
 	"github.com/AnonPhoenix420/cyph3r/internal/output"
 	"github.com/AnonPhoenix420/cyph3r/internal/probes"
 )
 
 func main() {
-	// Define tactical flags
-	target := flag.String("target", "", "Target domain or IP")
-	phone := flag.String("phone", "", "Target phone number")
-	scan := flag.Bool("scan", false, "Enable port scanning")
+	// 1. Define Flags
+	targetPtr := flag.String("target", "", "Target domain or IP address")
 	flag.Parse()
 
-	// 1. Initialize System Banner
+	// 2. Initial UI
 	output.Banner()
 
-	// 2. Branch Logic: Phone Intel
-	if *phone != "" {
-		intel.GetPhoneIntel(*phone)
-		return
+	if *targetPtr == "" {
+		output.Error("No target specified. Use -target <domain/ip>")
+		os.Exit(1)
 	}
 
-	// 3. Branch Logic: Domain/IP Intel
-	if *target == "" {
-		output.Error("Input required. Use -target <domain> or -phone <number>")
-		return
-	}
+	// 3. Identification Phase
+	output.PulseNode(*targetPtr)
 
-	// Visual acquisition signal
-	output.PulseNode(*target)
-
-	// Fetch Full Intelligence Data
-	data, err := intel.GetFullIntel(*target)
+	// 4. Intelligence Gathering (Renamed to match intel.go)
+	data, err := intel.GetTargetIntel(*targetPtr)
 	if err != nil {
-		output.Error("Failed to fetch node intelligence")
-		return
+		output.Error("Failed to resolve target intelligence.")
+		os.Exit(1)
 	}
 
-	// Render the HUD
+	// 5. Display the Full Recon HUD
 	output.DisplayHUD(data)
 
-	// Execute Tactical Probes if enabled
-	if *scan {
-		probes.RunFullScan(*target)
-	}
+	// 6. Execution Phase (Port/Signal Scan)
+	probes.RunFullScan(*targetPtr)
+
+	output.Success("Operation Complete.")
 }
