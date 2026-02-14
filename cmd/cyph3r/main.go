@@ -9,11 +9,19 @@ import (
 
 func main() {
 	target := flag.String("target", "", "Target domain or IP")
+	phone := flag.String("phone", "", "Target phone number")
 	scan := flag.Bool("scan", false, "Enable port scanning")
 	flag.Parse()
 
+	// 1. Check for Phone Intel first
+	if *phone != "" {
+		intel.GetPhoneIntel(*phone)
+		return
+	}
+
+	// 2. Check for Domain Intel
 	if *target == "" {
-		output.Error("Target required. Use -target <domain>")
+		output.Error("Input required. Use -target <domain> or -phone <number>")
 		return
 	}
 
