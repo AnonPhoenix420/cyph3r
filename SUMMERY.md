@@ -54,10 +54,14 @@ cyph3r -target 8.8.4.4
 
 ```text
 Command Action
-make repair Forces a deep-clean of Go caches and resets modules.
-make build Compiles a fresh binary to the ./bin directory.
-make backup Creates a timestamped .tar.gz archive of the source code.
-make docker Builds a minimal Alpine-based Docker image.
+
+*make repair Forces a deep-clean of Go caches and resets modules.
+
+*make build Compiles a fresh binary to the ./bin directory.
+
+*make backup Creates a timestamped .tar.gz archive of the source code.
+
+*make docker Builds a minimal Alpine-based Docker image.
 ```
 
 🔐 Privacy & Security Policy
