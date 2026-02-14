@@ -7,7 +7,7 @@ import (
 
 func RunFullScan(target string) {
 	ports := []int{21, 22, 25, 53, 80, 443, 3306, 8080}
-	output.PrintScanHeader()
+	output.PrintStatus("INIT_SCAN", "Probing infrastructure...")
 	for _, port := range ports {
 		alive, status := DialTarget(target, port)
 		if alive {
