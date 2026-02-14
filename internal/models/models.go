@@ -1,8 +1,6 @@
-
 package models
 
 type IntelData struct {
-    Localhost   string
 	IPs         []string
 	Nameservers []string
 	WhoisRaw    string
@@ -14,4 +12,11 @@ type IntelData struct {
 	ISP         string
 	Org         string
 	ASN         string
+	IsAlive     bool
+}
+
+type ProbeResult struct {
+	Port     int
+	State    string
+	Service  string
 }
