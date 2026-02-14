@@ -1,1 +1,17 @@
 
+package models
+
+type IntelData struct {
+  Localhost   string
+	IPs         []string
+	Nameservers []string
+	WhoisRaw    string
+	Registrar   string
+	Country     string
+	City        string
+	Lat         float64
+	Lon         float64
+	ISP         string
+	Org         string
+	ASN         string
+}
