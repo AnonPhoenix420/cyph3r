@@ -4,69 +4,47 @@ import (
 	"encoding/json"
 	"net"
 	"net/http"
-	"os"
 	"time"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-func GetTargetIntel(target string) (models.IntelData, error) {
+func GetTargetIntel(input string) (models.IntelData, error) {
 	var data models.IntelData
+	data.NameServers = make(map[string]string)
 
-	// 1. Resolve Target IP
-	ips, err := net.LookupIP(target)
-	if err != nil || len(ips) == 0 {
-		return data, err
+	// 1. REVERSIBLE TARGETING & IP ENUMERATION
+	parsedIP := net.ParseIP(input)
+	if parsedIP != nil {
+		data.IP = input
+		data.TargetIPs = append(data.TargetIPs, input)
+		names, _ := net.LookupAddr(input)
+		if len(names) > 0 { data.TargetName = names[0] }
+	} else {
+		data.TargetName = input
+		ips, _ := net.LookupIP(input)
+		for _, ip := range ips {
+			data.TargetIPs = append(data.TargetIPs, ip.String())
+		}
+		if len(data.TargetIPs) > 0 { data.IP = data.TargetIPs[0] }
 	}
-	data.IP = ips[0].String()
 
-	// 2. Localhost Identity (Notation)
-	hostname, _ := os.Hostname()
-	data.LocalHost = hostname
-	ifaces, _ := net.Interfaces()
-	for _, i := range ifaces {
-		addrs, _ := i.Addrs()
-		for _, addr := range addrs {
-			if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-				if ipnet.IP.To4() != nil {
-					data.LocalIPs = append(data.LocalIPs, ipnet.IP.String())
-				}
-			}
+	// 2. NAME SERVER SPIDERING (Name -> IP Mapping)
+	nsRecords, _ := net.LookupNS(data.TargetName)
+	for _, ns := range nsRecords {
+		nsIPs, _ := net.LookupIP(ns.Host)
+		if len(nsIPs) > 0 {
+			data.NameServers[ns.Host] = nsIPs[0].String()
+		} else {
+			data.NameServers[ns.Host] = "Not Resolved"
 		}
 	}
 
-	// 3. DNS Name Servers
-	ns, _ := net.LookupNS(target)
-	for _, nameserver := range ns {
-		data.NameServers = append(data.NameServers, nameserver.Host)
-	}
-
-	// 4. Deep Recon API (Geo + Org + Postal)
+	// 3. REMOTE GEO RECON (Using target IP only)
 	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get("http://ip-api.com/json/" + data.IP + "?fields=status,message,country,countryCode,regionName,city,zip,lat,lon,isp,org,as,reverse")
+	resp, err := client.Get("http://ip-api.com/json/" + data.IP + "?fields=status,country,countryCode,regionName,city,zip,lat,lon,isp,org")
 	if err == nil {
 		defer resp.Body.Close()
-		var apiResult struct {
-			Country     string  `json:"country"`
-			CountryCode string  `json:"countryCode"`
-			RegionName  string  `json:"regionName"`
-			City        string  `json:"city"`
-			Zip         string  `json:"zip"`
-			Lat         float64 `json:"lat"`
-			Lon         float64 `json:"lon"`
-			ISP         string  `json:"isp"`
-			Org         string  `json:"org"`
-		}
-		json.NewDecoder(resp.Body).Decode(&apiResult)
-
-		data.Country = apiResult.Country
-		data.CountryCode = apiResult.CountryCode
-		data.RegionName = apiResult.RegionName
-		data.Zip = apiResult.Zip
-		data.City = apiResult.City
-		data.Lat = apiResult.Lat
-		data.Lon = apiResult.Lon
-		data.ISP = apiResult.ISP
-		data.Org = apiResult.Org
+		json.NewDecoder(resp.Body).Decode(&data)
 	}
 
 	return data, nil
