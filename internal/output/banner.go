@@ -3,10 +3,9 @@ package output
 import "fmt"
 
 func Banner() {
-	// I'm using your Neon Blue here. 
-	// PASTE YOUR ORIGINAL ASCII ART BETWEEN THE BACKTICKS BELOW
+	// Using NeonBlue from your colors.go
 	fmt.Printf("%s", NeonBlue)
-	fmt.Println(`
+	fmt.Println('
    ______      ____  __  __ _____ ____  
   / ____/_  __/ __ \/ / / /|__  // __ \ 
  / /   / / / / /_/ / /_/ /  /_ </ /_/ / 
