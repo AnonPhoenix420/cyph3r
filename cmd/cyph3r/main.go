@@ -2,23 +2,29 @@ package main
 
 import (
 	"flag"
-	"cyph3r/internal/intel"
-	"cyph3r/internal/output"
-	"cyph3r/internal/probes"
+	"github.com/AnonPhoenix420/cyph3r/internal/intel"
+	"github.com/AnonPhoenix420/cyph3r/internal/output"
+	"github.com/AnonPhoenix420/cyph3r/internal/probes"
 )
 
 func main() {
-	target := flag.String("target", "", "Target domain/IP")
+	target := flag.String("target", "", "Target domain or IP")
 	scan := flag.Bool("scan", false, "Enable port scanning")
 	flag.Parse()
 
 	if *target == "" {
-		output.Error("No target specified. Use -target <host>")
+		output.Error("Target required. Use -target <domain>")
 		return
 	}
 
-	output.PrintStatus("TARGET", *target)
-	data, _ := intel.GetFullIntel(*target)
+	output.PulseNode(*target)
+
+	data, err := intel.GetFullIntel(*target)
+	if err != nil {
+		output.Error("Failed to fetch intel")
+		return
+	}
+
 	output.DisplayHUD(data)
 
 	if *scan {
