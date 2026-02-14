@@ -10,33 +10,35 @@ import (
 )
 
 func main() {
-	// 1. Define Flags
+	// 1. Setup target flag
 	targetPtr := flag.String("target", "", "Target domain or IP address")
 	flag.Parse()
 
-	// 2. Initial UI
+	// 2. Clear UI and render banner
 	output.Banner()
 
+	// 3. Validate input
 	if *targetPtr == "" {
 		output.Error("No target specified. Use -target <domain/ip>")
 		os.Exit(1)
 	}
 
-	// 3. Identification Phase
+	// 4. Start Pulse (This is the function you were missing)
 	output.PulseNode(*targetPtr)
 
-	// 4. Intelligence Gathering (Renamed to match intel.go)
+	// 5. Fetch Remote Intel (No local data collected)
 	data, err := intel.GetTargetIntel(*targetPtr)
 	if err != nil {
 		output.Error("Failed to resolve target intelligence.")
 		os.Exit(1)
 	}
 
-	// 5. Display the Full Recon HUD
+	// 6. Display Remote Target HUD
 	output.DisplayHUD(data)
 
-	// 6. Execution Phase (Port/Signal Scan)
+	// 7. Execute Tactical Port Scan
 	probes.RunFullScan(*targetPtr)
 
+	// 8. Exit
 	output.Success("Operation Complete.")
 }
