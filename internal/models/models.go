@@ -2,7 +2,7 @@
 package models
 
 type IntelData struct {
-  Localhost   string
+    Localhost   string
 	IPs         []string
 	Nameservers []string
 	WhoisRaw    string
