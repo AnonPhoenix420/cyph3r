@@ -11,7 +11,11 @@ func DisplayHUD(data models.IntelData) {
 	fmt.Printf("%s[*] Provider:  %s%s\n", White, NeonGreen, data.ISP)
 	fmt.Printf("%s[*] Location:  %s%s, %s\n", White, NeonGreen, data.City, data.Country)
 	
-	// Clickable Map Link - Uses %f for float coordinates
+	// Map Link
 	mapURL := fmt.Sprintf("https://www.google.com/maps?q=%f,%f", data.Lat, data.Lon)
 	fmt.Printf("%s[*] Geo-Map:   %s%s%s\n", White, NeonBlue, mapURL, Reset)
+}
+
+func PulseNode(target string) {
+	fmt.Printf("\n%s[!] Identifying Node: %s%s%s\n", White, NeonPink, target, Reset)
 }
