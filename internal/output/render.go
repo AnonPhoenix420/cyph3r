@@ -17,7 +17,7 @@ func DisplayHUD(data models.IntelData) {
 	fmt.Printf("%s[*] Provider:  %s%s\n", White, NeonGreen, data.ISP)
 	fmt.Printf("%s[*] Location:  %s%s, %s\n", White, NeonGreen, data.City, data.Country)
 	
-	// Format coordinates for a map link
+	// Correct Google Maps format for clickable coordinates
 	mapURL := fmt.Sprintf("https://www.google.com/maps?q=%f,%f", data.Lat, data.Lon)
 	fmt.Printf("%s[*] Geo-Map:   %s%s%s\n", White, NeonBlue, mapURL, Reset)
 }
