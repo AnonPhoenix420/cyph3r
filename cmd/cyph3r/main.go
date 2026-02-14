@@ -9,15 +9,15 @@ import (
 
 func main() {
 	target := flag.String("target", "", "Target domain/IP")
-	scan := flag.Bool("scan", false, "Enable port scan")
+	scan := flag.Bool("scan", false, "Enable port scanning")
 	flag.Parse()
 
 	if *target == "" {
-		output.Error("Target required. Use -target <domain>")
+		output.Error("No target specified. Use -target <host>")
 		return
 	}
 
-	output.PulseNode(*target)
+	output.PrintStatus("TARGET", *target)
 	data, _ := intel.GetFullIntel(*target)
 	output.DisplayHUD(data)
 
