@@ -3,6 +3,7 @@ package intel
 import (
 	"os/exec"
 	"strings"
+	"flote64"
 	"cyph3r/internal/models"
 )
 
