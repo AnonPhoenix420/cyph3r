@@ -2,7 +2,6 @@ package intel
 
 import (
 	"encoding/json"
-	"fmt"
 	"net"
 	"net/http"
 	"time"
