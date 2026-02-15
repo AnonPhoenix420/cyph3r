@@ -1,14 +1,13 @@
 package intel
 
 import (
-	"encoding/json"
 	"net"
 	"net/http"
 	"time"
+	"encoding/json"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// GetTargetIntel handles the original network recon logic
 func GetTargetIntel(input string) (models.IntelData, error) {
 	var data models.IntelData
 	data.NameServers = make(map[string]string)
@@ -43,19 +42,5 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		json.NewDecoder(resp.Body).Decode(&data)
 	}
 
-	return data, nil
-}
-
-// GetPhoneIntel handles the NEW phone metadata logic (REQUIRED for main.go)
-func GetPhoneIntel(number string) (models.PhoneData, error) {
-	var data models.PhoneData
-	// Mock response for stability; you can connect a real API here later
-	data.Number = number
-	data.Valid = true
-	data.LocalFormat = number
-	data.Carrier = "Global Gateway"
-	data.Location = "Detected"
-	data.Type = "Mobile/VOIP"
-	
 	return data, nil
 }
