@@ -30,7 +30,7 @@ func ScanPorts(target string) []string {
 
 func grabBanner(conn net.Conn) string {
 	conn.SetReadDeadline(time.Now().Add(1 * time.Second))
-	// Some services talk first (SSH, FTP), others wait for a request
+	// Try to trigger a response from web servers, otherwise just wait for service announcement (SSH/FTP)
 	fmt.Fprintf(conn, "HEAD / HTTP/1.0\r\n\r\n") 
 	scanner := bufio.NewScanner(conn)
 	if scanner.Scan() {
