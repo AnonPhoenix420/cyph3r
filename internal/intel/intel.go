@@ -24,13 +24,12 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 	ns, _ := net.LookupNS(input)
 	for _, n := range ns { data.NameServers["NS"] = append(data.NameServers["NS"], n.Host) }
 	
-	// Call the scanner we moved to probes
+	// Trigger the external scanner
 	data.NameServers["PORTS"] = probes.ScanPorts(input)
 
-	// 3. FULL GEO-INTEL (Ensuring Zip is captured)
+	// 3. GEO-INTEL
 	if len(data.TargetIPs) > 0 {
 		client := &http.Client{Timeout: 5 * time.Second}
-		// Added zip to the fields list
 		resp, err := client.Get("http://ip-api.com/json/" + data.TargetIPs[0] + "?fields=status,country,regionName,city,zip,isp,org")
 		if err == nil {
 			defer resp.Body.Close()
