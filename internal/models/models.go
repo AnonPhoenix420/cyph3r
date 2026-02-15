@@ -1,6 +1,6 @@
 package models
 
-type IntelData struct {
+type IntelData struct { //show all information in hud
 	TargetName  string
 	TargetIPs   []string
 	ISP         string
@@ -9,10 +9,10 @@ type IntelData struct {
 	RegionName  string
 	State       string
 	City        string
-	Zip         string
+	Zip         string 
 	Lat         float64
 	Lon         float64
-	NameServers map[string][]string // Changed to []string
+	NameServers map[string][]string
 }
 
 type PhoneData struct {
@@ -22,5 +22,5 @@ type PhoneData struct {
 	Carrier  string
 	Type     string
 	Valid    bool
+	MapLink  string // New Field for Pinpoint Mapping
 }
-
