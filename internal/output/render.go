@@ -5,20 +5,12 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// Universal Hex Escape Codes (Fixes Color Issues)
-const (
-	Reset      = "\x1b[0m"
-	White      = "\x1b[97m"
-	NeonPink   = "\x1b[38;5;198m"
-	NeonBlue   = "\x1b[38;5;81m"
-	NeonGreen  = "\x1b[38;5;82m"
-	NeonYellow = "\x1b[38;5;226m"
-)
-
+// PulseNode - Uses the colors already defined in your colors.go
 func PulseNode(target string) {
 	fmt.Printf("\n%s[!] Identifying Node: %s%s%s\n", White, NeonPink, target, Reset)
 }
 
+// DisplayHUD renders the full network intelligence suite
 func DisplayHUD(data models.IntelData) {
 	fmt.Printf("\n%s--- [ REMOTE_TARGET_INTELLIGENCE_HUD ] ---%s\n", NeonPink, Reset)
 	fmt.Printf("%s[*] Target Node:   %s%s\n", White, NeonBlue, data.TargetName)
@@ -39,6 +31,7 @@ func DisplayHUD(data models.IntelData) {
 	}
 }
 
+// DisplayPhoneHUD renders the high-precision phone metadata
 func DisplayPhoneHUD(p models.PhoneData) {
 	fmt.Printf("\n%s--- [ PHONE_INTELLIGENCE_REPORT ] ---%s\n", NeonPink, Reset)
 	fmt.Printf("%s[*] Number:       %s%s\n", White, NeonBlue, p.Number)
