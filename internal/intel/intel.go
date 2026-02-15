@@ -20,16 +20,15 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		data.TargetIPs = append(data.TargetIPs, ip.String())
 	}
 
-	// 2. RESOLVE NAMESERVERS (DNS Intel)
+	// 2. RESOLVE NAMESERVERS
 	ns, _ := net.LookupNS(input)
 	for _, nameserver := range ns {
 		data.NameServers["DNS"] = append(data.NameServers["DNS"], nameserver.Host)
 	}
 
-	// 3. GEOLOCATION (The "Where" in the world)
+	// 3. GEOLOCATION
 	if len(data.TargetIPs) > 0 {
 		client := &http.Client{Timeout: 5 * time.Second}
-		// Querying IP-API for the full stack
 		resp, err := client.Get("http://ip-api.com/json/" + data.TargetIPs[0] + "?fields=status,country,regionName,city,zip,lat,lon,isp,org,as")
 		if err == nil {
 			defer resp.Body.Close()
@@ -46,7 +45,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 			data.Zip = t.Zip
 			data.ISP = t.Isp
 			data.Org = t.Org
-			// Generate a REAL clickable Google Maps link
+			// REAL Google Maps link
 			data.MapLink = fmt.Sprintf("https://www.google.com/maps?q=%s,%s", data.Lat, data.Lon)
 		}
 	}
