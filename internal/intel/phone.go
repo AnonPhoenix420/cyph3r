@@ -1,6 +1,8 @@
 package intel
 
 import (
+	"fmt"
+	"net/url"
 	"strings"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
@@ -10,34 +12,37 @@ func GetPhoneIntel(number string) (models.PhoneData, error) {
 	data.Number = number
 	data.Valid = true
 
-	// Clean number for processing
 	cleanNum := strings.TrimPrefix(number, "+")
-	
-	// Country & State Detection Logic
+	if len(cleanNum) < 4 { return data, nil }
+
 	if strings.HasPrefix(cleanNum, "1") {
 		data.Country = "United States / Canada"
-		areaCode := cleanNum[1:4]
-		
-		// Map for high-precision State identification
-		stateMap := map[string]string{
-			"415": "California (San Francisco)", "212": "New York (Manhattan)", 
-			"312": "Illinois (Chicago)", "213": "California (Los Angeles)",
-			"202": "District of Columbia", "305": "Florida (Miami)",
-			"617": "Massachusetts (Boston)", "702": "Nevada (Las Vegas)",
+		ac := cleanNum[1:4]
+
+		// Tactical Area Code Intelligence Map
+		areaMap := map[string]string{
+			"201": "Jersey City, NJ", "202": "Washington, D.C.", "212": "Manhattan, NY",
+			"213": "Los Angeles, CA", "305": "Miami, FL", "312": "Chicago, IL",
+			"415": "San Francisco, CA", "512": "Austin, TX", "602": "Phoenix, AZ",
+			"617": "Boston, MA", "702": "Las Vegas, NV", "216": "Cleveland, OH",
+			"404": "Atlanta, GA", "713": "Houston, TX", "215": "Philadelphia, PA",
+			"206": "Seattle, WA", "303": "Denver, CO", "615": "Nashville, TN",
+			"416": "Toronto, ON", "604": "Vancouver, BC", "514": "Montreal, QC",
 		}
-		
-		if state, exists := stateMap[areaCode]; exists {
-			data.Location = state
+
+		if loc, found := areaMap[ac]; found {
+			data.Location = loc
+			// Generate PINPOINT Map Link (No Key Required)
+			data.MapLink = fmt.Sprintf("https://www.google.com/maps/search/%s", url.QueryEscape(loc))
 		} else {
-			data.Location = "North America (Verify Area Code: " + areaCode + ")"
+			data.Location = "North America (NPA: " + ac + ")"
+			data.MapLink = "Regional data only"
 		}
-		
-		// Carrier Logic
-		data.Carrier = "US/CA Major Carrier (AT&T/Verizon/T-Mobile Cluster)"
-	} else if strings.HasPrefix(cleanNum, "44") {
-		data.Country = "United Kingdom"
-		data.Location = "UK Regional Hub"
-		data.Carrier = "Vodafone / BT Architecture"
+		data.Carrier = "Tier-1 Carrier Architecture"
+	} else {
+		data.Country = "International"
+		data.Location = "Global Distribution"
+		data.Carrier = "International Routing Hub"
 	}
 
 	data.Type = "Mobile / VoIP High-Priority"
