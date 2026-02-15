@@ -4,7 +4,8 @@ package models
 type IntelData struct {
 	IP          string
 	TargetName  string
-	TargetIPs   []string // All resolved IPs for the target
+	TargetIPs   []string
+	ISP         string   // This was the missing field
 	Org         string
 	Country     string
 	CountryCode string
@@ -13,7 +14,7 @@ type IntelData struct {
 	City        string
 	Lat         float64
 	Lon         float64
-	NameServers map[string]string // All resolved Hostname -> IP
+	NameServers map[string]string
 }
 
 // PhoneData handles international phone metadata
@@ -25,3 +26,4 @@ type PhoneData struct {
 	Location    string `json:"location"`
 	Type        string `json:"line_type"`
 }
+
