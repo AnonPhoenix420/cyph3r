@@ -21,7 +21,7 @@ func ScanPorts(target string) []string {
 
 	for _, port := range ninjaPorts {
 		address := fmt.Sprintf("%s:%d", target, port)
-		time.Sleep(150 * time.Millisecond) // Ninja timing
+		time.Sleep(150 * time.Millisecond) // Tactical jitter
 
 		conn, err := net.DialTimeout("tcp", address, 1500*time.Millisecond)
 		if err != nil {
@@ -32,10 +32,10 @@ func ScanPorts(target string) []string {
 		if isSSL(port) {
 			info = getSSLInfo(target, port)
 		} else {
-			// Try to grab a service banner first (SSH/FTP/etc)
+			// First, try a raw banner grab (works for SSH, FTP, SMTP)
 			info = grabBanner(conn)
-			// If no banner, try HTTP info
-			if info == "" || info == "UNKNOWN" {
+			// If it's silent, try an HTTP probe
+			if info == "" {
 				info = getHTTPInfo(target, port)
 			}
 		}
@@ -51,8 +51,7 @@ func ScanPorts(target string) []string {
 }
 
 func grabBanner(conn net.Conn) string {
-	conn.SetReadDeadline(time.Now().Add(1 * time.Second))
-	// Wait for the server to speak first (Common for SSH, FTP, SMTP)
+	conn.SetReadDeadline(time.Now().Add(800 * time.Millisecond))
 	reader := bufio.NewReader(conn)
 	banner, err := reader.ReadString('\n')
 	if err != nil {
@@ -73,9 +72,9 @@ func getHTTPInfo(target string, port int) string {
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0")
 	
 	resp, err := client.Do(req)
-	if err != nil { return "" }
+	if err != nil { return "OPEN" }
 	defer resp.Body.Close()
-	// Grab the Server header to see if it's Nginx, Apache, Cloudflare
+	
 	server := resp.Header.Get("Server")
 	if server != "" {
 		return fmt.Sprintf("HTTP %d | %s", resp.StatusCode, server)
@@ -88,6 +87,7 @@ func getSSLInfo(target string, port int) string {
 	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 1 * time.Second}, "tcp", fmt.Sprintf("%s:%d", target, port), conf)
 	if err != nil { return "SSL_OPEN" }
 	defer conn.Close()
+	
 	certs := conn.ConnectionState().PeerCertificates
 	if len(certs) > 0 {
 		return fmt.Sprintf("SSL: %s", certs[0].Subject.CommonName)
