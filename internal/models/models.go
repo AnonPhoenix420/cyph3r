@@ -6,7 +6,6 @@ type IntelData struct {
 	ISP         string
 	Org         string
 	Country     string
-	RegionName  string
 	State       string
 	City        string
 	Zip         string
@@ -17,14 +16,7 @@ type IntelData struct {
 }
 
 type PhoneData struct {
-	Number   string
-	Country  string
-	State    string
-	Location string
-	Lat      string
-	Lon      string
-	Carrier  string
-	Type     string
-	Valid    bool
-	MapLink  string
+	Number, Country, State, Location, Lat, Lon, Carrier, Type string
+	Valid bool
+	MapLink string
 }
