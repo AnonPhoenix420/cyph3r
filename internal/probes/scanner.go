@@ -1,40 +1,68 @@
 package probes
 
 import (
-	"bufio"
+	"crypto/tls"
 	"fmt"
 	"net"
+	"net/http"
 	"time"
 )
 
-// ScanPorts probes the target and grabs service banners
 func ScanPorts(target string) []string {
 	var results []string
-	commonPorts := []int{21, 22, 25, 53, 80, 110, 443, 3306, 3389, 8080}
+	// Tactical List: Web, Admin Panels, DBs, and Cloud Management
+	// 80, 443 (Web), 2082-2087 (cPanel), 8443 (Plesk), 10000 (Webmin), 6443 (K8s)
+	webAdminPorts := []int{80, 443, 2082, 2083, 2086, 2087, 8080, 8443, 8888, 9443, 10000, 6443}
 
-	for _, port := range commonPorts {
+	for _, port := range webAdminPorts {
 		address := fmt.Sprintf("%s:%d", target, port)
-		conn, err := net.DialTimeout("tcp", address, 1*time.Second)
-		if err == nil {
-			banner := grabBanner(conn)
-			if banner != "" {
-				results = append(results, fmt.Sprintf("%d (%s)", port, banner))
-			} else {
-				results = append(results, fmt.Sprintf("%d", port))
-			}
-			conn.Close()
+		
+		// 1. Check if port is open
+		conn, err := net.DialTimeout("tcp", address, 1500*time.Millisecond)
+		if err != nil {
+			continue
+		}
+		conn.Close()
+
+		// 2. Identify the service details
+		info := ""
+		if port == 443 || port == 8443 || port == 2083 || port == 2087 || port == 9443 || port == 6443 {
+			info = getSSLInfo(target, port)
+		} else {
+			info = getHTTPInfo(target, port)
+		}
+
+		if info != "" {
+			results = append(results, fmt.Sprintf("%d (%s)", port, info))
+		} else {
+			results = append(results, fmt.Sprintf("%d", port))
 		}
 	}
 	return results
 }
 
-func grabBanner(conn net.Conn) string {
-	conn.SetReadDeadline(time.Now().Add(1 * time.Second))
-	// Try to trigger a response from web servers, otherwise just wait for service announcement (SSH/FTP)
-	fmt.Fprintf(conn, "HEAD / HTTP/1.0\r\n\r\n") 
-	scanner := bufio.NewScanner(conn)
-	if scanner.Scan() {
-		return scanner.Text()
+func getHTTPInfo(target string, port int) string {
+	client := http.Client{Timeout: 1 * time.Second}
+	url := fmt.Sprintf("http://%s:%d", target, port)
+	resp, err := client.Get(url)
+	if err != nil {
+		return "OPEN"
 	}
-	return ""
+	defer resp.Body.Close()
+	return fmt.Sprintf("HTTP %d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
+}
+
+func getSSLInfo(target string, port int) string {
+	conf := &tls.Config{InsecureSkipVerify: true}
+	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 1 * time.Second}, "tcp", fmt.Sprintf("%s:%d", target, port), conf)
+	if err != nil {
+		return "SSL_ERR"
+	}
+	defer conn.Close()
+	
+	certs := conn.ConnectionState().PeerCertificates
+	if len(certs) > 0 {
+		return fmt.Sprintf("SSL: %s | EXP: %s", certs[0].Subject.CommonName, certs[0].NotAfter.Format("2006-01-02"))
+	}
+	return "SSL_OPEN"
 }
