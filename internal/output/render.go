@@ -5,10 +5,12 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
+// PulseNode handles the status line in main.go
 func PulseNode(target string) {
 	fmt.Printf("\n%s[!] Identifying Node: %s%s%s\n", White, NeonPink, target, Reset)
 }
 
+// DisplayHUD restores recursive DNS IPs and tactical styling
 func DisplayHUD(data models.IntelData) {
 	fmt.Printf("\n%s--- [ REMOTE_TARGET_INTELLIGENCE_HUD ] ---\n", NeonPink)
 	fmt.Printf("%s[*] Target Node:   %s%s\n", White, NeonBlue, data.TargetName)
@@ -23,7 +25,7 @@ func DisplayHUD(data models.IntelData) {
 	fmt.Printf("\n%s[ AUTHORITATIVE_NAME_SERVERS ]\n", NeonPink)
 	for _, ns := range data.NameServers["NS"] {
 		fmt.Printf("%s[-] %s\n", White, ns)
-		// Fetch the IPs we resolved for this specific NS
+		// Pull the specific IPs resolved for this NS
 		ips := data.NameServers["IP_"+ns]
 		for _, ip := range ips {
 			fmt.Printf("    %s↳ [%s]\n", NeonBlue, ip)
@@ -38,4 +40,14 @@ func DisplayHUD(data models.IntelData) {
 		fmt.Printf("%s[*] INFO: Tactical scan complete.\n", White)
 	}
 	fmt.Printf("%s[+] SUCCESS: Operation Complete.\n%s", NeonGreen, Reset)
+}
+
+// DisplayPhoneHUD restores the satellite tracking layout (FIXES BUILD ERROR)
+func DisplayPhoneHUD(p models.PhoneData) {
+	fmt.Printf("\n%s--- [ 🛰️ GLOBAL_SATELLITE_HUD ] ---\n", NeonPink)
+	fmt.Printf("%s[*] Target:     %s%s\n", White, NeonBlue, p.Number)
+	fmt.Printf("%s[*] Carrier:    %s%s\n", White, NeonYellow, p.Carrier)
+	fmt.Printf("%s[*] Location:   %s%s, %s\n", White, NeonGreen, p.Location, p.Country)
+	fmt.Printf("%s[*] Vector:     %s%s\n", White, NeonBlue, p.MapLink)
+	fmt.Printf("%s------------------------------------%s\n", NeonPink, Reset)
 }
