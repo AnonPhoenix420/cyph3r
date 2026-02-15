@@ -14,13 +14,13 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 	data.TargetName = input
 	data.NameServers = make(map[string][]string)
 
-	// Resolve All IP Addresses
+	// Resolve IPv4 and IPv6
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips {
 		data.TargetIPs = append(data.TargetIPs, ip.String())
 	}
 	
-	// Resolve All Name Servers
+	// Resolve Name Servers
 	nsRecords, _ := net.LookupNS(input)
 	for _, ns := range nsRecords {
 		nsIPs, _ := net.LookupIP(ns.Host)
@@ -33,12 +33,10 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 
 	if len(data.TargetIPs) > 0 {
 		client := &http.Client{Timeout: 5 * time.Second}
-		// Fetching data from free IP-API
 		resp, err := client.Get("http://ip-api.com/json/" + data.TargetIPs[0] + "?fields=status,country,regionName,city,zip,lat,lon,isp,org")
 		if err == nil {
 			defer resp.Body.Close()
 			var temp struct {
-				Status string  `json:"status"`
 				Lat    float64 `json:"lat"`
 				Lon    float64 `json:"lon"`
 				Region string  `json:"regionName"`
@@ -50,7 +48,6 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 			}
 			json.NewDecoder(resp.Body).Decode(&temp)
 			
-			// Transfer to Model as Strings
 			data.Lat = fmt.Sprintf("%.6f", temp.Lat)
 			data.Lon = fmt.Sprintf("%.6f", temp.Lon)
 			data.State = temp.Region
