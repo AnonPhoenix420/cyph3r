@@ -8,46 +8,51 @@ import (
 )
 
 func main() {
-	// 1. Define flags so they don't error out
-	targetFlag := flag.String("target", "", "Domain")
-	phoneFlag := flag.String("phone", "", "Phone")
-	_ = flag.Bool("scan", false, "Scan mode")
+	// Define optional flags for backwards compatibility
+	targetFlag := flag.String("target", "", "Domain or IP")
+	phoneFlag := flag.String("phone", "", "Phone number")
+	_ = flag.Bool("scan", false, "Legacy scan mode")
 	flag.Parse()
 
-	// 2. Call YOUR banner (Make sure this is Capitalized in banner.go)
+	// 1. CALL YOUR BANNER FROM banner.go
 	output.DisplayBanner()
 
-	// 3. Logic to handle: ./cyph3r google.com OR ./cyph3r --target google.com
+	// 2. CAPTURE INPUT (Flag OR Naked Argument)
 	input := ""
 	if *targetFlag != "" {
 		input = *targetFlag
 	} else if *phoneFlag != "" {
 		input = *phoneFlag
 	} else if flag.NArg() > 0 {
-		input = flag.Arg(0)
+		input = flag.Arg(0) // Handles: ./cyph3r google.com
 	}
 
+	// Exit if no input at all
 	if input == "" {
 		return
 	}
 
-	// 4. Router: Detect if it's a Phone or Domain
-	if strings.HasPrefix(input, "+") || isNumeric(input) {
+	// 3. SMART ROUTING
+	// Treat as phone if it starts with '+' or is a long string of numbers
+	if strings.HasPrefix(input, "+") || (len(input) > 7 && isNumeric(input)) {
 		output.PulseNode(input)
-		p, _ := intel.GetPhoneIntel(input)
-		output.DisplayPhoneHUD(p)
+		pData, _ := intel.GetPhoneIntel(input)
+		output.DisplayPhoneHUD(pData)
 	} else {
+		// Treat as domain/IP
 		output.PulseNode(input)
-		d, _ := intel.GetTargetIntel(input)
-		output.DisplayHUD(d)
+		data, _ := intel.GetTargetIntel(input)
+		output.DisplayHUD(data)
 	}
 }
 
+// Helper for numeric detection
 func isNumeric(s string) bool {
 	clean := strings.TrimPrefix(s, "+")
-	if len(clean) < 7 { return false }
-	for _, c := range clean {
-		if c < '0' || c > '9' { return false }
+	for _, char := range clean {
+		if char < '0' || char > '9' {
+			return false
+		}
 	}
 	return true
 }
