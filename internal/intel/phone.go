@@ -3,7 +3,7 @@ package intel
 import (
 	"fmt"
 	"strings"
-	"github.com/AnonPhoenix420/cyph3r/internal/models"
+	"cyph3r/internal/models" // FIXED: Removed the github URL prefix
 )
 
 func GetPhoneIntel(number string) (models.PhoneData, error) {
@@ -13,12 +13,9 @@ func GetPhoneIntel(number string) (models.PhoneData, error) {
 
 	clean := strings.TrimPrefix(number, "+")
 	
-	// Global OSINT Prefix Map (Expandable)
 	globalMap := map[string][]string{
-		"1330": {"USA", "Ohio", "Akron/Canton", "41.0814", "-81.5190", "Verizon/AT&T Cluster"},
-		"1212": {"USA", "New York", "Manhattan", "40.7128", "-74.0060", "Verizon Cluster"},
-		"44":   {"UK", "United Kingdom", "Global Hub", "55.3781", "-3.4360", "BT/Vodafone Architecture"},
-		"91":   {"India", "India", "Global Hub", "20.5937", "78.9629", "Jio/Airtel Architecture"},
+		"1330": {"USA", "Ohio", "Akron/Canton", "41.0814", "-81.5190", "Verizon/AT&T"},
+		"44":   {"UK", "United Kingdom", "London Hub", "51.5074", "-0.1278", "BT/Vodafone"},
 	}
 
 	for prefix, info := range globalMap {
@@ -30,9 +27,8 @@ func GetPhoneIntel(number string) (models.PhoneData, error) {
 	}
 
 	if data.Country == "" {
-		data.Country, data.State, data.Location, data.Carrier = "International Node", "Scanning...", "Triangulating...", "Global Routing"
+		data.Country = "International"
 	}
 
-	data.Type = "Mobile / VoIP High-Priority"
 	return data, nil
 }
