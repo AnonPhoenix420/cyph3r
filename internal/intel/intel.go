@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
-	"github.com/AnonPhoenix420/cyph3r/internal/probes" 
+	"github.com/AnonPhoenix420/cyph3r/internal/probes"
 )
 
 func GetTargetIntel(input string) (models.IntelData, error) {
@@ -15,33 +15,32 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 	data.TargetName = input
 	data.NameServers = make(map[string][]string)
 
-	// 1. RESOLVE IPs
+	// 1. IP RESOLUTION
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips {
 		data.TargetIPs = append(data.TargetIPs, ip.String())
 	}
 
-	// 2. DNS INFRASTRUCTURE
+	// 2. DNS & PORTS
 	ns, _ := net.LookupNS(input)
 	for _, n := range ns { data.NameServers["NS"] = append(data.NameServers["NS"], n.Host) }
 	
-	// 3. TRIGGER SCAN (Calling from internal/probes)
+	// Call the scanner we moved to probes
 	data.NameServers["PORTS"] = probes.ScanPorts(input)
 
-	// 4. GEOLOCATION
+	// 3. FULL GEO-INTEL (Ensuring Zip is captured)
 	if len(data.TargetIPs) > 0 {
 		client := &http.Client{Timeout: 5 * time.Second}
-		resp, err := client.Get("http://ip-api.com/json/" + data.TargetIPs[0] + "?fields=status,country,regionName,city,zip,lat,lon,isp,org")
+		// Added zip to the fields list
+		resp, err := client.Get("http://ip-api.com/json/" + data.TargetIPs[0] + "?fields=status,country,regionName,city,zip,isp,org")
 		if err == nil {
 			defer resp.Body.Close()
 			var t struct {
-				Lat, Lon float64
 				Country, RegionName, City, Zip, Isp, Org string
 			}
 			json.NewDecoder(resp.Body).Decode(&t)
-			data.Lat, data.Lon = fmt.Sprintf("%.6f", t.Lat), fmt.Sprintf("%.6f", t.Lon)
-			data.Country, data.State, data.City, data.Zip, data.ISP, data.Org = t.Country, t.RegionName, t.City, t.Zip, t.Isp, t.Org
-			data.MapLink = fmt.Sprintf("https://www.google.com/maps?q=%s,%s", data.Lat, data.Lon)
+			data.Country, data.State, data.City, data.Zip = t.Country, t.RegionName, t.City, t.Zip
+			data.ISP, data.Org = t.Isp, t.Org
 		}
 	}
 	return data, nil
