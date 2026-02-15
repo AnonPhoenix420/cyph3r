@@ -14,13 +14,11 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 	data.TargetName = input
 	data.NameServers = make(map[string][]string)
 
-	// Resolve IPv4 and IPv6
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips {
 		data.TargetIPs = append(data.TargetIPs, ip.String())
 	}
 	
-	// Resolve Name Servers
 	nsRecords, _ := net.LookupNS(input)
 	for _, ns := range nsRecords {
 		nsIPs, _ := net.LookupIP(ns.Host)
