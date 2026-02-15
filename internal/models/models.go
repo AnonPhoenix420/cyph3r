@@ -12,7 +12,6 @@ type IntelData struct {
 	Zip         string
 	Lat         float64
 	Lon         float64
-	Number     []string
 	NameServers map[string][]string // Changed to []string
 }
 
