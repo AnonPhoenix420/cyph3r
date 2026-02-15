@@ -8,31 +8,51 @@ import (
 )
 
 func main() {
-	targetFlag := flag.String("target", "", "Domain")
-	phoneFlag := flag.String("phone", "", "Phone")
-	_ = flag.Bool("scan", false, "Legacy")
+	// Define flags
+	targetFlag := flag.String("target", "", "Domain or IP")
+	phoneFlag := flag.String("phone", "", "Phone number")
+	_ = flag.Bool("scan", false, "Legacy scan mode")
 	flag.Parse()
 
-	output.DisplayBanner()
+	// 1. MATCHED TO YOUR LOGO: Calls func Banner() in banner.go
+	output.Banner()
 
-	input := ""
-	if *targetFlag != "" { input = *targetFlag } else if *phoneFlag != "" { input = *phoneFlag } else if flag.NArg() > 0 { input = flag.Arg(0) }
+	// 2. CAPTURE INPUT (Flag OR Naked Argument)
+	var input string
+	if *targetFlag != "" {
+		input = *targetFlag
+	} else if *phoneFlag != "" {
+		input = *phoneFlag
+	} else if flag.NArg() > 0 {
+		input = flag.Arg(0) // Handles: ./cyph3r google.com
+	}
 
-	if input == "" { return }
+	// Exit silently if no input
+	if input == "" {
+		return
+	}
 
+	// 3. SMART ROUTING
+	// Treat as phone if it starts with '+' or is a long numeric string
 	if strings.HasPrefix(input, "+") || (len(input) > 7 && isNumeric(input)) {
 		output.PulseNode(input)
-		p, _ := intel.GetPhoneIntel(input)
-		output.DisplayPhoneHUD(p)
+		pData, _ := intel.GetPhoneIntel(input)
+		output.DisplayPhoneHUD(pData)
 	} else {
+		// Treat as domain/IP
 		output.PulseNode(input)
-		d, _ := intel.GetTargetIntel(input)
-		output.DisplayHUD(d)
+		data, _ := intel.GetTargetIntel(input)
+		output.DisplayHUD(data)
 	}
 }
 
+// isNumeric checks if the string is purely digits (ignoring the + prefix)
 func isNumeric(s string) bool {
 	clean := strings.TrimPrefix(s, "+")
-	for _, c := range clean { if c < '0' || c > '9' { return false } }
+	for _, char := range clean {
+		if char < '0' || char > '9' {
+			return false
+		}
+	}
 	return true
 }
