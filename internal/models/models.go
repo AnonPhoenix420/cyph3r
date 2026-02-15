@@ -7,13 +7,13 @@ type IntelData struct {
 	Org         string
 	Country     string
 	RegionName  string
-	State       string // Added
+	State       string
 	City        string
 	Zip         string
-	Lat         string // String format
-	Lon         string // String format
-	MapLink     string
+	Lat         string 
+	Lon         string 
 	NameServers map[string][]string
+	MapLink     string 
 }
 
 type PhoneData struct {
