@@ -2,7 +2,6 @@ package intel
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
@@ -12,39 +11,30 @@ func GetPhoneIntel(number string) (models.PhoneData, error) {
 	data.Number = number
 	data.Valid = true
 
-	cleanNum := strings.TrimPrefix(number, "+")
-	if len(cleanNum) < 4 { return data, nil }
+	clean := strings.TrimPrefix(number, "+")
+	if strings.HasPrefix(clean, "1") {
+		data.Country = "United States"
+		ac := clean[1:4]
 
-	if strings.HasPrefix(cleanNum, "1") {
-		data.Country = "United States / Canada"
-		ac := cleanNum[1:4]
-
-		// Tactical Area Code Intelligence Map
-		areaMap := map[string]string{
-			"201": "Jersey City, NJ", "202": "Washington, D.C.", "212": "Manhattan, NY",
-			"213": "Los Angeles, CA", "305": "Miami, FL", "312": "Chicago, IL",
-			"415": "San Francisco, CA", "512": "Austin, TX", "602": "Phoenix, AZ",
-			"617": "Boston, MA", "702": "Las Vegas, NV", "216": "Cleveland, OH",
-			"404": "Atlanta, GA", "713": "Houston, TX", "215": "Philadelphia, PA",
-			"206": "Seattle, WA", "303": "Denver, CO", "615": "Nashville, TN",
-			"416": "Toronto, ON", "604": "Vancouver, BC", "514": "Montreal, QC",
+		// Precision State & Provider Mapping
+		areaMap := map[string][]string{
+			"415": {"California", "San Francisco", "AT&T / Verizon Cluster"},
+			"212": {"New York", "Manhattan", "Verizon / T-Mobile Cluster"},
+			"305": {"Florida", "Miami", "AT&T Mobility"},
+			"702": {"Nevada", "Las Vegas", "T-Mobile USA"},
 		}
 
-		if loc, found := areaMap[ac]; found {
-			data.Location = loc
-			// Generate PINPOINT Map Link (No Key Required)
-			data.MapLink = fmt.Sprintf("https://www.google.com/maps/search/%s", url.QueryEscape(loc))
+		if val, found := areaMap[ac]; found {
+			data.State = val[0]
+			data.Location = val[1]
+			data.Carrier = val[2]
+			data.MapLink = fmt.Sprintf("https://www.google.com/maps/search/%s+%s", val[1], val[0])
 		} else {
-			data.Location = "North America (NPA: " + ac + ")"
-			data.MapLink = "Regional data only"
+			data.State = "Unknown"
+			data.Location = "North American Region " + ac
+			data.Carrier = "Tier-1 Network Provider"
 		}
-		data.Carrier = "Tier-1 Carrier Architecture"
-	} else {
-		data.Country = "International"
-		data.Location = "Global Distribution"
-		data.Carrier = "International Routing Hub"
 	}
-
 	data.Type = "Mobile / VoIP High-Priority"
 	return data, nil
 }
