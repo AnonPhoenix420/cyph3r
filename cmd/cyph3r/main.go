@@ -10,35 +10,48 @@ import (
 )
 
 func main() {
-	// 1. Setup target flag
+	// REGISTER FLAGS (This fixes your "not defined" error)
 	targetPtr := flag.String("target", "", "Target domain or IP address")
+	phonePtr := flag.String("phone", "", "International phone number")
+	scanPtr := flag.Bool("scan", false, "Enable tactical port scan")
 	flag.Parse()
 
-	// 2. Clear UI and render banner
 	output.Banner()
 
-	// 3. Validate input
-	if *targetPtr == "" {
-		output.Error("No target specified. Use -target <domain/ip>")
-		os.Exit(1)
+	// 1. Check for Phone Input
+	if *phonePtr != "" {
+		output.PulseNode(*phonePtr)
+		pData, err := intel.GetPhoneIntel(*phonePtr)
+		if err != nil {
+			output.Error("Phone lookup failed.")
+			os.Exit(1)
+		}
+		output.DisplayPhoneHUD(pData)
+		os.Exit(0)
 	}
 
-	// 4. Start Pulse (This is the function you were missing)
-	output.PulseNode(*targetPtr)
+	// 2. Check for Target Input
+	if *targetPtr != "" {
+		output.PulseNode(*targetPtr)
+		data, err := intel.GetTargetIntel(*targetPtr)
+		if err != nil {
+			output.Error("Target resolution failed.")
+			os.Exit(1)
+		}
 
-	// 5. Fetch Remote Intel (No local data collected)
-	data, err := intel.GetTargetIntel(*targetPtr)
-	if err != nil {
-		output.Error("Failed to resolve target intelligence.")
-		os.Exit(1)
+		output.DisplayHUD(data)
+
+		// Run scan only if --scan flag is present
+		if *scanPtr {
+			probes.RunFullScan(*targetPtr)
+		}
+		
+		output.Success("Operation Complete.")
+		os.Exit(0)
 	}
 
-	// 6. Display Remote Target HUD
-	output.DisplayHUD(data)
-
-	// 7. Execute Tactical Port Scan
-	probes.RunFullScan(*targetPtr)
-
-	// 8. Exit
-	output.Success("Operation Complete.")
+	// 3. Fallback if no flags
+	output.Error("Missing input. Use --target <host> or --phone <number>")
+	flag.Usage()
+	os.Exit(1)
 }
