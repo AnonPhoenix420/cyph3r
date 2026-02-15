@@ -5,36 +5,38 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-func PulseNode(target string) {
-	fmt.Printf("\n%s[!] Identifying Node: %s%s%s\n", White, NeonPink, target, Reset)
-}
-
 func DisplayHUD(data models.IntelData) {
 	fmt.Printf("\n%s--- [ REMOTE_TARGET_INTELLIGENCE_HUD ] ---\n", NeonPink)
-	fmt.Printf("%s[*] Node:      %s%s\n", White, NeonBlue, data.TargetName)
+	fmt.Printf("%s[*] Target Node:   %s%s\n", White, NeonBlue, data.TargetName)
 	
-	for i, ip := range data.TargetIPs {
-		fmt.Printf("%s[*] IP [%d]:    %s%s\n", White, i, NeonGreen, ip)
+	// IP Stack
+	for _, ip := range data.TargetIPs {
+		fmt.Printf("%s[*] Associated IP: %s%s\n", White, NeonGreen, ip)
 	}
 
-	fmt.Printf("%s[*] Provider:   %s%s (%s)\n", White, NeonYellow, data.ISP, data.Org)
-	fmt.Printf("%s[*] Location:   %s%s, %s, %s\n", White, NeonGreen, data.City, data.State, data.Country)
-	
+	fmt.Printf("\n%s[ GEOGRAPHIC_DATA ]\n", NeonPink)
+	// Restored the Zip and full location string
+	fmt.Printf("%s[*] Location:      %s%s, %s, %s %s\n", White, NeonGreen, data.City, data.State, data.Country, data.Zip)
+	fmt.Printf("%s[*] ISP/Org:       %s%s\n", White, NeonYellow, data.ISP)
+
+	fmt.Printf("\n%s[ AUTHORITATIVE_NAME_SERVERS ]\n", NeonPink)
 	if len(data.NameServers["NS"]) > 0 {
-		fmt.Printf("%s[*] NS Nodes:   %s%v\n", White, NeonBlue, data.NameServers["NS"])
-	}
-	if len(data.NameServers["MX"]) > 0 {
-		fmt.Printf("%s[*] MX Nodes:   %s%v\n", White, NeonBlue, data.NameServers["MX"])
+		for _, ns := range data.NameServers["NS"] {
+			fmt.Printf("%s[-] %s\n", White, ns)
+			// The tactical sub-bullet from your original version
+			fmt.Printf("    %s↳ %s[ACTIVE_NODE]\n", NeonBlue, White)
+		}
 	}
 
-	fmt.Printf("%s[*] Map Link:   %s%s\n", White, NeonBlue, data.MapLink)
-	fmt.Printf("%s------------------------------------------%s\n", NeonPink, Reset)
-}
+	// Restored the Tactical Scan Log Vibe
+	if ports := data.NameServers["PORTS"]; len(ports) > 0 {
+		fmt.Printf("\n%s[*] INFO: Initializing Tactical Scan: %s%s\n", White, NeonPink, data.TargetName)
+		for _, p := range ports {
+			// Re-added the [ACK/SYN] tag for that raw network feel
+			fmt.Printf("%s[+] PORT %s: %sOPEN [ACK/SYN]\n", NeonGreen, p, White)
+		}
+		fmt.Printf("%s[*] INFO: Tactical scan complete.\n", White)
+	}
 
-func DisplayPhoneHUD(p models.PhoneData) {
-	fmt.Printf("\n%s--- [ 🛰️ GLOBAL_SATELLITE_HUD ] ---\n", NeonPink)
-	fmt.Printf("%s[*] Target:     %s%s\n", White, NeonBlue, p.Number)
-	fmt.Printf("%s[*] Carrier:    %s%s\n", White, NeonYellow, p.Carrier)
-	fmt.Printf("%s[*] Vector:     %s%s\n", White, NeonBlue, p.MapLink)
-	fmt.Printf("%s------------------------------------%s\n", NeonPink, Reset)
+	fmt.Printf("%s[+] SUCCESS: Operation Complete.\n%s", NeonGreen, Reset)
 }
