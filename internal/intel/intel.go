@@ -14,30 +14,26 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 	data.TargetName = input
 	data.NameServers = make(map[string][]string)
 
-	// 1. PRIMARY TARGET RESOLUTION
+	// Resolve Target IPs
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips {
 		data.TargetIPs = append(data.TargetIPs, ip.String())
 	}
 
-	// 2. RECURSIVE NS RESOLUTION
+	// Recursive NS Resolution
 	ns, _ := net.LookupNS(input)
 	for _, n := range ns {
-		// Store the hostname
 		data.NameServers["NS"] = append(data.NameServers["NS"], n.Host)
-		
-		// RESOLVE IPs FOR THE NAME SERVER ITSELF
 		nsIPs, _ := net.LookupIP(n.Host)
 		for _, nip := range nsIPs {
-			// Store these with a special prefix so the HUD can find them
 			key := "IP_" + n.Host
 			data.NameServers[key] = append(data.NameServers[key], nip.String())
 		}
 	}
 	
-	// 3. PORTS & GEO
 	data.NameServers["PORTS"] = probes.ScanPorts(input)
 
+	// Geo-Intel
 	if len(data.TargetIPs) > 0 {
 		client := &http.Client{Timeout: 5 * time.Second}
 		resp, err := client.Get("http://ip-api.com/json/" + data.TargetIPs[0] + "?fields=status,country,regionName,city,zip,isp,org")
