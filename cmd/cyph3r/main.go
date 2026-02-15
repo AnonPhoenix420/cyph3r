@@ -8,26 +8,17 @@ import (
 )
 
 func main() {
-	targetFlag := flag.String("target", "", "Domain or IP")
-	phoneFlag := flag.String("phone", "", "Phone number")
-	_ = flag.Bool("scan", false, "Legacy scan mode")
+	targetFlag := flag.String("target", "", "Domain")
+	phoneFlag := flag.String("phone", "", "Phone")
+	_ = flag.Bool("scan", false, "Legacy")
 	flag.Parse()
 
-	// Call your banner from internal/output/banner.go
 	output.DisplayBanner()
 
-	var input string
-	if *targetFlag != "" {
-		input = *targetFlag
-	} else if *phoneFlag != "" {
-		input = *phoneFlag
-	} else if flag.NArg() > 0 {
-		input = flag.Arg(0)
-	}
+	input := ""
+	if *targetFlag != "" { input = *targetFlag } else if *phoneFlag != "" { input = *phoneFlag } else if flag.NArg() > 0 { input = flag.Arg(0) }
 
-	if input == "" {
-		return
-	}
+	if input == "" { return }
 
 	if strings.HasPrefix(input, "+") || (len(input) > 7 && isNumeric(input)) {
 		output.PulseNode(input)
@@ -42,8 +33,6 @@ func main() {
 
 func isNumeric(s string) bool {
 	clean := strings.TrimPrefix(s, "+")
-	for _, c := range clean {
-		if c < '0' || c > '9' { return false }
-	}
+	for _, c := range clean { if c < '0' || c > '9' { return false } }
 	return true
 }
