@@ -5,6 +5,22 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
+// Standard HUD Colors
+const (
+	Reset      = "\033[0m"
+	White      = "\033[97m"
+	NeonPink   = "\033[38;5;198m"
+	NeonBlue   = "\033[38;5;81m"
+	NeonGreen  = "\033[38;5;82m"
+	NeonYellow = "\033[38;5;226m"
+)
+
+// PulseNode - This was the missing function causing your build error
+func PulseNode(target string) {
+	fmt.Printf("\n%s[!] Identifying Node: %s%s%s\n", White, NeonPink, target, Reset)
+}
+
+// DisplayHUD renders the full network intelligence suite
 func DisplayHUD(data models.IntelData) {
 	fmt.Printf("\n%s--- [ REMOTE_TARGET_INTELLIGENCE_HUD ] ---%s\n", NeonPink, Reset)
 	fmt.Printf("%s[*] Target Node:   %s%s\n", White, NeonBlue, data.TargetName)
@@ -25,6 +41,7 @@ func DisplayHUD(data models.IntelData) {
 	}
 }
 
+// DisplayPhoneHUD renders the high-precision phone metadata
 func DisplayPhoneHUD(p models.PhoneData) {
 	fmt.Printf("\n%s--- [ PHONE_INTELLIGENCE_REPORT ] ---%s\n", NeonPink, Reset)
 	fmt.Printf("%s[*] Number:       %s%s\n", White, NeonBlue, p.Number)
