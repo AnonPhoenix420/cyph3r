@@ -17,7 +17,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 	data.TargetName = input
 	data.NameServers = make(map[string][]string)
 
-	// Standard lookup without context
+	// Standard DNS Lookup (Context-Free)
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips { 
 		data.TargetIPs = append(data.TargetIPs, ip.String()) 
@@ -49,7 +49,6 @@ func discoverSubdomains(domain string) []string {
 		wg.Add(1)
 		go func(sub string) {
 			defer wg.Done()
-			// Simplified: net.LookupHost doesn't require a context argument
 			if _, err := net.LookupHost(sub + "." + domain); err == nil {
 				mu.Lock()
 				found = append(found, sub+"."+domain)
@@ -65,8 +64,7 @@ func fetchWhois(domain string) string {
 	server := "whois.iana.org"
 	if strings.HasSuffix(domain, ".ir") { server = "whois.nic.ir" }
 	
-	// We still use DialTimeout here so the tool doesn't hang forever 
-	// if a WHOIS server is down.
+	// Uses DialTimeout for safety without needing the context package
 	conn, err := net.DialTimeout("tcp", server+":43", 5*time.Second)
 	if err != nil { return "DATA_RESTRICTED" }
 	defer conn.Close()
@@ -77,9 +75,7 @@ func fetchWhois(domain string) string {
 		line := strings.ToLower(scanner.Text())
 		if strings.Contains(line, "registrar:") || strings.Contains(line, "source:") {
 			parts := strings.Split(line, ":")
-			if len(parts) > 1 { 
-				return strings.TrimSpace(parts[1]) 
-			}
+			if len(parts) > 1 { return strings.TrimSpace(parts[1]) }
 		}
 	}
 	return "UNKNOWN_ORG"
