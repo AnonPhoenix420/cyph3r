@@ -17,22 +17,13 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 	data.TargetName = input
 	data.NameServers = make(map[string][]string)
 
-	// Standard DNS Lookup (Context-Free)
 	ips, _ := net.LookupIP(input)
-	for _, ip := range ips { 
-		data.TargetIPs = append(data.TargetIPs, ip.String()) 
-	}
+	for _, ip := range ips { data.TargetIPs = append(data.TargetIPs, ip.String()) }
 
 	var wg sync.WaitGroup
 	wg.Add(2)
-	go func() { 
-		defer wg.Done()
-		data.Subdomains = discoverSubdomains(input) 
-	}()
-	go func() { 
-		defer wg.Done()
-		data.Org = fetchWhois(input) 
-	}()
+	go func() { defer wg.Done(); data.Subdomains = discoverSubdomains(input) }()
+	go func() { defer wg.Done(); data.Org = fetchWhois(input) }()
 	wg.Wait()
 
 	data.NameServers["PORTS"] = probes.ScanPorts(input)
@@ -44,15 +35,12 @@ func discoverSubdomains(domain string) []string {
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	subs := []string{"www", "mail", "vpn", "dev", "api", "ssh", "ftp"}
-
 	for _, s := range subs {
 		wg.Add(1)
 		go func(sub string) {
 			defer wg.Done()
 			if _, err := net.LookupHost(sub + "." + domain); err == nil {
-				mu.Lock()
-				found = append(found, sub+"."+domain)
-				mu.Unlock()
+				mu.Lock(); found = append(found, sub+"."+domain); mu.Unlock()
 			}
 		}(s)
 	}
@@ -63,12 +51,9 @@ func discoverSubdomains(domain string) []string {
 func fetchWhois(domain string) string {
 	server := "whois.iana.org"
 	if strings.HasSuffix(domain, ".ir") { server = "whois.nic.ir" }
-	
-	// Uses DialTimeout for safety without needing the context package
 	conn, err := net.DialTimeout("tcp", server+":43", 5*time.Second)
 	if err != nil { return "DATA_RESTRICTED" }
 	defer conn.Close()
-
 	fmt.Fprintf(conn, domain+"\r\n")
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
