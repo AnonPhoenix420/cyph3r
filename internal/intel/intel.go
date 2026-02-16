@@ -59,26 +59,25 @@ func discoverSubdomains(domain string) []string {
 	return found
 }
 
+// Internalized WHOIS logic - No external libraries needed
 func fetchWhois(domain string) string {
-	// Querying the IANA root server directly
 	server := "whois.iana.org"
 	if strings.HasSuffix(domain, ".ir") { server = "whois.nic.ir" }
 	
 	conn, err := net.DialTimeout("tcp", server+":43", 5*time.Second)
-	if err != nil { return "CONNECTION_FAILED" }
+	if err != nil { return "CONNECTION_TIMEOUT" }
 	defer conn.Close()
 
 	fmt.Fprintf(conn, domain+"\r\n")
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
 		line := strings.ToLower(scanner.Text())
-		// Parsing common WHOIS keys
-		if strings.Contains(line, "registrar:") || strings.Contains(line, "source:") || strings.Contains(line, "organization:") {
+		if strings.Contains(line, "registrar:") || strings.Contains(line, "organization:") {
 			parts := strings.Split(line, ":")
 			if len(parts) > 1 { 
 				return strings.TrimSpace(parts[1]) 
 			}
 		}
 	}
-	return "DATA_RESTRICTED"
+	return "DATA_HIDDEN"
 }
