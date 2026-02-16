@@ -19,8 +19,8 @@ type PhoneData struct {
 	Country        string
 	Risk           string
 	MapLink        string
-	// Social OSINT Fields
 	SocialPresence []string
 	BreachAlert    bool
 	HandleHint     string
+	AliasMatches   []string // Platforms where the handle exists
 }
