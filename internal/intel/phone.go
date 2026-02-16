@@ -1,46 +1,55 @@
 package intel
 
 import (
+	"encoding/json"
 	"fmt"
-	"strings"
+	"net/http"
+	"time"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
 func GetPhoneIntel(number string) (models.PhoneData, error) {
 	var d models.PhoneData
 	d.Number = number
-	d.Valid = true
+
+	// Using a multi-vector OSINT API for phone metadata
+	client := &http.Client{Timeout: 5 * time.Second}
+	url := fmt.Sprintf("http://apilayer.net/api/validate?access_key=YOUR_KEY_OPTIONAL&number=%s", number)
 	
-	// Strip symbols for prefix checking
-	clean := strings.TrimPrefix(number, "+")
+	resp, err := client.Get(url)
+	if err != nil {
+		return d, err
+	}
+	defer resp.Body.Close()
+
+	var res struct {
+		Valid       bool   `json:"valid"`
+		Carrier     string `json:"carrier"`
+		Location    string `json:"location"`
+		Type        string `json:"line_type"`
+		CountryName string `json:"country_name"`
+		Prefix      string `json:"country_prefix"`
+	}
+	json.NewDecoder(resp.Body).Decode(&res)
+
+	// Mapping Intel to the Model
+	d.Valid = res.Valid
+	d.Carrier = res.Carrier
+	d.Location = res.Location
+	d.Country = res.CountryName
+	d.Type = res.Type
 	
-	// Tactical Prefix Mapping
-	// In a production environment, you'd call a dedicated API here
-	globalMap := map[string][]string{
-		"1":    {"USA/Canada", "North America", "Global", "37.0902", "-95.7129", "Multi-Carrier"},
-		"44":   {"UK", "United Kingdom", "London Hub", "51.5074", "-0.1278", "BT/Vodafone"},
-		"1330": {"USA", "Ohio", "Akron/Canton", "41.0814", "-81.5190", "Verizon/AT&T"},
+	// Passive Risk Assessment: VOIP numbers are flagged as high risk
+	if d.Type == "special_services" || d.Type == "toll_free" {
+		d.Risk = "HIGH (Potential Burner)"
+	} else {
+		d.Risk = "LOW (Physical Asset)"
 	}
 
-	for pfx, info := range globalMap {
-		if strings.HasPrefix(clean, pfx) {
-			d.Country = info[0]
-			d.State = info[1]
-			d.Location = info[2]
-			d.Lat = info[3]
-			d.Lon = info[4]
-			d.Carrier = info[5]
-			// Real coordinate link
-			d.MapLink = fmt.Sprintf("https://www.google.com/maps?q=%s,%s", d.Lat, d.Lon)
-			break
-		}
-	}
-
-	// Default if no prefix matched
-	if d.Country == "" {
-		d.Country = "Unknown"
-		d.Carrier = "Unknown/VOIP"
-	}
+	// Generating the Tactical Map Vector
+	// In a real scenario, we'd pull Lat/Lon from a HLR lookup, 
+	// here we simulate the vector link
+	d.MapLink = fmt.Sprintf("https://www.google.com/maps/search/%s+%s", d.Location, d.Country)
 
 	return d, nil
 }
