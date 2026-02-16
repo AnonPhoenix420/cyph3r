@@ -6,10 +6,12 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
+// PulseNode initializes the scan visualizer
 func PulseNode(target string) {
 	fmt.Printf("\n%s[!] Identifying Node: %s%s%s\n", White, NeonPink, target, Reset)
 }
 
+// DisplayHUD renders the Network/Domain intelligence report
 func DisplayHUD(data models.IntelData) {
 	fmt.Printf("\n%s--- [ REMOTE_TARGET_INTELLIGENCE_HUD ] ---\n", NeonPink)
 	fmt.Printf("%s[*] Target Node:   %s%s\n", White, NeonBlue, data.TargetName)
@@ -42,16 +44,35 @@ func DisplayHUD(data models.IntelData) {
 	fmt.Printf("%s[+] SUCCESS: Operation Complete.\n%s", NeonGreen, Reset)
 }
 
+// DisplayPhoneHUD renders the Deep OSINT Satellite report
 func DisplayPhoneHUD(p models.PhoneData) {
+	// Risk Logic: NeonPink for Breaches or High Risk
 	riskColor := NeonGreen
-	if strings.Contains(p.Risk, "HIGH") { riskColor = NeonPink }
+	if p.BreachAlert || strings.Contains(p.Risk, "HIGH") || strings.Contains(p.Risk, "CRITICAL") {
+		riskColor = NeonPink
+	}
 
 	fmt.Printf("\n%s--- [ 🛰️ GLOBAL_SATELLITE_HUD ] ---\n", NeonPink)
-	fmt.Printf("%s[*] Target:     %s%s\n", White, NeonBlue, p.Number)
-	fmt.Printf("%s[*] Status:     %s%t\n", White, NeonGreen, p.Valid)
-	fmt.Printf("%s[*] Type:       %s%s\n", White, NeonYellow, p.Type)
-	fmt.Printf("%s[*] Risk Level: %s%s\n", White, riskColor, p.Risk)
-	fmt.Printf("%s[*] Location:   %s%s\n", White, NeonGreen, p.Country)
-	fmt.Printf("%s[*] Map Vector: %s%s\n", White, NeonBlue, p.MapLink)
+	fmt.Printf("%s[*] Target:      %s%s\n", White, NeonBlue, p.Number)
+	fmt.Printf("%s[*] Risk Level:  %s%s\n", White, riskColor, p.Risk)
+
+	// Deep Social OSINT Section
+	if p.BreachAlert {
+		fmt.Printf("%s[!] BREACH:     %sMATCH FOUND IN PUBLIC LEAKS\n", NeonPink, White)
+		if p.HandleHint != "" {
+			fmt.Printf("%s[*] Alias Hint:  %s%s\n", White, NeonYellow, p.HandleHint)
+		}
+	}
+
+	if len(p.SocialPresence) > 0 {
+		socials := strings.Join(p.SocialPresence, ", ")
+		fmt.Printf("%s[*] Social:      %s%s\n", White, NeonGreen, socials)
+	}
+
+	fmt.Printf("%s[*] Status:      %s%t\n", White, NeonGreen, p.Valid)
+	fmt.Printf("%s[*] Type:        %s%s\n", White, NeonYellow, p.Type)
+	fmt.Printf("%s[*] Carrier:     %s%s\n", White, NeonYellow, p.Carrier)
+	fmt.Printf("%s[*] Location:    %s%s\n", White, NeonGreen, p.Country)
+	fmt.Printf("%s[*] Map Vector:  %s%s\n", White, NeonBlue, p.MapLink)
 	fmt.Printf("%s------------------------------------%s\n", NeonPink, Reset)
 }
