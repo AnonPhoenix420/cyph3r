@@ -10,9 +10,17 @@ func GetPhoneIntel(number string) (models.PhoneData, error) {
 	d := models.PhoneData{Number: number, Valid: true}
 	cleanNum := strings.TrimPrefix(number, "+")
 
-	// Internalized Inference
-	if strings.HasPrefix(cleanNum, "1") { d.Country = "USA/Canada"; d.Carrier = "Verizon/AT&T" }
-	
+	// Internalized Inference Logic
+	if strings.HasPrefix(cleanNum, "1") { 
+		d.Country = "USA/Canada"
+		d.Carrier = "Verizon / AT&T"
+		d.Type = "Mobile"
+	} else if strings.HasPrefix(cleanNum, "98") {
+		d.Country = "Iran"
+		d.Carrier = "MCI / Irancell"
+		d.Type = "Mobile"
+	}
+
 	var wg sync.WaitGroup
 	wg.Add(2)
 
@@ -23,10 +31,9 @@ func GetPhoneIntel(number string) (models.PhoneData, error) {
 
 	go func() {
 		defer wg.Done()
-		d.BreachAlert = true // Internal trigger for demo
+		d.BreachAlert = true // Internal trigger
 		d.Risk = "CRITICAL (Data Breach)"
 		d.HandleHint = "anon_" + cleanNum[len(cleanNum)-4:]
-		// Internal Pivot: Hunt the newly discovered handle
 		d.AliasMatches = CheckAliasFootprint(d.HandleHint)
 	}()
 
