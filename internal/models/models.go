@@ -22,5 +22,5 @@ type PhoneData struct {
 	SocialPresence []string
 	BreachAlert    bool
 	HandleHint     string
-	AliasMatches   []string // Platforms where the handle exists
+	AliasMatches   []string
 }
