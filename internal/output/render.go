@@ -6,14 +6,20 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
+// Global Package Constants (Visible to status.go)
 const (
-	NeonPink = "\033[38;5;198m"
-	NeonBlue = "\033[38;5;39m"
-	NeonGreen = "\033[38;5;82m"
+	NeonPink   = "\033[38;5;198m"
+	NeonBlue   = "\033[38;5;39m"
+	NeonGreen  = "\033[38;5;82m"
 	NeonYellow = "\033[38;5;226m"
-	White = "\033[97m"
-	Reset = "\033[0m"
+	Red        = "\033[31m"
+	White      = "\033[97m"
+	Reset      = "\033[0m"
 )
+
+func PulseNode(target string) {
+	fmt.Printf("\n%s[!] Identifying Node: %s%s%s\n", White, NeonPink, target, Reset)
+}
 
 func DisplayHUD(data models.IntelData) {
 	fmt.Printf("\n%s--- [ REMOTE_TARGET_INTELLIGENCE_HUD ] ---\n", NeonPink)
