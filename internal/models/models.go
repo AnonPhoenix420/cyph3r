@@ -3,10 +3,10 @@ package models
 type IntelData struct {
 	TargetName  string
 	TargetIPs   []string
-	City, State, Country, Zip, ISP, Org string
-	NameServers map[string][]string
+	City, State, Country, Org string
+	NameServers map[string][]string // NS Name -> [IPs]
 	Subdomains  []string
-	Risk string
+	ScanResults []string
 	MapLink string
 }
 
