@@ -10,7 +10,7 @@ func GetPhoneIntel(number string) (models.PhoneData, error) {
 	d := models.PhoneData{Number: number, Valid: true}
 	clean := strings.TrimPrefix(number, "+")
 
-	// Internalized Inference Logic
+	// Internal E.164 Inference Logic
 	if strings.HasPrefix(clean, "1") {
 		d.Country, d.Carrier, d.Type = "USA/Canada", "Verizon / AT&T", "Mobile"
 	} else if strings.HasPrefix(clean, "98") {
@@ -32,6 +32,7 @@ func GetPhoneIntel(number string) (models.PhoneData, error) {
 		d.BreachAlert = true 
 		d.Risk = "CRITICAL (Data Breach)"
 		d.HandleHint = "anon_" + clean[len(clean)-4:]
+		// Internal Pivot: Alias Hunting
 		d.AliasMatches = CheckAliasFootprint(d.HandleHint)
 	}()
 
