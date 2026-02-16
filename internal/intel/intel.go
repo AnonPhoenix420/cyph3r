@@ -59,25 +59,35 @@ func discoverSubdomains(domain string) []string {
 	return found
 }
 
-// Internalized WHOIS logic - No external libraries needed
 func fetchWhois(domain string) string {
 	server := "whois.iana.org"
 	if strings.HasSuffix(domain, ".ir") { server = "whois.nic.ir" }
 	
 	conn, err := net.DialTimeout("tcp", server+":43", 5*time.Second)
-	if err != nil { return "CONNECTION_TIMEOUT" }
+	if err != nil { return "OFFLINE" }
 	defer conn.Close()
 
 	fmt.Fprintf(conn, domain+"\r\n")
 	scanner := bufio.NewScanner(conn)
+	
+	// Tactical keyword list for international Org detection
+	keywords := []string{"org:", "organization:", "registrant:", "descr:", "owner:", "registrar:"}
+	
 	for scanner.Scan() {
 		line := strings.ToLower(scanner.Text())
-		if strings.Contains(line, "registrar:") || strings.Contains(line, "organization:") {
-			parts := strings.Split(line, ":")
-			if len(parts) > 1 { 
-				return strings.TrimSpace(parts[1]) 
+		for _, key := range keywords {
+			if strings.Contains(line, key) {
+				parts := strings.Split(line, ":")
+				if len(parts) > 1 {
+					val := strings.TrimSpace(parts[1])
+					// Skip privacy walls
+					if val == "" || strings.Contains(val, "redacted") || strings.Contains(val, "privacy") || strings.Contains(val, "not disclosed") {
+						continue
+					}
+					return strings.ToUpper(val)
+				}
 			}
 		}
 	}
-	return "DATA_HIDDEN"
+	return "SECURE_INFRASTRUCTURE"
 }
