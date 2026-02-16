@@ -7,6 +7,10 @@ type IntelData struct {
 	City, State, Country, Zip, ISP, Org string
 	NameServers map[string][]string
 	Subdomains  []string
+	Lon string
+	Lat string
+	Risk string
+	MapLink string
 }
 
 // PhoneData handles Cellular/Satellite intelligence
@@ -14,13 +18,12 @@ type PhoneData struct {
 	Number   string
 	Valid    bool
 	Carrier  string
-	Type     string // Mobile, Landline, VOIP
+	Type     string
 	Location string
 	State    string
 	Country  string
 	Lat      string
 	Lon      string
-	Timezone string
-	Risk     string // High/Low based on VOIP detection
+	Risk     string
 	MapLink  string
 }
