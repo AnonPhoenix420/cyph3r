@@ -6,15 +6,6 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-const (
-	Reset      = "\033[0m"
-	White      = "\033[97m"
-	NeonGreen  = "\033[38;5;82m"
-	NeonPink   = "\033[38;5;198m"
-	NeonBlue   = "\033[38;5;45m"
-	NeonYellow = "\033[38;5;226m"
-)
-
 func PulseNode(target string) {
 	fmt.Printf("\n%s[!] Identifying Node: %s%s%s\n", White, NeonPink, target, Reset)
 }
