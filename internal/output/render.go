@@ -44,7 +44,7 @@ func DisplayHUD(data models.IntelData) {
 	fmt.Printf("%s[+] SUCCESS: Operation Complete.\n%s", NeonGreen, Reset)
 }
 
-// DisplayPhoneHUD renders the Deep OSINT Satellite report
+// DisplayPhoneHUD renders the Deep OSINT Satellite report with Alias Hunting
 func DisplayPhoneHUD(p models.PhoneData) {
 	// Risk Logic: NeonPink for Breaches or High Risk
 	riskColor := NeonGreen
@@ -56,12 +56,18 @@ func DisplayPhoneHUD(p models.PhoneData) {
 	fmt.Printf("%s[*] Target:      %s%s\n", White, NeonBlue, p.Number)
 	fmt.Printf("%s[*] Risk Level:  %s%s\n", White, riskColor, p.Risk)
 
-	// Deep Social OSINT Section
+	// Deep Social OSINT & Breach Logic
 	if p.BreachAlert {
 		fmt.Printf("%s[!] BREACH:     %sMATCH FOUND IN PUBLIC LEAKS\n", NeonPink, White)
 		if p.HandleHint != "" {
 			fmt.Printf("%s[*] Alias Hint:  %s%s\n", White, NeonYellow, p.HandleHint)
 		}
+	}
+
+	// NEW: Display discovered Alias Footprint (GitHub, Reddit, etc.)
+	if len(p.AliasMatches) > 0 {
+		footprint := strings.Join(p.AliasMatches, ", ")
+		fmt.Printf("%s[*] Footprint:   %s%s\n", White, NeonBlue, footprint)
 	}
 
 	if len(p.SocialPresence) > 0 {
