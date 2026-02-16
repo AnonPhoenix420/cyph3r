@@ -6,6 +6,15 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
+const (
+	Reset      = "\033[0m"
+	White      = "\033[97m"
+	NeonGreen  = "\033[38;5;82m"
+	NeonPink   = "\033[38;5;198m"
+	NeonBlue   = "\033[38;5;45m"
+	NeonYellow = "\033[38;5;226m"
+)
+
 func PulseNode(target string) {
 	fmt.Printf("\n%s[!] Identifying Node: %s%s%s\n", White, NeonPink, target, Reset)
 }
@@ -18,38 +27,39 @@ func DisplayHUD(data models.IntelData) {
 	}
 
 	fmt.Printf("\n%s[ GEOGRAPHIC_DATA ]\n", NeonPink)
-	fmt.Printf("%s[*] Location:      %s%s, %s, %s %s\n", White, NeonGreen, data.City, data.State, data.Country, data.Zip)
-	fmt.Printf("%s[*] ISP/Org:       %s%s\n", White, NeonYellow, data.ISP)
+	fmt.Printf("%s[*] Location:      %s%s, %s, %s\n", White, NeonGreen, data.City, data.State, data.Country)
+	fmt.Printf("%s[*] ISP/Org:       %s%s\n", White, NeonYellow, data.Org)
+
+	if len(data.Subdomains) > 0 {
+		fmt.Printf("\n%s[ IDENTIFIED_SUB_NODES ]\n", NeonPink)
+		for _, s := range data.Subdomains {
+			fmt.Printf("%s[+] Node: %s%s\n", NeonGreen, White, s)
+		}
+	}
 
 	fmt.Printf("\n%s[ AUTHORITATIVE_NAME_SERVERS ]\n", NeonPink)
 	for _, ns := range data.NameServers["NS"] {
 		fmt.Printf("%s[-] %s\n", White, ns)
-		ips := data.NameServers["IP_"+ns]
-		for _, ip := range ips {
+		for _, ip := range data.NameServers["IP_"+ns] {
 			fmt.Printf("    %s↳ [%s]\n", NeonBlue, ip)
 		}
 	}
 
 	if ports := data.NameServers["PORTS"]; len(ports) > 0 {
-		fmt.Printf("\n%s[*] INFO: Initializing Tactical Admin Scan: %s%s\n", White, NeonPink, data.TargetName)
+		fmt.Printf("\n%s[*] Tactical Admin Scan: %s\n", White, data.TargetName)
 		for _, p := range ports {
-			if strings.Contains(p, "[!]") {
-				// Flag vulnerabilities in Yellow/Red style
-				fmt.Printf("%s[!] ALERT: PORT %s: %sVULNERABILITY_THRESHOLD_MET\n", NeonYellow, p, White)
+			if strings.Contains(p, "!") {
+				fmt.Printf("%s[!] ALERT: PORT %s: %sCRITICAL_VERSION_FOUND\n", NeonYellow, p, White)
 			} else {
-				fmt.Printf("%s[+] PORT %s: %sOPEN [ACK/SYN]\n", NeonGreen, p, White)
+				fmt.Printf("%s[+] PORT %s: %sOPEN\n", NeonGreen, p, White)
 			}
 		}
-		fmt.Printf("%s[*] INFO: Admin/Web scan complete.\n", White)
 	}
 	fmt.Printf("%s[+] SUCCESS: Operation Complete.\n%s", NeonGreen, Reset)
 }
 
 func DisplayPhoneHUD(p models.PhoneData) {
 	fmt.Printf("\n%s--- [ 🛰️ GLOBAL_SATELLITE_HUD ] ---\n", NeonPink)
-	fmt.Printf("%s[*] Target:     %s%s\n", White, NeonBlue, p.Number)
-	fmt.Printf("%s[*] Carrier:    %s%s\n", White, NeonYellow, p.Carrier)
-	fmt.Printf("%s[*] Location:   %s%s, %s\n", White, NeonGreen, p.Location, p.Country)
-	fmt.Printf("%s[*] Vector:     %s%s\n", White, NeonBlue, p.MapLink)
-	fmt.Printf("%s------------------------------------%s\n", NeonPink, Reset)
+	fmt.Printf("%s[*] Target:   %s%s\n[*] Carrier:  %s%s\n", White, NeonBlue, p.Number, NeonYellow, p.Carrier)
+	fmt.Printf("%s[*] Vector:   %s%s\n------------------------------------\n", White, NeonBlue, p.MapLink)
 }
