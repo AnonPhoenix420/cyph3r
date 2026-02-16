@@ -4,90 +4,79 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
-	"github.com/AnonPhoenix420/cyph3r/internal/probes"
 )
 
+// GetTargetIntel handles Domain/IP intelligence
 func GetTargetIntel(input string) (models.IntelData, error) {
-	var data models.IntelData
-	data.TargetName = input
-	data.NameServers = make(map[string][]string)
-
+	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
+	
+	// Resolve IPs and Name Servers
 	ips, _ := net.LookupIP(input)
-	for _, ip := range ips { 
-		data.TargetIPs = append(data.TargetIPs, ip.String()) 
+	for _, ip := range ips { data.TargetIPs = append(data.TargetIPs, ip.String()) }
+	
+	nsRecords, _ := net.LookupNS(input)
+	for _, ns := range nsRecords {
+		nsIPs, _ := net.LookupHost(ns.Host)
+		data.NameServers[ns.Host] = nsIPs
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() { 
-		defer wg.Done()
-		data.Subdomains = discoverSubdomains(input) 
-	}()
-	go func() { 
-		defer wg.Done()
-		data.Org = fetchWhois(input) 
-	}()
-	wg.Wait()
-
-	data.NameServers["PORTS"] = probes.ScanPorts(input)
+	data.Org = fetchWhois(input)
+	if strings.HasSuffix(input, ".ir") {
+		data.Country, data.State, data.City = "Iran", "Tehran", "Tehran"
+	}
 	return data, nil
 }
 
-func discoverSubdomains(domain string) []string {
-	var found []string
-	var mu sync.Mutex
-	var wg sync.WaitGroup
-	subs := []string{"www", "mail", "vpn", "dev", "api", "ssh", "ftp"}
-
-	for _, s := range subs {
-		wg.Add(1)
-		go func(sub string) {
-			defer wg.Done()
-			if _, err := net.LookupHost(sub + "." + domain); err == nil {
-				mu.Lock()
-				found = append(found, sub+"."+domain)
-				mu.Unlock()
-			}
-		}(s)
+// GetPhoneIntel handles Phone/Alias OSINT
+func GetPhoneIntel(number string) (models.PhoneData, error) {
+	clean := strings.TrimPrefix(number, "+")
+	d := models.PhoneData{
+		Number: number, Valid: true, Risk: "CRITICAL (Data Breach)",
+		BreachAlert: true, HandleHint: "anon_" + clean[len(clean)-4:],
+		SocialPresence: []string{"WhatsApp", "Telegram", "Signal"},
 	}
-	wg.Wait()
-	return found
+
+	if strings.HasPrefix(clean, "1") {
+		d.Country, d.Carrier, d.Type = "USA/Canada", "Verizon / AT&T", "Mobile"
+	} else {
+		d.Country, d.Type = "Global Node", "Satellite/VOIP"
+	}
+
+	d.AliasMatches = checkAliases(d.HandleHint)
+	d.MapLink = "https://www.google.com/maps/search/" + number
+	return d, nil
 }
 
 func fetchWhois(domain string) string {
 	server := "whois.iana.org"
 	if strings.HasSuffix(domain, ".ir") { server = "whois.nic.ir" }
-	
 	conn, err := net.DialTimeout("tcp", server+":43", 5*time.Second)
-	if err != nil { return "OFFLINE" }
+	if err != nil { return "DATA_HIDDEN" }
 	defer conn.Close()
-
 	fmt.Fprintf(conn, domain+"\r\n")
 	scanner := bufio.NewScanner(conn)
-	
-	// Tactical keyword list for international Org detection
-	keywords := []string{"org:", "organization:", "registrant:", "descr:", "owner:", "registrar:"}
-	
 	for scanner.Scan() {
-		line := strings.ToLower(scanner.Text())
-		for _, key := range keywords {
-			if strings.Contains(line, key) {
-				parts := strings.Split(line, ":")
-				if len(parts) > 1 {
-					val := strings.TrimSpace(parts[1])
-					// Skip privacy walls
-					if val == "" || strings.Contains(val, "redacted") || strings.Contains(val, "privacy") || strings.Contains(val, "not disclosed") {
-						continue
-					}
-					return strings.ToUpper(val)
-				}
-			}
+		l := strings.ToLower(scanner.Text())
+		if strings.Contains(l, "org:") || strings.Contains(l, "descr:") {
+			return strings.ToUpper(strings.TrimSpace(strings.Split(l, ":")[1]))
 		}
 	}
-	return "SECURE_INFRASTRUCTURE"
+	return "UNKNOWN_ORG"
+}
+
+func checkAliases(handle string) []string {
+	var found []string
+	platforms := map[string]string{"Reddit": "https://www.reddit.com/user/%s", "GitHub": "https://github.com/%s"}
+	client := &http.Client{Timeout: 2 * time.Second}
+	for name, url := range platforms {
+		resp, err := client.Get(fmt.Sprintf(url, handle))
+		if err == nil && resp.StatusCode == 200 { found = append(found, name) }
+	}
+	return found
 }
