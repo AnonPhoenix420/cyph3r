@@ -1,33 +1,47 @@
 package intel
 
 import (
-	"fmt"
 	"strings"
+	"sync"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
 func GetPhoneIntel(number string) (models.PhoneData, error) {
-	var d models.PhoneData
-	d.Number = number
-
-	// Tactical Logic: Inference based on E.164 formatting
-	if strings.HasPrefix(number, "+1") {
+	d := models.PhoneData{Number: number, Valid: true}
+	
+	// 1. Prefix Inference
+	cleanNum := strings.TrimPrefix(number, "+")
+	if strings.HasPrefix(cleanNum, "1") {
 		d.Country = "USA/Canada"
-		d.Valid = true
-	} else if strings.HasPrefix(number, "+98") {
+		d.Carrier = "Verizon / AT&T"
+	} else if strings.HasPrefix(cleanNum, "98") {
 		d.Country = "Iran"
-		d.Valid = true
-	}
-
-	// Risk Assessment Logic
-	if !d.Valid {
-		d.Risk = "HIGH (Unallocated/Virtual)"
-		d.Type = "VOIP/Burner"
+		d.Carrier = "MCI / Irancell"
 	} else {
-		d.Risk = "LOW (Physical Asset)"
-		d.Type = "Mobile"
+		d.Country = "Global / Unknown"
 	}
 
-	d.MapLink = "https://www.google.com/maps/search/" + number
+	// 2. Parallel OSINT Probe
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// Vector: Social Presence (Simulated Scraper)
+	go func() {
+		defer wg.Done()
+		// Logic would check public API hints for WhatsApp/Telegram
+		d.SocialPresence = []string{"WhatsApp", "Telegram", "Signal"}
+	}()
+
+	// Vector: Breach Database Cross-Reference
+	go func() {
+		defer wg.Done()
+		// Simulated breach hit for demonstration
+		d.BreachAlert = true 
+		d.Risk = "CRITICAL (Data Breach)"
+		d.HandleHint = "Alias: anon_" + cleanNum[len(cleanNum)-4:]
+	}()
+
+	wg.Wait()
+	d.MapLink = "http://googleusercontent.com/maps.google.com/search?q=" + d.Number
 	return d, nil
 }
