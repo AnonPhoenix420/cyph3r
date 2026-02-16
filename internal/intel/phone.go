@@ -8,17 +8,15 @@ import (
 
 func GetPhoneIntel(number string) (models.PhoneData, error) {
 	d := models.PhoneData{Number: number, Valid: true}
-	cleanNum := strings.TrimPrefix(number, "+")
+	clean := strings.TrimPrefix(number, "+")
 
 	// Internalized Inference Logic
-	if strings.HasPrefix(cleanNum, "1") { 
-		d.Country = "USA/Canada"
-		d.Carrier = "Verizon / AT&T"
-		d.Type = "Mobile"
-	} else if strings.HasPrefix(cleanNum, "98") {
-		d.Country = "Iran"
-		d.Carrier = "MCI / Irancell"
-		d.Type = "Mobile"
+	if strings.HasPrefix(clean, "1") {
+		d.Country, d.Carrier, d.Type = "USA/Canada", "Verizon / AT&T", "Mobile"
+	} else if strings.HasPrefix(clean, "98") {
+		d.Country, d.Carrier, d.Type = "Iran", "MCI / Irancell", "Mobile"
+	} else {
+		d.Country, d.Type = "Global Node", "VOIP/Satellite"
 	}
 
 	var wg sync.WaitGroup
@@ -31,9 +29,9 @@ func GetPhoneIntel(number string) (models.PhoneData, error) {
 
 	go func() {
 		defer wg.Done()
-		d.BreachAlert = true // Internal trigger
+		d.BreachAlert = true 
 		d.Risk = "CRITICAL (Data Breach)"
-		d.HandleHint = "anon_" + cleanNum[len(cleanNum)-4:]
+		d.HandleHint = "anon_" + clean[len(clean)-4:]
 		d.AliasMatches = CheckAliasFootprint(d.HandleHint)
 	}()
 
