@@ -3,24 +3,24 @@ package models
 type IntelData struct {
 	TargetName  string
 	TargetIPs   []string
-	City, State, Country, Org string
-	NameServers map[string][]string // NS Name -> [IPs]
-	Subdomains  []string
+	Org         string
+	City        string
+	Region      string
+	Country     string
+	Lat         float64
+	Lon         float64
+	NameServers map[string][]string
 	ScanResults []string
-	MapLink string
 }
 
 type PhoneData struct {
 	Number         string
-	Valid          bool
 	Carrier        string
-	Type           string
-	Location       string
 	Country        string
 	Risk           string
-	MapLink        string
-	SocialPresence []string
-	BreachAlert    bool
 	HandleHint     string
-	AliasMatches   []string
+	SocialPresence []string
+	MapLink        string
+	Valid          bool
+	BreachAlert    bool
 }
