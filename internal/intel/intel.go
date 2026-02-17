@@ -14,14 +14,16 @@ import (
 func GetTargetIntel(input string) (models.IntelData, error) {
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 	ips, _ := net.LookupIP(input)
-	for _, ip := range ips { data.TargetIPs = append(data.TargetIPs, ip.String()) }
+	for _, ip := range ips { 
+		data.TargetIPs = append(data.TargetIPs, ip.String()) 
+	}
 	data.TargetIPs = deduplicate(data.TargetIPs)
 	
 	if len(data.TargetIPs) > 0 {
 		geo := fetchGeo(data.TargetIPs[0])
 		data.Org, data.City, data.Region, data.Country = geo.Org, geo.City, geo.RegionName, geo.Country
 		data.Lat, data.Lon = geo.Lat, geo.Lon
-		// Live Signal Pulse
+		// Capture the Signal Pulse
 		data.Latency = pingTarget(data.TargetIPs[0])
 	}
 
@@ -37,8 +39,11 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 
 func pingTarget(ip string) string {
 	start := time.Now()
-	conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "80"), 2*time.Second)
-	if err != nil { return "LOST" }
+	// Using a quick TCP dial to port 80/443 to measure RTT
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "80"), 1*time.Second)
+	if err != nil {
+		return "LOST"
+	}
 	conn.Close()
 	return fmt.Sprintf("%dms", time.Since(start).Milliseconds())
 }
@@ -66,7 +71,7 @@ func performTacticalScan(target string) []string {
 
 	for _, p := range ports {
 		addr := fmt.Sprintf("%s:%d", target, p)
-		conn, err := net.DialTimeout("tcp", addr, 1500*time.Millisecond)
+		conn, err := net.DialTimeout("tcp", addr, 1200*time.Millisecond)
 		if err == nil {
 			conn.Close()
 			res := fmt.Sprintf("PORT %d: OPEN [ACK/SYN]", p)
@@ -102,15 +107,12 @@ func GetPhoneIntel(number string) (models.PhoneData, error) {
 
 	if strings.HasPrefix(clean, "98") {
 		d.Country = "Iran"
-		if strings.HasPrefix(clean, "9891") { d.Carrier = "MCI (Hamrah-e-Avval)" } else if strings.HasPrefix(clean, "9893") { d.Carrier = "Irancell" } else { d.Carrier = "Rightel" }
+		if strings.HasPrefix(clean, "9891") { d.Carrier = "MCI" } else if strings.HasPrefix(clean, "9893") { d.Carrier = "Irancell" } else { d.Carrier = "Rightel" }
 	} else if strings.HasPrefix(clean, "1") {
 		d.Country, d.Carrier = "USA/Canada", "North American Band"
-	} else if strings.HasPrefix(clean, "44") {
-		d.Country, d.Carrier = "United Kingdom", "O2 / Vodafone"
 	} else {
-		d.Country, d.Carrier = "International", "Global Carrier Discovery"
+		d.Country, d.Carrier = "International Node", "Global Carrier Discovery"
 	}
-
 	d.HandleHint = "uid_" + clean[len(clean)-6:]
 	d.MapLink = "http://googleusercontent.com/maps.google.com/search?q=" + d.Country
 	return d, nil
