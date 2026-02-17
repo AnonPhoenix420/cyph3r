@@ -4,122 +4,115 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
+	"net/url"
+	"os"
 	"strings"
 	"time"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
+	"golang.org/x/net/proxy"
 )
+
+// GetClient returns a proxy-aware HTTP client if SHADOW_PROXY is set
+func GetClient() *http.Client {
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	proxyAddr := os.Getenv("SHADOW_PROXY")
+	if proxyAddr != "" {
+		dialer, err := proxy.SOCKS5("tcp", proxyAddr, nil, proxy.Direct)
+		if err == nil {
+			transport.Dial = dialer.Dial
+		}
+	}
+	return &http.Client{Transport: transport, Timeout: 5 * time.Second}
+}
 
 func GetTargetIntel(input string) (models.IntelData, error) {
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 	ips, _ := net.LookupIP(input)
-	for _, ip := range ips { 
-		data.TargetIPs = append(data.TargetIPs, ip.String()) 
-	}
-	data.TargetIPs = deduplicate(data.TargetIPs)
+	for _, ip := range ips { data.TargetIPs = append(data.TargetIPs, ip.String()) }
 	
 	if len(data.TargetIPs) > 0 {
-		geo := fetchGeo(data.TargetIPs[0])
-		data.Org, data.City, data.Region, data.Country = geo.Org, geo.City, geo.RegionName, geo.Country
+		geo, raw := fetchGeo(data.TargetIPs[0])
+		data.Org, data.City, data.Country = geo.Org, geo.City, geo.Country
 		data.Lat, data.Lon = geo.Lat, geo.Lon
-		// Capture the Signal Pulse
+		data.RawGeo = raw
 		data.Latency = pingTarget(data.TargetIPs[0])
 	}
 
 	nsRecords, _ := net.LookupNS(input)
 	for _, ns := range nsRecords {
 		addrs, _ := net.LookupHost(ns.Host)
-		data.NameServers[ns.Host] = deduplicate(addrs)
+		data.NameServers[ns.Host] = addrs
 	}
 
 	data.ScanResults = performTacticalScan(input)
 	return data, nil
 }
 
-func pingTarget(ip string) string {
-	start := time.Now()
-	// Using a quick TCP dial to port 80/443 to measure RTT
-	conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "80"), 1*time.Second)
-	if err != nil {
-		return "LOST"
-	}
-	conn.Close()
-	return fmt.Sprintf("%dms", time.Since(start).Milliseconds())
-}
-
-func fetchGeo(ip string) GeoResponse {
-	client := http.Client{Timeout: 3 * time.Second}
-	resp, err := client.Get("http://ip-api.com/json/" + ip)
-	if err != nil { return GeoResponse{Org: "SECURE_INFRASTRUCTURE"} }
+func fetchGeo(ip string) (GeoResponse, string) {
+	client := GetClient()
+	resp, err := client.Get("http://ip-api.com/json/" + ip + "?fields=66846719")
+	if err != nil { return GeoResponse{Org: "OFFLINE_NODE"}, "{}" }
 	defer resp.Body.Close()
+	
+	body, _ := io.ReadAll(resp.Body)
 	var r GeoResponse
-	json.NewDecoder(resp.Body).Decode(&r)
-	if r.Org == "" { r.Org = r.Isp }
-	return r
+	json.Unmarshal(body, &r)
+	return r, string(body)
 }
 
 type GeoResponse struct {
-	Country, RegionName, City, Isp, Org string
+	Country, City, Isp, Org string
 	Lat, Lon float64
+}
+
+func pingTarget(ip string) string {
+	start := time.Now()
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "443"), 1*time.Second)
+	if err != nil { return "TIMEOUT" }
+	defer conn.Close()
+	return fmt.Sprintf("%dms", time.Since(start).Milliseconds())
 }
 
 func performTacticalScan(target string) []string {
 	var results []string
 	var serverHeader string
-	ports := []int{80, 443, 8080, 8443, 2083, 2087}
+	client := GetClient()
+	ports := []int{80, 443, 8080}
 
 	for _, p := range ports {
 		addr := fmt.Sprintf("%s:%d", target, p)
-		conn, err := net.DialTimeout("tcp", addr, 1200*time.Millisecond)
+		conn, err := net.DialTimeout("tcp", addr, 1*time.Second)
 		if err == nil {
 			conn.Close()
-			res := fmt.Sprintf("PORT %d: OPEN [ACK/SYN]", p)
-			if (p == 80 || p == 443) && serverHeader == "" {
-				client := http.Client{Timeout: 1 * time.Second}
+			if serverHeader == "" {
 				proto := "http"; if p == 443 { proto = "https" }
 				if hResp, hErr := client.Get(fmt.Sprintf("%s://%s", proto, target)); hErr == nil {
 					serverHeader = hResp.Header.Get("Server")
 					hResp.Body.Close()
 				}
 			}
-			if p == 443 || p == 8443 {
-				conf := &tls.Config{InsecureSkipVerify: true}
-				if tlsConn, err := tls.Dial("tcp", addr, conf); err == nil {
-					if certs := tlsConn.ConnectionState().PeerCertificates; len(certs) > 0 {
-						res = fmt.Sprintf("PORT %d: OPEN (SSL: %s) [ACK/SYN]", p, certs[0].Subject.CommonName)
-					}
-					tlsConn.Close()
-				}
-			}
-			results = append(results, res)
+			results = append(results, fmt.Sprintf("PORT %d: OPEN", p))
 		}
 	}
-	if serverHeader == "" { serverHeader = "SECURE_NODE" }
+	if serverHeader == "" { serverHeader = "UNKNOWN" }
 	results = append(results, "STACK: "+serverHeader)
 	return results
 }
 
 func GetPhoneIntel(number string) (models.PhoneData, error) {
 	clean := strings.TrimPrefix(number, "+")
-	clean = strings.ReplaceAll(clean, " ", "")
-	d := models.PhoneData{Number: number, Risk: "LOW (Clearnet)", SocialPresence: []string{"WhatsApp", "Telegram"}}
-
-	if strings.HasPrefix(clean, "98") {
-		d.Country = "Iran"
-		if strings.HasPrefix(clean, "9891") { d.Carrier = "MCI" } else if strings.HasPrefix(clean, "9893") { d.Carrier = "Irancell" } else { d.Carrier = "Rightel" }
-	} else if strings.HasPrefix(clean, "1") {
+	d := models.PhoneData{Number: number, Risk: "LOW", SocialPresence: []string{"WhatsApp", "Telegram"}}
+	if strings.HasPrefix(clean, "1") {
 		d.Country, d.Carrier = "USA/Canada", "North American Band"
 	} else {
-		d.Country, d.Carrier = "International Node", "Global Carrier Discovery"
+		d.Country, d.Carrier = "International", "Global Node"
 	}
 	d.HandleHint = "uid_" + clean[len(clean)-6:]
 	d.MapLink = "http://googleusercontent.com/maps.google.com/search?q=" + d.Country
 	return d, nil
-}
-
-func deduplicate(s []string) []string {
-	m := make(map[string]bool); var res []string
-	for _, v := range s { if !m[v] { m[v] = true; res = append(res, v) } }
-	return res
 }
