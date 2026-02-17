@@ -9,10 +9,10 @@ type IntelData struct {
 	Country     string
 	Lat         float64
 	Lon         float64
-	Latency     string
+	Latency     string // Measures RTT pulse
 	NameServers map[string][]string
 	ScanResults []string
-	RawGeo      string // <--- Added for Verbose Mode (-v)
+	RawGeo      string // Full JSON dump for Verbose Mode
 }
 
 type PhoneData struct {
