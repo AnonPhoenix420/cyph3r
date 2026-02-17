@@ -9,9 +9,10 @@ type IntelData struct {
 	Country     string
 	Lat         float64
 	Lon         float64
-	Latency     string // <--- ADD THIS FIELD
+	Latency     string
 	NameServers map[string][]string
 	ScanResults []string
+	RawGeo      string // <--- Added for Verbose Mode (-v)
 }
 
 type PhoneData struct {
@@ -22,6 +23,4 @@ type PhoneData struct {
 	HandleHint     string
 	SocialPresence []string
 	MapLink        string
-	Valid          bool
-	BreachAlert    bool
 }
