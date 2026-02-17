@@ -2,57 +2,78 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"os"
 	"strings"
+
 	"github.com/AnonPhoenix420/cyph3r/internal/intel"
 	"github.com/AnonPhoenix420/cyph3r/internal/output"
 )
 
 func main() {
-	// Define flags
-	targetFlag := flag.String("target", "", "Domain or IP")
-	phoneFlag := flag.String("phone", "", "Phone number")
-	_ = flag.Bool("scan", false, "Legacy scan mode")
+	// 1. Setup Flags
+	target := flag.String("t", "", "Target domain (e.g., president.ir)")
+	phone := flag.String("p", "", "Phone number (e.g., +98912...)")
 	flag.Parse()
 
-	// 1. MATCHED TO YOUR LOGO: Calls func Banner() in banner.go
-	output.Banner()
+	// 2. Banner Logic
+	fmt.Print(output.NeonPink)
+	fmt.Println("______      ____  __  __ _____ ____ ")
+	fmt.Println("  / ____/_  __/ __ \\/ / / /|__  // __ \\")
+	fmt.Println(" / /   / / / / /_/ / /_/ /  /_ </ /_/ /")
+	fmt.Println("/ /___/ /_/ / ____/ __  / ___/ / _, _/")
+	fmt.Println("\\____/\\__, /_/   /_/ /_/ /____/_/ |_| ")
+	fmt.Println("     /____/         NETWORK_INTEL_SYSTEM")
+	fmt.Print(output.Reset)
 
-	// 2. CAPTURE INPUT (Flag OR Naked Argument)
-	var input string
-	if *targetFlag != "" {
-		input = *targetFlag
-	} else if *phoneFlag != "" {
-		input = *phoneFlag
-	} else if flag.NArg() > 0 {
-		input = flag.Arg(0) // Handles: ./cyph3r google.com
-	}
-
-	// Exit silently if no input
-	if input == "" {
-		return
-	}
-
-	// 3. SMART ROUTING
-	// Treat as phone if it starts with '+' or is a long numeric string
-	if strings.HasPrefix(input, "+") || (len(input) > 7 && isNumeric(input)) {
-		output.PulseNode(input)
-		pData, _ := intel.GetPhoneIntel(input)
-		output.DisplayPhoneHUD(pData)
+	// 3. Routing Logic
+	if *target != "" {
+		executeTargetIntel(*target)
+	} else if *phone != "" {
+		executePhoneIntel(*phone)
 	} else {
-		// Treat as domain/IP
-		output.PulseNode(input)
-		data, _ := intel.GetTargetIntel(input)
-		output.DisplayHUD(data)
+		output.Error("No target specified. Use -t <domain> or -p <phone>")
+		os.Exit(1)
 	}
 }
 
-// isNumeric checks if the string is purely digits (ignoring the + prefix)
-func isNumeric(s string) bool {
-	clean := strings.TrimPrefix(s, "+")
-	for _, char := range clean {
-		if char < '0' || char > '9' {
-			return false
-		}
+func executeTargetIntel(target string) {
+	// Pulse the node first
+	output.PulseNode(target)
+
+	// Start Fancy Animation
+	done := make(chan bool)
+	go output.LoadingAnimation(done, "Remote Node Intelligence")
+
+	// Perform High-End Intel Gathering
+	data, err := intel.GetTargetIntel(target)
+	
+	// Kill Animation
+	done <- true
+
+	if err != nil {
+		output.Error(fmt.Sprintf("Intel Extraction Failed: %v", err))
+		return
 	}
-	return true
+
+	// Render the Chromatic HUD
+	output.DisplayHUD(data)
+}
+
+func executePhoneIntel(number string) {
+	output.Info("Initializing Satellite Uplink...")
+	
+	done := make(chan bool)
+	go output.LoadingAnimation(done, "Digital Footprint Analysis")
+
+	data, err := intel.GetPhoneIntel(number)
+	
+	done <- true
+
+	if err != nil {
+		output.Error(fmt.Sprintf("Phone OSINT Failed: %v", err))
+		return
+	}
+
+	output.DisplayPhoneHUD(data)
 }
