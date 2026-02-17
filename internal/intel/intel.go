@@ -8,44 +8,38 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
 func GetTargetIntel(input string) (models.IntelData, error) {
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 	
-	// 1. Dual-Stack Resolution
+	// Force Dual-Stack Resolution
 	ips, _ := net.LookupIP(input)
-	for _, ip := range ips { data.TargetIPs = append(data.TargetIPs, ip.String()) }
+	for _, ip := range ips {
+		data.TargetIPs = append(data.TargetIPs, ip.String())
+	}
+	data.TargetIPs = deduplicate(data.TargetIPs)
 	
-	// 2. Name Server Recursive Depth
+	// Recursive NS Discovery
 	nsRecords, _ := net.LookupNS(input)
 	for _, ns := range nsRecords {
-		nsAddrs, _ := net.LookupHost(ns.Host)
-		data.NameServers[ns.Host] = nsAddrs
+		addrs, _ := net.LookupHost(ns.Host)
+		data.NameServers[ns.Host] = deduplicate(addrs)
 	}
 
-	// 3. Recursive WHOIS (Universal Redirection)
 	data.Org = queryRecursiveWhois(input, "whois.iana.org")
-
-	// 4. Tactical Scan
 	data.ScanResults = performTacticalScan(input)
-	if stack := fetchHeaders(input); stack != "" {
-		data.ScanResults = append(data.ScanResults, "STACK: "+stack)
-	}
-
 	return data, nil
 }
 
 func queryRecursiveWhois(domain, server string) string {
 	conn, err := net.DialTimeout("tcp", server+":43", 5*time.Second)
-	if err != nil { return "DATA_UNAVAILABLE" }
+	if err != nil { return "BYPASS_REQUIRED" }
 	defer conn.Close()
 
 	fmt.Fprintf(conn, domain+"\r\n")
 	scanner := bufio.NewScanner(conn)
-	
 	var referral string
 	keywords := []string{"descr:", "org:", "organization:", "registrant:", "owner:", "org-name:"}
 
@@ -93,13 +87,16 @@ func performTacticalScan(target string) []string {
 	return results
 }
 
-func fetchHeaders(target string) string {
-	client := &http.Client{Timeout: 3 * time.Second}
-	resp, err := client.Head("https://" + target)
-	if err != nil { resp, err = client.Head("http://" + target) }
-	if err != nil { return "" }
-	defer resp.Body.Close()
-	return resp.Header.Get("Server")
+func deduplicate(s []string) []string {
+	m := make(map[string]bool)
+	var res []string
+	for _, v := range s {
+		if !m[v] {
+			m[v] = true
+			res = append(res, v)
+		}
+	}
+	return res
 }
 
 func GetPhoneIntel(number string) (models.PhoneData, error) {
@@ -109,14 +106,9 @@ func GetPhoneIntel(number string) (models.PhoneData, error) {
 		BreachAlert: true, HandleHint: "anon_" + clean[len(clean)-4:],
 		SocialPresence: []string{"WhatsApp", "Telegram", "Signal"},
 	}
-	// High-End Logic: Mapping Country & Carrier based on E.164
-	if strings.HasPrefix(clean, "98") {
-		d.Country, d.Carrier = "Iran", "MCI / Irancell"
-	} else if strings.HasPrefix(clean, "1") {
-		d.Country, d.Carrier = "USA/Canada", "Verizon / AT&T"
-	} else {
-		d.Country, d.Carrier = "Global Node", "International Carrier"
-	}
-	d.MapLink = "http://google.com/maps/search/" + number
+	if strings.HasPrefix(clean, "98") { d.Country, d.Carrier = "Iran", "MCI / Irancell"
+	} else if strings.HasPrefix(clean, "1") { d.Country, d.Carrier = "USA/Canada", "Verizon / AT&T"
+	} else { d.Country, d.Carrier = "Global Node", "International" }
+	d.MapLink = "http://maps.google.com/search?q=" + number
 	return d, nil
 }
