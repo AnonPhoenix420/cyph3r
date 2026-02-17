@@ -6,13 +6,12 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// Global Package Constants (Visible to status.go)
 const (
 	NeonPink   = "\033[38;5;198m"
 	NeonBlue   = "\033[38;5;39m"
 	NeonGreen  = "\033[38;5;82m"
 	NeonYellow = "\033[38;5;226m"
-	Red        = "\033[31m"
+	Red        = "\033[31m" // Fixes status.go error
 	White      = "\033[97m"
 	Reset      = "\033[0m"
 )
@@ -35,9 +34,16 @@ func DisplayHUD(data models.IntelData) {
 		fmt.Printf("%s[-] %s\n", White, ns)
 		for _, ip := range ips { fmt.Printf("    %s↳ [%s]\n", NeonBlue, ip) }
 	}
+
 	fmt.Printf("\n%s[*] INFO: Initializing Tactical Admin Scan...\n", White)
-	for _, res := range data.ScanResults { fmt.Printf("%s[+] %s\n", NeonGreen, res) }
-	fmt.Printf("%s[*] INFO: Admin/Web scan complete.\n%s", White, Reset)
+	for _, res := range data.ScanResults {
+		if strings.HasPrefix(res, "STACK:") {
+			fmt.Printf("%s[*] Software:      %s%s\n", White, NeonYellow, strings.TrimPrefix(res, "STACK: "))
+			continue
+		}
+		fmt.Printf("%s[+] %s\n", NeonGreen, res)
+	}
+	fmt.Printf("%s[*] INFO: Operation Complete.\n%s", White, Reset)
 }
 
 func DisplayPhoneHUD(p models.PhoneData) {
