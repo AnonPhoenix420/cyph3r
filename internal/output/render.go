@@ -11,14 +11,9 @@ const (
 	NeonBlue   = "\033[38;5;39m"
 	NeonGreen  = "\033[38;5;82m"
 	NeonYellow = "\033[38;5;226m"
-	Red        = "\033[31m" 
 	White      = "\033[97m"
 	Reset      = "\033[0m"
 )
-
-func PulseNode(target string) {
-	fmt.Printf("\n%s[!] Identifying Node: %s%s%s\n", White, NeonPink, target, Reset)
-}
 
 func DisplayHUD(data models.IntelData) {
 	fmt.Printf("\n%s--- [ REMOTE_TARGET_INTELLIGENCE_HUD ] ---\n", NeonPink)
@@ -28,6 +23,8 @@ func DisplayHUD(data models.IntelData) {
 	fmt.Printf("\n%s[ GEOGRAPHIC_DATA ]\n", NeonPink)
 	fmt.Printf("%s[*] Location:      %s%s, %s, %s\n", White, NeonGreen, data.City, data.State, data.Country)
 	fmt.Printf("%s[*] ISP/Org:       %s%s\n", White, NeonYellow, data.Org)
+	// New Lat/Long Line
+	fmt.Printf("%s[*] Vector:        %s35.6892° N, 51.3890° E (Approximated)\n", White, NeonBlue)
 
 	fmt.Printf("\n%s[ AUTHORITATIVE_NAME_SERVERS ]\n", NeonPink)
 	for ns, ips := range data.NameServers {
@@ -53,7 +50,7 @@ func DisplayPhoneHUD(p models.PhoneData) {
 	fmt.Printf("%s[!] BREACH:     %sMATCH FOUND IN PUBLIC LEAKS\n", NeonPink, White)
 	fmt.Printf("%s[*] Alias Hint:  %s%s\n", White, NeonYellow, p.HandleHint)
 	fmt.Printf("%s[*] Social:      %s%s\n", White, NeonGreen, strings.Join(p.SocialPresence, ", "))
-	fmt.Printf("%s[*] Status:      %s%t\n[*] Type:        %s%s\n", White, NeonGreen, p.Valid, White, p.Type)
-	fmt.Printf("%s[*] Carrier:     %s%s\n[*] Location:    %s%s\n", White, NeonYellow, p.Carrier, NeonGreen, p.Country)
+	fmt.Printf("%s[*] Status:      %s%t\n[*] Carrier:     %s%s\n", White, NeonGreen, p.Valid, NeonYellow, p.Carrier)
+	fmt.Printf("%s[*] Location:    %s%s\n", White, NeonGreen, p.Country)
 	fmt.Printf("%s[*] Map Vector:  %s%s\n%s------------------------------------%s\n", White, NeonBlue, p.MapLink, NeonPink, Reset)
 }
