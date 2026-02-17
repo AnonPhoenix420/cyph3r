@@ -7,25 +7,19 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
-	"golang.org/x/net/proxy"
 )
 
-// GetClient enables Shadow Mode via SOCKS5
+// Uses system's native VPN tunnel
 func GetClient() *http.Client {
-	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+		Timeout: 5 * time.Second,
 	}
-	if proxyAddr := os.Getenv("SHADOW_PROXY"); proxyAddr != "" {
-		dialer, err := proxy.SOCKS5("tcp", proxyAddr, nil, proxy.Direct)
-		if err == nil {
-			transport.Dial = dialer.Dial
-		}
-	}
-	return &http.Client{Transport: transport, Timeout: 5 * time.Second}
 }
 
 func GetTargetIntel(input string) (models.IntelData, error) {
@@ -53,8 +47,8 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 
 func fetchGeo(ip string) (GeoResponse, string) {
 	client := GetClient()
-	resp, err := client.Get("http://ip-api.com/json/" + ip + "?fields=16982015")
-	if err != nil { return GeoResponse{Org: "SECURE_GATEWAY"}, "{}" }
+	resp, err := client.Get("http://ip-api.com/json/" + ip)
+	if err != nil { return GeoResponse{Org: "SECURE_NODE"}, "{}" }
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
 	var r GeoResponse
@@ -95,7 +89,7 @@ func performTacticalScan(target string) []string {
 			results = append(results, fmt.Sprintf("PORT %d: OPEN", p))
 		}
 	}
-	if serverHeader == "" { serverHeader = "SECURE_INFRA" }
+	if serverHeader == "" { serverHeader = "HIDDEN" }
 	results = append(results, "STACK: "+serverHeader)
 	return results
 }
