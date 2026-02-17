@@ -11,25 +11,20 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// --- TARGET DOMAIN LOGIC ---
-
 func GetTargetIntel(input string) (models.IntelData, error) {
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
-	
-	// Dual-Stack Vector Resolution
 	ips, _ := net.LookupIP(input)
-	for _, ip := range ips { 
-		data.TargetIPs = append(data.TargetIPs, ip.String()) 
-	}
+	for _, ip := range ips { data.TargetIPs = append(data.TargetIPs, ip.String()) }
 	data.TargetIPs = deduplicate(data.TargetIPs)
 	
 	if len(data.TargetIPs) > 0 {
 		geo := fetchGeo(data.TargetIPs[0])
 		data.Org, data.City, data.Region, data.Country = geo.Org, geo.City, geo.RegionName, geo.Country
 		data.Lat, data.Lon = geo.Lat, geo.Lon
+		// Live Signal Pulse
+		data.Latency = pingTarget(data.TargetIPs[0])
 	}
 
-	// Authoritative Cluster Mapping
 	nsRecords, _ := net.LookupNS(input)
 	for _, ns := range nsRecords {
 		addrs, _ := net.LookupHost(ns.Host)
@@ -38,6 +33,14 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 
 	data.ScanResults = performTacticalScan(input)
 	return data, nil
+}
+
+func pingTarget(ip string) string {
+	start := time.Now()
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "80"), 2*time.Second)
+	if err != nil { return "LOST" }
+	conn.Close()
+	return fmt.Sprintf("%dms", time.Since(start).Milliseconds())
 }
 
 func fetchGeo(ip string) GeoResponse {
@@ -67,18 +70,14 @@ func performTacticalScan(target string) []string {
 		if err == nil {
 			conn.Close()
 			res := fmt.Sprintf("PORT %d: OPEN [ACK/SYN]", p)
-			
-			// Software Sniffing (Live Server Header)
 			if (p == 80 || p == 443) && serverHeader == "" {
-				proto := "http"
-				if p == 443 { proto = "https" }
 				client := http.Client{Timeout: 1 * time.Second}
+				proto := "http"; if p == 443 { proto = "https" }
 				if hResp, hErr := client.Get(fmt.Sprintf("%s://%s", proto, target)); hErr == nil {
 					serverHeader = hResp.Header.Get("Server")
 					hResp.Body.Close()
 				}
 			}
-
 			if p == 443 || p == 8443 {
 				conf := &tls.Config{InsecureSkipVerify: true}
 				if tlsConn, err := tls.Dial("tcp", addr, conf); err == nil {
@@ -96,31 +95,20 @@ func performTacticalScan(target string) []string {
 	return results
 }
 
-// --- PHONE OSINT LOGIC ---
-
-
-
 func GetPhoneIntel(number string) (models.PhoneData, error) {
 	clean := strings.TrimPrefix(number, "+")
 	clean = strings.ReplaceAll(clean, " ", "")
-	
 	d := models.PhoneData{Number: number, Risk: "LOW (Clearnet)", SocialPresence: []string{"WhatsApp", "Telegram"}}
 
-	// Live Global Prefix Mapping
 	if strings.HasPrefix(clean, "98") {
 		d.Country = "Iran"
 		if strings.HasPrefix(clean, "9891") { d.Carrier = "MCI (Hamrah-e-Avval)" } else if strings.HasPrefix(clean, "9893") { d.Carrier = "Irancell" } else { d.Carrier = "Rightel" }
 	} else if strings.HasPrefix(clean, "1") {
 		d.Country, d.Carrier = "USA/Canada", "North American Band"
 	} else if strings.HasPrefix(clean, "44") {
-		d.Country, d.Carrier = "United Kingdom", "O2 / EE / Vodafone"
+		d.Country, d.Carrier = "United Kingdom", "O2 / Vodafone"
 	} else {
-		d.Country, d.Carrier = "International Node", "Global Carrier Discovery"
-	}
-
-	// Dynamic Risk Scoring
-	if strings.HasPrefix(clean, "1201") || strings.HasPrefix(clean, "4470") {
-		d.Risk = "CRITICAL (Burner/VOIP)"
+		d.Country, d.Carrier = "International", "Global Carrier Discovery"
 	}
 
 	d.HandleHint = "uid_" + clean[len(clean)-6:]
