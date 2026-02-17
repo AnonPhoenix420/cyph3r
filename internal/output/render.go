@@ -40,7 +40,7 @@ func DisplayHUD(data models.IntelData) {
 
 	fmt.Printf("\n%s[ GEO_ENTITY ]%s\n", Cyan, Reset)
 	fmt.Printf(" %s•%s ENTITY:   %s%s\n", Cyan, White, NeonYellow, data.Org)
-	fmt.Printf(" %s•%s POSITION: %s%.4f° N, %.4f° E %s📡 %s(SIGNAL_LOCKED)\n", Cyan, White, Cyan, data.Lat, data.Lon, Amber, Amber)
+	fmt.Printf(" %s•%s POSITION: %s%.4f° N, %.4f° E %s📡 %s(SIGNAL_PULSE: %s)\n", Cyan, White, Cyan, data.Lat, data.Lon, Amber, Amber, data.Latency)
 	fmt.Printf(" %s•%s Location: %s%s, %s, %s%s\n", Cyan, White, NeonGreen, data.City, data.Region, data.Country, Reset)
 
 	fmt.Printf("\n%s[ AUTHORITATIVE_CLUSTERS ]%s\n", Cyan, Reset)
