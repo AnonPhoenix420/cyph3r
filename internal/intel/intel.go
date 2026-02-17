@@ -12,7 +12,7 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// GetClient utilizes the native VPN tunnel provided by the OS
+// GetClient routes through your system's active VPN tunnel
 func GetClient() *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
@@ -25,13 +25,13 @@ func GetClient() *http.Client {
 func GetTargetIntel(input string) (models.IntelData, error) {
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 	
-	// 1. Resolve All IP Vectors (v4 & v6)
+	// 1. Resolve All IP Vectors
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips {
 		data.TargetIPs = append(data.TargetIPs, ip.String())
 	}
 	
-	// 2. Geolocation & Signal Latency
+	// 2. Geolocation & Signal Analysis
 	if len(data.TargetIPs) > 0 {
 		geo, raw := fetchGeo(data.TargetIPs[0])
 		data.Org, data.City, data.Country = geo.Org, geo.City, geo.Country
@@ -40,14 +40,14 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		data.Latency = pingTarget(data.TargetIPs[0])
 	}
 
-	// 3. Map Authoritative Nameserver Clusters
+	// 3. Authority Cluster Mapping
 	nsRecords, _ := net.LookupNS(input)
 	for _, ns := range nsRecords {
 		addrs, _ := net.LookupHost(ns.Host)
 		data.NameServers[ns.Host] = addrs
 	}
 
-	// 4. Tactical Infrastructure Scan
+	// 4. Infrastructure Stack Fingerprinting
 	data.ScanResults = performTacticalScan(input)
 	
 	return data, nil
@@ -57,7 +57,7 @@ func fetchGeo(ip string) (GeoResponse, string) {
 	client := GetClient()
 	resp, err := client.Get("http://ip-api.com/json/" + ip)
 	if err != nil {
-		return GeoResponse{Org: "SECURE_UPLINK"}, "{}"
+		return GeoResponse{Org: "UPLINK_ENCRYPTED"}, "{}"
 	}
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
@@ -73,10 +73,9 @@ type GeoResponse struct {
 
 func pingTarget(ip string) string {
 	start := time.Now()
-	// Dialing port 443 for a more accurate 'active' signal over VPN
-	conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "443"), 1500*time.Millisecond)
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "443"), 2*time.Second)
 	if err != nil {
-		return "LOST"
+		return "TIMEOUT"
 	}
 	defer conn.Close()
 	return fmt.Sprintf("%dms", time.Since(start).Milliseconds())
@@ -90,12 +89,11 @@ func performTacticalScan(target string) []string {
 	ports := []int{80, 443, 8080}
 	for _, p := range ports {
 		addr := net.JoinHostPort(target, fmt.Sprintf("%d", p))
-		conn, err := net.DialTimeout("tcp", addr, 1*time.Second)
+		conn, err := net.DialTimeout("tcp", addr, 1500*time.Millisecond)
 		if err == nil {
 			conn.Close()
 			results = append(results, fmt.Sprintf("PORT %d: OPEN", p))
 			
-			// Sniff Server Banner from Port 80/443
 			if (p == 80 || p == 443) && serverHeader == "" {
 				proto := "http"
 				if p == 443 { proto = "https" }
@@ -107,7 +105,7 @@ func performTacticalScan(target string) []string {
 		}
 	}
 	
-	if serverHeader == "" { serverHeader = "HIDDEN_STACK" }
+	if serverHeader == "" { serverHeader = "F_STACK_HIDDEN" }
 	results = append(results, "STACK: "+serverHeader)
 	return results
 }
@@ -120,13 +118,12 @@ func GetPhoneIntel(number string) (models.PhoneData, error) {
 		SocialPresence: []string{"WhatsApp", "Telegram", "Signal"},
 	}
 	
-	// Heuristic Mapping (Expandable)
 	if strings.HasPrefix(clean, "98") {
 		d.Country, d.Carrier = "Iran", "MCI/Irancell"
 	} else if strings.HasPrefix(clean, "1") {
-		d.Country, d.Carrier = "USA/Canada", "North American Telecom"
+		d.Country, d.Carrier = "USA/Canada", "Global Mobile"
 	} else {
-		d.Country, d.Carrier = "Unknown Region", "Encrypted Provider"
+		d.Country, d.Carrier = "Unknown", "Provider Restricted"
 	}
 	
 	d.HandleHint = "uid_" + clean[len(clean)-6:]
