@@ -7,7 +7,6 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// LoadingAnimation creates the non-blocking spinner used by main.go
 func LoadingAnimation(done chan bool, label string) {
 	frames := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 	i := 0
@@ -57,7 +56,7 @@ func DisplayHUD(data models.IntelData) {
 	fmt.Printf("%s[*] INFO: Initializing Tactical Admin Scan...%s\n", NeonBlue, Reset)
 	for _, res := range data.ScanResults {
 		if strings.HasPrefix(res, "STACK:") {
-			fmt.Printf("%s[*] Software:      %s%s []%s\n", NeonBlue, NeonYellow, strings.TrimPrefix(res, "STACK: "), Reset)
+			fmt.Printf("%s[*] Software:      %s%-20s %s[]%s\n", NeonBlue, NeonYellow, strings.TrimPrefix(res, "STACK: "), NeonBlue, Reset)
 			continue
 		}
 		fmt.Printf("%s[+] %s%s\n", NeonGreen, White, res)
