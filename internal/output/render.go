@@ -3,7 +3,6 @@ package output
 import (
 	"fmt"
 	"strings"
-	"time"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
