@@ -3,8 +3,26 @@ package output
 import (
 	"fmt"
 	"strings"
+	"time"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
+
+// LoadingAnimation creates the non-blocking spinner used by main.go
+func LoadingAnimation(done chan bool, label string) {
+	frames := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+	i := 0
+	for {
+		select {
+		case <-done:
+			fmt.Print(ClearLine)
+			return
+		default:
+			fmt.Printf("\r%s%s %sScanning %s%s...%s", ClearLine, NeonPink, frames[i%len(frames)], White, label, Reset)
+			i++
+			time.Sleep(80 * time.Millisecond)
+		}
+	}
+}
 
 func PulseNode(target string) {
 	fmt.Printf("\n%s[!] %sIDENTIFYING NODE: %s%s%s\n", Cyan, White, NeonPink, target, Reset)
