@@ -8,4 +8,5 @@ const (
 	Red        = "\033[31m" 
 	White      = "\033[97m"
 	Reset      = "\033[0m"
+	ClearLine  = "\r\033[K"
 )
