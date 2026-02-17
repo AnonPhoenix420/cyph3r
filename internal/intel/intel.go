@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
-	"net/http"
 	"strings"
 	"time"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
@@ -109,6 +108,6 @@ func GetPhoneIntel(number string) (models.PhoneData, error) {
 	if strings.HasPrefix(clean, "98") { d.Country, d.Carrier = "Iran", "MCI / Irancell"
 	} else if strings.HasPrefix(clean, "1") { d.Country, d.Carrier = "USA/Canada", "Verizon / AT&T"
 	} else { d.Country, d.Carrier = "Global Node", "International" }
-	d.MapLink = "http://maps.google.com/search?q=" + number
+	d.MapLink = "http://googleusercontent.com/maps.google.com/search?q=" + number
 	return d, nil
 }
