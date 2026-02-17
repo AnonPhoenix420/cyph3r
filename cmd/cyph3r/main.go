@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/AnonPhoenix420/cyph3r/internal/intel"
 	"github.com/AnonPhoenix420/cyph3r/internal/output"
@@ -38,25 +37,22 @@ func main() {
 }
 
 func executeTargetIntel(target string) {
-	// Pulse the node first
 	output.PulseNode(target)
 
 	// Start Fancy Animation
 	done := make(chan bool)
 	go output.LoadingAnimation(done, "Remote Node Intelligence")
 
-	// Perform High-End Intel Gathering
+	// Recursive Intel Gathering
 	data, err := intel.GetTargetIntel(target)
 	
-	// Kill Animation
-	done <- true
+	done <- true // Stop Animation
 
 	if err != nil {
 		output.Error(fmt.Sprintf("Intel Extraction Failed: %v", err))
 		return
 	}
 
-	// Render the Chromatic HUD
 	output.DisplayHUD(data)
 }
 
@@ -68,7 +64,7 @@ func executePhoneIntel(number string) {
 
 	data, err := intel.GetPhoneIntel(number)
 	
-	done <- true
+	done <- true // Stop Animation
 
 	if err != nil {
 		output.Error(fmt.Sprintf("Phone OSINT Failed: %v", err))
