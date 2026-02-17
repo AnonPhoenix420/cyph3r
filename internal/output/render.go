@@ -3,9 +3,33 @@ package output
 import (
 	"fmt"
 	"strings"
+	"time"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
+// PulseNode initializes the target identification in the terminal
+func PulseNode(target string) {
+	fmt.Printf("\n%s[!] %sIDENTIFYING NODE: %s%s%s\n", Cyan, White, NeonPink, target, Reset)
+}
+
+// LoadingAnimation creates a non-blocking spinner for background tasks
+func LoadingAnimation(done chan bool, label string) {
+	frames := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+	i := 0
+	for {
+		select {
+		case <-done:
+			fmt.Print(ClearLine)
+			return
+		default:
+			fmt.Printf("\r%s%s %sScanning %s%s...%s", ClearLine, NeonPink, frames[i%len(frames)], White, label, Reset)
+			i++
+			time.Sleep(80 * time.Millisecond)
+		}
+	}
+}
+
+// DisplayHUD renders the high-end intelligence for domains
 func DisplayHUD(data models.IntelData) {
 	fmt.Printf("\n%s╔═══════════════════════════════════════════════════════════════╗", Electric)
 	fmt.Printf("\n║ %s[!] TARGET_NODE: %-41s %s║", Cyan, NeonPink+data.TargetName, Electric)
@@ -19,7 +43,7 @@ func DisplayHUD(data models.IntelData) {
 
 	fmt.Printf("\n%s[ GEO_ENTITY ]%s\n", Cyan, Reset)
 	fmt.Printf(" %s•%s ENTITY:   %s%s\n", Cyan, White, NeonYellow, data.Org)
-	fmt.Printf(" %s•%s POSITION: %s35.6892° N, 51.3890° E %s(LOCKED)\n", Cyan, White, Cyan, Amber)
+	fmt.Printf(" %s•%s POSITION: %s35.6892° N, 51.3890° E %s(SIGNAL_LOCKED)\n", Cyan, White, Cyan, Amber)
 
 	fmt.Printf("\n%s[ AUTHORITATIVE_CLUSTERS ]%s\n", Cyan, Reset)
 	for ns, ips := range data.NameServers {
@@ -38,8 +62,10 @@ func DisplayHUD(data models.IntelData) {
 		}
 		fmt.Printf(" %s»%s %s\n", NeonGreen, White, res)
 	}
+	fmt.Printf("\n%s[*] %sSESSION_IDLE: Awaiting next vector.%s\n", Electric, Amber, Reset)
 }
 
+// DisplayPhoneHUD renders the high-end intelligence for mobile targets
 func DisplayPhoneHUD(p models.PhoneData) {
 	fmt.Printf("\n%s╔═══════════════════════════════════════════════════════════════╗", Electric)
 	fmt.Printf("\n║ %s[!] PHONE_INTEL: %-42s %s║", Cyan, NeonPink+p.Number, Electric)
