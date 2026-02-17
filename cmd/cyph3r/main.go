@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-
 	"github.com/AnonPhoenix420/cyph3r/internal/intel"
 	"github.com/AnonPhoenix420/cyph3r/internal/output"
 )
@@ -14,7 +13,6 @@ func main() {
 	phone := flag.String("p", "", "Phone number")
 	flag.Parse()
 
-	// Clean call to the new banner function
 	output.Banner()
 
 	if *target != "" {
