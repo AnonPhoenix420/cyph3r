@@ -7,12 +7,10 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// PulseNode initializes the target identification in the terminal
 func PulseNode(target string) {
 	fmt.Printf("\n%s[!] %sIDENTIFYING NODE: %s%s%s\n", Cyan, White, NeonPink, target, Reset)
 }
 
-// LoadingAnimation creates a non-blocking spinner for background tasks
 func LoadingAnimation(done chan bool, label string) {
 	frames := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 	i := 0
@@ -29,7 +27,6 @@ func LoadingAnimation(done chan bool, label string) {
 	}
 }
 
-// DisplayHUD renders the high-end intelligence for domains
 func DisplayHUD(data models.IntelData) {
 	fmt.Printf("\n%s╔═══════════════════════════════════════════════════════════════╗", Electric)
 	fmt.Printf("\n║ %s[!] TARGET_NODE: %-41s %s║", Cyan, NeonPink+data.TargetName, Electric)
@@ -65,7 +62,6 @@ func DisplayHUD(data models.IntelData) {
 	fmt.Printf("\n%s[*] %sSESSION_IDLE: Awaiting next vector.%s\n", Electric, Amber, Reset)
 }
 
-// DisplayPhoneHUD renders the high-end intelligence for mobile targets
 func DisplayPhoneHUD(p models.PhoneData) {
 	fmt.Printf("\n%s╔═══════════════════════════════════════════════════════════════╗", Electric)
 	fmt.Printf("\n║ %s[!] PHONE_INTEL: %-42s %s║", Cyan, NeonPink+p.Number, Electric)
