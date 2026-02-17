@@ -15,7 +15,7 @@ import (
 func GetTargetIntel(input string) (models.IntelData, error) {
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 	
-	// 1. Core Networking
+	// DNS Resolution
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips { data.TargetIPs = append(data.TargetIPs, ip.String()) }
 	
@@ -25,17 +25,16 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		data.NameServers[ns.Host] = nsIPs
 	}
 
-	// 2. High-End Recursive WHOIS (Redirection Support)
+	// High-End Recursive WHOIS
 	data.Org = queryRecursiveWhois(input, "whois.iana.org")
-
-	// 3. Infrastructure & SSL Scanning
+	
+	// Infrastructure Probes
 	data.ScanResults = performTacticalScan(input)
 	if stack := fetchHeaders(input); stack != "" {
 		data.ScanResults = append(data.ScanResults, "STACK: "+stack)
 	}
 
-	// 4. Geo-Inference (Placeholder for MaxMind Local Logic)
-	// In a full MaxMind setup, you'd open the .mmdb file here.
+	// Geo-Inference
 	if strings.HasSuffix(input, ".ir") {
 		data.Country, data.State, data.City = "Iran", "Tehran", "Tehran"
 	} else {
@@ -54,6 +53,7 @@ func queryRecursiveWhois(domain, server string) string {
 	fmt.Fprintf(conn, domain+"\r\n")
 	scanner := bufio.NewScanner(conn)
 	var referral string
+	keywords := []string{"descr:", "org:", "organization:", "registrant:", "owner:"}
 
 	for scanner.Scan() {
 		line := strings.ToLower(scanner.Text())
@@ -61,9 +61,14 @@ func queryRecursiveWhois(domain, server string) string {
 			parts := strings.Split(line, ":")
 			if len(parts) > 1 { referral = strings.TrimSpace(parts[1]) }
 		}
-		if strings.Contains(line, "descr:") || strings.Contains(line, "org:") {
-			parts := strings.Split(line, ":")
-			if len(parts) > 1 { return strings.ToUpper(strings.TrimSpace(parts[1])) }
+		for _, key := range keywords {
+			if strings.Contains(line, key) {
+				parts := strings.Split(line, ":")
+				if len(parts) > 1 {
+					val := strings.TrimSpace(parts[1])
+					if val != "" && !strings.Contains(val, "redacted") { return strings.ToUpper(val) }
+				}
+			}
 		}
 	}
 	if referral != "" && referral != server { return queryRecursiveWhois(domain, referral) }
@@ -94,6 +99,17 @@ func performTacticalScan(target string) []string {
 	return results
 }
 
+func fetchHeaders(target string) string {
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Head("https://" + target)
+	if err != nil { resp, err = client.Head("http://" + target) }
+	if err != nil { return "" }
+	defer resp.Body.Close()
+	s := resp.Header.Get("Server")
+	if s == "" { return "Cloud-Shield" }
+	return s
+}
+
 func GetPhoneIntel(number string) (models.PhoneData, error) {
 	clean := strings.TrimPrefix(number, "+")
 	d := models.PhoneData{
@@ -106,17 +122,6 @@ func GetPhoneIntel(number string) (models.PhoneData, error) {
 	} else {
 		d.Country, d.Carrier = "USA/Canada", "Verizon / AT&T"
 	}
-	d.MapLink = "http://googleusercontent.com/maps.google.com/search?q=" + number
+	d.MapLink = "https://www.google.com/maps/search/" + number
 	return d, nil
-}
-
-func fetchHeaders(target string) string {
-	client := &http.Client{Timeout: 3 * time.Second}
-	resp, err := client.Head("https://" + target)
-	if err != nil { resp, err = client.Head("http://" + target) }
-	if err != nil { return "" }
-	defer resp.Body.Close()
-	s := resp.Header.Get("Server")
-	if s == "" { return "Cloud-Shield" }
-	return s
 }
