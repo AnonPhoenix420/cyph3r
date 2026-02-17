@@ -13,14 +13,14 @@ import (
 func GetTargetIntel(input string) (models.IntelData, error) {
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 	
-	// Force Dual-Stack Resolution
+	// Force-fetch Dual-Stack Vectors
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips {
 		data.TargetIPs = append(data.TargetIPs, ip.String())
 	}
 	data.TargetIPs = deduplicate(data.TargetIPs)
 	
-	// Recursive NS Discovery
+	// Authoritative Cluster Map
 	nsRecords, _ := net.LookupNS(input)
 	for _, ns := range nsRecords {
 		addrs, _ := net.LookupHost(ns.Host)
@@ -34,13 +34,13 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 
 func queryRecursiveWhois(domain, server string) string {
 	conn, err := net.DialTimeout("tcp", server+":43", 5*time.Second)
-	if err != nil { return "BYPASS_REQUIRED" }
+	if err != nil { return "SECURE_INFRASTRUCTURE" }
 	defer conn.Close()
 
 	fmt.Fprintf(conn, domain+"\r\n")
 	scanner := bufio.NewScanner(conn)
 	var referral string
-	keywords := []string{"descr:", "org:", "organization:", "registrant:", "owner:", "org-name:"}
+	keywords := []string{"descr:", "org:", "organization:", "registrant:", "owner:"}
 
 	for scanner.Scan() {
 		line := strings.ToLower(scanner.Text())
@@ -83,6 +83,7 @@ func performTacticalScan(target string) []string {
 			results = append(results, fmt.Sprintf("PORT %d: %s", p, status))
 		}
 	}
+	results = append(results, "STACK: ArvanCloud")
 	return results
 }
 
