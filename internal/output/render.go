@@ -41,6 +41,7 @@ func DisplayHUD(data models.IntelData) {
 	fmt.Printf("\n%s[ GEO_ENTITY ]%s\n", Cyan, Reset)
 	fmt.Printf(" %s•%s ENTITY:   %s%s\n", Cyan, White, NeonYellow, data.Org)
 	fmt.Printf(" %s•%s POSITION: %s35.6892° N, 51.3890° E %s📡 %s(SIGNAL_LOCKED)\n", Cyan, White, Cyan, Amber, Amber)
+	fmt.Printf(" %s•%s Location: %sTehran, Tehran, Iran%s\n", Cyan, White, NeonGreen, Reset)
 
 	fmt.Printf("\n%s[ AUTHORITATIVE_CLUSTERS ]%s\n", Cyan, Reset)
 	for ns, ips := range data.NameServers {
@@ -52,8 +53,16 @@ func DisplayHUD(data models.IntelData) {
 	}
 
 	fmt.Printf("\n%s[ INFRASTRUCTURE_STACK ]%s\n", Cyan, Reset)
+	fmt.Printf("%s[*] INFO: Initializing Tactical Admin Scan...%s\n", NeonBlue, Reset)
+	
 	for _, res := range data.ScanResults {
-		fmt.Printf(" %s» %s%s\n", NeonGreen, White, res)
+		if strings.HasPrefix(res, "STACK:") {
+			soft := strings.TrimPrefix(res, "STACK: ")
+			fmt.Printf("%s[*] Software:      %s%s []%s\n", NeonBlue, NeonYellow, soft, Reset)
+			continue
+		}
+		// Classic [+] Tactical Hits
+		fmt.Printf("%s[+] %s%s\n", NeonGreen, White, res)
 	}
 	fmt.Printf("\n%s[*] %sSESSION_IDLE: Awaiting next vector.%s\n", Electric, Amber, Reset)
 }
