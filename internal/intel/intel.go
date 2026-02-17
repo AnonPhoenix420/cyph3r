@@ -1,7 +1,6 @@
 package intel
 
 import (
-	"bufio"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -16,6 +15,8 @@ import (
 
 func GetTargetIntel(input string) (models.IntelData, error) {
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
+	
+	// Force-fetch Dual-Stack Vectors
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips { 
 		data.TargetIPs = append(data.TargetIPs, ip.String()) 
@@ -28,6 +29,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		data.Lat, data.Lon = geo.Lat, geo.Lon
 	}
 
+	// Authoritative Cluster Map
 	nsRecords, _ := net.LookupNS(input)
 	for _, ns := range nsRecords {
 		addrs, _ := net.LookupHost(ns.Host)
