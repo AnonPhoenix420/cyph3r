@@ -15,45 +15,39 @@ import (
 func GetTargetIntel(input string) (models.IntelData, error) {
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 	
-	// DNS Resolution
+	// 1. Dual-Stack Resolution
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips { data.TargetIPs = append(data.TargetIPs, ip.String()) }
 	
+	// 2. Name Server Recursive Depth
 	nsRecords, _ := net.LookupNS(input)
 	for _, ns := range nsRecords {
-		nsIPs, _ := net.LookupHost(ns.Host)
-		data.NameServers[ns.Host] = nsIPs
+		nsAddrs, _ := net.LookupHost(ns.Host)
+		data.NameServers[ns.Host] = nsAddrs
 	}
 
-	// High-End Recursive WHOIS
+	// 3. Recursive WHOIS (Universal Redirection)
 	data.Org = queryRecursiveWhois(input, "whois.iana.org")
-	
-	// Infrastructure Probes
+
+	// 4. Tactical Scan
 	data.ScanResults = performTacticalScan(input)
 	if stack := fetchHeaders(input); stack != "" {
 		data.ScanResults = append(data.ScanResults, "STACK: "+stack)
 	}
 
-	// Geo-Inference
-	if strings.HasSuffix(input, ".ir") {
-		data.Country, data.State, data.City = "Iran", "Tehran", "Tehran"
-	} else {
-		data.Country = "US/Global Node"
-	}
-	
 	return data, nil
 }
 
 func queryRecursiveWhois(domain, server string) string {
-	address := fmt.Sprintf("%s:%d", server, 43)
-	conn, err := net.DialTimeout("tcp", address, 5*time.Second)
-	if err != nil { return "DATA_PROTECTED" }
+	conn, err := net.DialTimeout("tcp", server+":43", 5*time.Second)
+	if err != nil { return "DATA_UNAVAILABLE" }
 	defer conn.Close()
 
 	fmt.Fprintf(conn, domain+"\r\n")
 	scanner := bufio.NewScanner(conn)
+	
 	var referral string
-	keywords := []string{"descr:", "org:", "organization:", "registrant:", "owner:"}
+	keywords := []string{"descr:", "org:", "organization:", "registrant:", "owner:", "org-name:"}
 
 	for scanner.Scan() {
 		line := strings.ToLower(scanner.Text())
@@ -105,9 +99,7 @@ func fetchHeaders(target string) string {
 	if err != nil { resp, err = client.Head("http://" + target) }
 	if err != nil { return "" }
 	defer resp.Body.Close()
-	s := resp.Header.Get("Server")
-	if s == "" { return "Cloud-Shield" }
-	return s
+	return resp.Header.Get("Server")
 }
 
 func GetPhoneIntel(number string) (models.PhoneData, error) {
@@ -117,11 +109,14 @@ func GetPhoneIntel(number string) (models.PhoneData, error) {
 		BreachAlert: true, HandleHint: "anon_" + clean[len(clean)-4:],
 		SocialPresence: []string{"WhatsApp", "Telegram", "Signal"},
 	}
+	// High-End Logic: Mapping Country & Carrier based on E.164
 	if strings.HasPrefix(clean, "98") {
 		d.Country, d.Carrier = "Iran", "MCI / Irancell"
-	} else {
+	} else if strings.HasPrefix(clean, "1") {
 		d.Country, d.Carrier = "USA/Canada", "Verizon / AT&T"
+	} else {
+		d.Country, d.Carrier = "Global Node", "International Carrier"
 	}
-	d.MapLink = "https://www.google.com/maps/search/" + number
+	d.MapLink = "http://google.com/maps/search/" + number
 	return d, nil
 }
