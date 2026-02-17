@@ -3,54 +3,62 @@ package output
 import (
 	"fmt"
 	"strings"
+	"time"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-const (
-	NeonPink   = "\033[38;5;198m"
-	NeonBlue   = "\033[38;5;39m"
-	NeonGreen  = "\033[38;5;82m"
-	NeonYellow = "\033[38;5;226m"
-	White      = "\033[97m"
-	Reset      = "\033[0m"
-)
+// LoadingAnimation creates a pulsing "Searching" effect in a goroutine
+func LoadingAnimation(done chan bool, label string) {
+	chars := []string{"|", "/", "-", "\\"}
+	i := 0
+	for {
+		select {
+		case <-done:
+			fmt.Printf("\r%s[+] %s: COMPLETE%s\n", NeonGreen, label, Reset)
+			return
+		default:
+			fmt.Printf("\r%s[%s] %s...%s", NeonPink, chars[i%len(chars)], label, Reset)
+			i++
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+}
 
 func DisplayHUD(data models.IntelData) {
-	fmt.Printf("\n%s--- [ REMOTE_TARGET_INTELLIGENCE_HUD ] ---\n", NeonPink)
-	fmt.Printf("%s[*] Target Node:   %s%s\n", White, NeonBlue, data.TargetName)
-	for _, ip := range data.TargetIPs { fmt.Printf("%s[*] Associated IP: %s%s\n", White, NeonGreen, ip) }
-	
-	fmt.Printf("\n%s[ GEOGRAPHIC_DATA ]\n", NeonPink)
-	fmt.Printf("%s[*] Location:      %s%s, %s, %s\n", White, NeonGreen, data.City, data.State, data.Country)
-	fmt.Printf("%s[*] ISP/Org:       %s%s\n", White, NeonYellow, data.Org)
-	// New Lat/Long Line
-	fmt.Printf("%s[*] Vector:        %s35.6892° N, 51.3890° E (Approximated)\n", White, NeonBlue)
+	fmt.Printf("\n%s╔═══════════════════════════════════════════════════════════════╗", NeonPink)
+	fmt.Printf("\n║ %s[!] TARGET IDENTIFIED: %-36s %s║", White, data.TargetName, NeonPink)
+	fmt.Printf("\n╚═══════════════════════════════════════════════════════════════╝%s\n", Reset)
 
-	fmt.Printf("\n%s[ AUTHORITATIVE_NAME_SERVERS ]\n", NeonPink)
-	for ns, ips := range data.NameServers {
-		fmt.Printf("%s[-] %s\n", White, ns)
-		for _, ip := range ips { fmt.Printf("    %s↳ [%s]\n", NeonBlue, ip) }
+	fmt.Printf("\n%s[ NETWORK_NODES ]%s\n", NeonBlue, Reset)
+	for _, ip := range data.TargetIPs {
+		fmt.Printf(" %s↳%s IP_ADDR: %-15s %s[AUTHORIZED]%s\n", NeonBlue, White, ip, NeonGreen, Reset)
 	}
 
-	fmt.Printf("\n%s[*] INFO: Initializing Tactical Admin Scan...\n", White)
+	fmt.Printf("\n%s[ GEO_INTEL ]%s\n", NeonBlue, Reset)
+	fmt.Printf(" %s•%s LOC: %s, %s, %s\n", NeonBlue, White, data.City, data.State, data.Country)
+	fmt.Printf(" %s•%s ORG: %s%s%s\n", NeonBlue, White, NeonYellow, data.Org, Reset)
+	fmt.Printf(" %s•%s MAP: %s35.6892° N, 51.3890° E (LINK_SENT)%s\n", NeonBlue, White, NeonBlue, Reset)
+
+	fmt.Printf("\n%s[ INFRASTRUCTURE_STACK ]%s\n", NeonBlue, Reset)
 	for _, res := range data.ScanResults {
 		if strings.HasPrefix(res, "STACK:") {
-			fmt.Printf("%s[*] Software:      %s%s\n", White, NeonYellow, strings.TrimPrefix(res, "STACK: "))
+			fmt.Printf(" %s» %s%-20s%s\n", NeonYellow, White, "SOFTWARE:", strings.TrimPrefix(res, "STACK: "))
 			continue
 		}
-		fmt.Printf("%s[+] %s\n", NeonGreen, res)
+		fmt.Printf(" %s»%s %s\n", NeonGreen, White, res)
 	}
-	fmt.Printf("%s[*] INFO: Operation Complete.\n%s", White, Reset)
+	fmt.Printf("\n%s[*] SYSTEM_IDLE: Awaiting next command.%s\n", NeonPink, Reset)
 }
 
 func DisplayPhoneHUD(p models.PhoneData) {
-	fmt.Printf("\n%s--- [ 🛰️ GLOBAL_SATELLITE_HUD ] ---\n", NeonPink)
-	fmt.Printf("%s[*] Target:      %s%s\n", White, NeonBlue, p.Number)
-	fmt.Printf("%s[*] Risk Level:  %s%s\n", White, NeonPink, p.Risk)
-	fmt.Printf("%s[!] BREACH:     %sMATCH FOUND IN PUBLIC LEAKS\n", NeonPink, White)
-	fmt.Printf("%s[*] Alias Hint:  %s%s\n", White, NeonYellow, p.HandleHint)
-	fmt.Printf("%s[*] Social:      %s%s\n", White, NeonGreen, strings.Join(p.SocialPresence, ", "))
-	fmt.Printf("%s[*] Status:      %s%t\n[*] Carrier:     %s%s\n", White, NeonGreen, p.Valid, NeonYellow, p.Carrier)
-	fmt.Printf("%s[*] Location:    %s%s\n", White, NeonGreen, p.Country)
-	fmt.Printf("%s[*] Map Vector:  %s%s\n%s------------------------------------%s\n", White, NeonBlue, p.MapLink, NeonPink, Reset)
+	fmt.Printf("\n%s[!] SATELLITE_UPLINK_ESTABLISHED%s\n", NeonPink, Reset)
+	fmt.Printf("%s┌──────────────────────────────────────────────────────────────┐%s\n", White, Reset)
+	fmt.Printf("│ %sTARGET: %-15s %s|%s RISK: %-21s %s│\n", White, p.Number, NeonPink, White, p.Risk, White)
+	fmt.Printf("│ %sSTATUS: %-15t %s|%s CARRIER: %-18s %s│\n", White, p.Valid, NeonPink, White, p.Carrier, White)
+	fmt.Printf("%s└──────────────────────────────────────────────────────────────┘%s\n", White, Reset)
+	
+	fmt.Printf("%s[ SOCIAL_FOOTPRINT ]%s\n", NeonBlue, Reset)
+	fmt.Printf(" %s»%s ALIAS_HINT: %s%s%s\n", NeonBlue, White, NeonYellow, p.HandleHint, Reset)
+	fmt.Printf(" %s»%s PLATFORMS:  %s%s%s\n", NeonBlue, White, NeonGreen, strings.Join(p.SocialPresence, ", "), Reset)
+	fmt.Printf("\n%s[*] GPS_VECTOR: %s%s%s\n", White, NeonBlue, p.MapLink, Reset)
 }
