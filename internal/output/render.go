@@ -7,19 +7,22 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// LoadingAnimation creates a pulsing "Searching" effect in a goroutine
+func PulseNode(target string) {
+	fmt.Printf("\n%s[!] Identifying Node: %s%s%s\n", White, NeonPink, target, Reset)
+}
+
 func LoadingAnimation(done chan bool, label string) {
-	chars := []string{"|", "/", "-", "\\"}
+	frames := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 	i := 0
 	for {
 		select {
 		case <-done:
-			fmt.Printf("\r%s[+] %s: COMPLETE%s\n", NeonGreen, label, Reset)
+			fmt.Print(ClearLine)
 			return
 		default:
-			fmt.Printf("\r%s[%s] %s...%s", NeonPink, chars[i%len(chars)], label, Reset)
+			fmt.Printf("\r%s%s %sScanning %s...%s", ClearLine, NeonPink, frames[i%len(frames)], White, label, Reset)
 			i++
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(80 * time.Millisecond)
 		}
 	}
 }
