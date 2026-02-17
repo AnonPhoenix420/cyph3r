@@ -17,7 +17,9 @@ import (
 func GetTargetIntel(input string) (models.IntelData, error) {
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 	ips, _ := net.LookupIP(input)
-	for _, ip := range ips { data.TargetIPs = append(data.TargetIPs, ip.String()) }
+	for _, ip := range ips { 
+		data.TargetIPs = append(data.TargetIPs, ip.String()) 
+	}
 	data.TargetIPs = deduplicate(data.TargetIPs)
 	
 	if len(data.TargetIPs) > 0 {
@@ -79,33 +81,33 @@ func performTacticalScan(target string) []string {
 
 // --- PHONE OSINT LOGIC ---
 
-
-
 func GetPhoneIntel(number string) (models.PhoneData, error) {
 	clean := strings.TrimPrefix(number, "+")
 	clean = strings.ReplaceAll(clean, " ", "")
 	
 	d := models.PhoneData{Number: number, Risk: "LOW (Clearnet)", SocialPresence: []string{"WhatsApp", "Telegram"}}
 
-	// Live Prefix Mapping
 	if strings.HasPrefix(clean, "98") {
 		d.Country = "Iran"
-		if strings.HasPrefix(clean, "9891") { d.Carrier = "MCI (Hamrah-e-Avval)" } 
-		else if strings.HasPrefix(clean, "9893") { d.Carrier = "Irancell" }
-		else { d.Carrier = "Rightel" }
+		if strings.HasPrefix(clean, "9891") { 
+			d.Carrier = "MCI (Hamrah-e-Avval)" 
+		} else if strings.HasPrefix(clean, "9893") { 
+			d.Carrier = "Irancell" 
+		} else { 
+			d.Carrier = "Rightel" 
+		}
 	} else if strings.HasPrefix(clean, "1") {
 		d.Country, d.Carrier = "USA/Canada", "North American Band (Verizon/AT&T)"
 	} else {
 		d.Country, d.Carrier = "International", "Global Carrier Discovery"
 	}
 
-	// VOIP/Burner Detection
 	if strings.HasPrefix(clean, "1201") || strings.HasPrefix(clean, "4470") {
 		d.Risk = "CRITICAL (Burner/VOIP)"
 	}
 
 	d.HandleHint = "uid_" + clean[len(clean)-6:]
-	d.MapLink = "https://www.google.com/maps/search/" + d.Country
+	d.MapLink = "http://googleusercontent.com/maps.google.com/search?q=" + d.Country
 	return d, nil
 }
 
