@@ -10,22 +10,13 @@ import (
 )
 
 func main() {
-	// 1. Setup Flags
-	target := flag.String("t", "", "Target domain (e.g., president.ir)")
-	phone := flag.String("p", "", "Phone number (e.g., +98912...)")
+	target := flag.String("t", "", "Target domain")
+	phone := flag.String("p", "", "Phone number")
 	flag.Parse()
 
-	// 2. Banner Logic
-	fmt.Print(output.NeonPink)
-	fmt.Println("______      ____  __  __ _____ ____ ")
-	fmt.Println("  / ____/_  __/ __ \\/ / / /|__  // __ \\")
-	fmt.Println(" / /   / / / / /_/ / /_/ /  /_ </ /_/ /")
-	fmt.Println("/ /___/ /_/ / ____/ __  / ___/ / _, _/")
-	fmt.Println("\\____/\\__, /_/   /_/ /_/ /____/_/ |_| ")
-	fmt.Println("     /____/         NETWORK_INTEL_SYSTEM")
-	fmt.Print(output.Reset)
+	// Clean call to the new banner function
+	output.Banner()
 
-	// 3. Routing Logic
 	if *target != "" {
 		executeTargetIntel(*target)
 	} else if *phone != "" {
@@ -38,38 +29,30 @@ func main() {
 
 func executeTargetIntel(target string) {
 	output.PulseNode(target)
-
-	// Start Fancy Animation
 	done := make(chan bool)
 	go output.LoadingAnimation(done, "Remote Node Intelligence")
 
-	// Recursive Intel Gathering
 	data, err := intel.GetTargetIntel(target)
-	
-	done <- true // Stop Animation
+	done <- true
 
 	if err != nil {
 		output.Error(fmt.Sprintf("Intel Extraction Failed: %v", err))
 		return
 	}
-
 	output.DisplayHUD(data)
 }
 
 func executePhoneIntel(number string) {
 	output.Info("Initializing Satellite Uplink...")
-	
 	done := make(chan bool)
 	go output.LoadingAnimation(done, "Digital Footprint Analysis")
 
 	data, err := intel.GetPhoneIntel(number)
-	
-	done <- true // Stop Animation
+	done <- true
 
 	if err != nil {
 		output.Error(fmt.Sprintf("Phone OSINT Failed: %v", err))
 		return
 	}
-
 	output.DisplayPhoneHUD(data)
 }
