@@ -7,20 +7,8 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// ANSI Definitions
-const (
-	NeonPink = "\033[38;5;206m"
-	NeonGreen = "\033[38;5;121m"
-	NeonBlue = "\033[38;5;123m"
-	NeonYellow = "\033[38;5;227m"
-	Electric = "\033[38;5;45m"
-	Cyan = "\033[0;36m"
-	Amber = "\033[38;5;214m"
-	White = "\033[0;37m"
-	Red = "\033[0;31m"
-	Reset = "\033[0m"
-	ClearLine = "\033[2K\r"
-)
+// ClearLine remains here as it's a structural utility
+const ClearLine = "\033[2K\r"
 
 func LoadingAnimation(done chan bool, label string) {
 	frames := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
@@ -48,7 +36,7 @@ func DisplayHUD(data models.IntelData, verbose bool) {
 	fmt.Printf(" %s•%s POSITION: %s%.4f° N, %.4f° E %s📡 %s(SIGNAL: %s)\n", Cyan, White, Cyan, data.Lat, data.Lon, Amber, Amber, data.Latency)
 	fmt.Printf(" %s•%s Location: %s%s, %s%s\n", Cyan, White, NeonGreen, data.City, data.Country, Reset)
 
-	if verbose {
+	if verbose && data.RawGeo != "" {
 		fmt.Printf("\n%s[ RAW_GEO_DATA ]%s\n%s%s%s\n", Red, Reset, Amber, data.RawGeo, Reset)
 	}
 
@@ -68,12 +56,12 @@ func DisplayPhoneHUD(p models.PhoneData) {
 	fmt.Printf("\n╚═══════════════════════════════════════════════════════════════╝%s\n", Reset)
 
 	fmt.Printf("\n%s[ ATTRIBUTE_DATA ]%s\n", Cyan, Reset)
-	fmt.Printf(" • CARRIER:  %s%s\n", NeonYellow, p.Carrier)
-	fmt.Printf(" • LOCATION: %s%s\n", NeonGreen, p.Country)
-	fmt.Printf(" • RISK:     %sLOW (Clearnet)%s\n", NeonGreen, Reset)
+	fmt.Printf(" %s•%s CARRIER:  %s%s\n", Cyan, White, NeonYellow, p.Carrier)
+	fmt.Printf(" %s•%s LOCATION: %s%s\n", Cyan, White, NeonGreen, p.Country)
+	fmt.Printf(" %s•%s RISK:     %sLOW (Clearnet)%s\n", Cyan, White, NeonGreen, Reset)
 
 	fmt.Printf("\n%s[ DIGITAL_FOOTPRINT ]%s\n", Cyan, Reset)
-	fmt.Printf(" » ALIAS:    %s%s\n", Amber, p.HandleHint)
-	fmt.Printf(" » SOCIAL:   %s%s\n", NeonGreen, strings.Join(p.SocialPresence, ", "))
+	fmt.Printf(" %s»%s ALIAS:    %s%s\n", Cyan, White, Amber, p.HandleHint)
+	fmt.Printf(" %s»%s SOCIAL:   %s%s\n", Cyan, White, NeonGreen, strings.Join(p.SocialPresence, ", "))
 	fmt.Printf("\n%s[*] %sMAP_VECTOR: %s%s%s\n", White, Cyan, NeonBlue, p.MapLink, Reset)
 }
