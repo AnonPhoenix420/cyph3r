@@ -9,6 +9,7 @@ type IntelData struct {
 	Country     string
 	Lat         float64
 	Lon         float64
+	Latency     string // <--- ADD THIS FIELD
 	NameServers map[string][]string
 	ScanResults []string
 }
