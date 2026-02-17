@@ -56,7 +56,7 @@ func DisplayHUD(data models.IntelData) {
 	fmt.Printf("%s[*] INFO: Initializing Tactical Admin Scan...%s\n", NeonBlue, Reset)
 	for _, res := range data.ScanResults {
 		if strings.HasPrefix(res, "STACK:") {
-			fmt.Printf("%s[*] Software:      %s%-20s %s[]%s\n", NeonBlue, NeonYellow, strings.TrimPrefix(res, "STACK: "), NeonBlue, Reset)
+			fmt.Printf("%s[*] Software:      %s%-15s %s[]%s\n", NeonBlue, NeonYellow, strings.TrimPrefix(res, "STACK: "), NeonBlue, Reset)
 			continue
 		}
 		fmt.Printf("%s[+] %s%s\n", NeonGreen, White, res)
