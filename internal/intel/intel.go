@@ -25,13 +25,11 @@ func GetClient() *http.Client {
 func GetTargetIntel(input string) (models.IntelData, error) {
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 	
-	// 1. Resolve All IP Vectors
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips {
 		data.TargetIPs = append(data.TargetIPs, ip.String())
 	}
 	
-	// 2. Geolocation & Signal Analysis
 	if len(data.TargetIPs) > 0 {
 		geo, raw := fetchGeo(data.TargetIPs[0])
 		data.Org, data.City, data.Country = geo.Org, geo.City, geo.Country
@@ -40,19 +38,17 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		data.Latency = pingTarget(data.TargetIPs[0])
 	}
 
-	// 3. Authority Cluster Mapping
 	nsRecords, _ := net.LookupNS(input)
 	for _, ns := range nsRecords {
 		addrs, _ := net.LookupHost(ns.Host)
 		data.NameServers[ns.Host] = addrs
 	}
 
-	// 4. Infrastructure Stack Fingerprinting
 	data.ScanResults = performTacticalScan(input)
-	
 	return data, nil
 }
 
+// FIXED: Now returns vertical "pretty" JSON
 func fetchGeo(ip string) (GeoResponse, string) {
 	client := GetClient()
 	resp, err := client.Get("http://ip-api.com/json/" + ip)
@@ -60,10 +56,22 @@ func fetchGeo(ip string) (GeoResponse, string) {
 		return GeoResponse{Org: "UPLINK_ENCRYPTED"}, "{}"
 	}
 	defer resp.Body.Close()
+
 	body, _ := io.ReadAll(resp.Body)
+
+	// 1. Unmarshal for internal HUD logic
 	var r GeoResponse
 	json.Unmarshal(body, &r)
-	return r, string(body)
+
+	// 2. Format vertically for Verbose output
+	var anyData interface{}
+	json.Unmarshal(body, &anyData)
+	prettyJSON, err := json.MarshalIndent(anyData, "", "  ")
+	if err != nil {
+		return r, string(body)
+	}
+
+	return r, string(prettyJSON)
 }
 
 type GeoResponse struct {
