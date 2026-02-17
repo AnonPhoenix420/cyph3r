@@ -7,7 +7,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -15,13 +14,12 @@ import (
 	"golang.org/x/net/proxy"
 )
 
-// GetClient returns a proxy-aware HTTP client if SHADOW_PROXY is set
+// GetClient enables Shadow Mode via SOCKS5
 func GetClient() *http.Client {
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
-	proxyAddr := os.Getenv("SHADOW_PROXY")
-	if proxyAddr != "" {
+	if proxyAddr := os.Getenv("SHADOW_PROXY"); proxyAddr != "" {
 		dialer, err := proxy.SOCKS5("tcp", proxyAddr, nil, proxy.Direct)
 		if err == nil {
 			transport.Dial = dialer.Dial
@@ -55,10 +53,9 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 
 func fetchGeo(ip string) (GeoResponse, string) {
 	client := GetClient()
-	resp, err := client.Get("http://ip-api.com/json/" + ip + "?fields=66846719")
-	if err != nil { return GeoResponse{Org: "OFFLINE_NODE"}, "{}" }
+	resp, err := client.Get("http://ip-api.com/json/" + ip + "?fields=16982015")
+	if err != nil { return GeoResponse{Org: "SECURE_GATEWAY"}, "{}" }
 	defer resp.Body.Close()
-	
 	body, _ := io.ReadAll(resp.Body)
 	var r GeoResponse
 	json.Unmarshal(body, &r)
@@ -72,8 +69,8 @@ type GeoResponse struct {
 
 func pingTarget(ip string) string {
 	start := time.Now()
-	conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "443"), 1*time.Second)
-	if err != nil { return "TIMEOUT" }
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "443"), 1200*time.Millisecond)
+	if err != nil { return "LOST" }
 	defer conn.Close()
 	return fmt.Sprintf("%dms", time.Since(start).Milliseconds())
 }
@@ -83,7 +80,6 @@ func performTacticalScan(target string) []string {
 	var serverHeader string
 	client := GetClient()
 	ports := []int{80, 443, 8080}
-
 	for _, p := range ports {
 		addr := fmt.Sprintf("%s:%d", target, p)
 		conn, err := net.DialTimeout("tcp", addr, 1*time.Second)
@@ -99,7 +95,7 @@ func performTacticalScan(target string) []string {
 			results = append(results, fmt.Sprintf("PORT %d: OPEN", p))
 		}
 	}
-	if serverHeader == "" { serverHeader = "UNKNOWN" }
+	if serverHeader == "" { serverHeader = "SECURE_INFRA" }
 	results = append(results, "STACK: "+serverHeader)
 	return results
 }
@@ -107,10 +103,10 @@ func performTacticalScan(target string) []string {
 func GetPhoneIntel(number string) (models.PhoneData, error) {
 	clean := strings.TrimPrefix(number, "+")
 	d := models.PhoneData{Number: number, Risk: "LOW", SocialPresence: []string{"WhatsApp", "Telegram"}}
-	if strings.HasPrefix(clean, "1") {
+	if strings.HasPrefix(clean, "98") {
+		d.Country, d.Carrier = "Iran", "MCI/Irancell"
+	} else if strings.HasPrefix(clean, "1") {
 		d.Country, d.Carrier = "USA/Canada", "North American Band"
-	} else {
-		d.Country, d.Carrier = "International", "Global Node"
 	}
 	d.HandleHint = "uid_" + clean[len(clean)-6:]
 	d.MapLink = "http://googleusercontent.com/maps.google.com/search?q=" + d.Country
