@@ -11,7 +11,7 @@ const (
 	NeonBlue   = "\033[38;5;39m"
 	NeonGreen  = "\033[38;5;82m"
 	NeonYellow = "\033[38;5;226m"
-	Red        = "\033[31m" // Fixes status.go error
+	Red        = "\033[31m" 
 	White      = "\033[97m"
 	Reset      = "\033[0m"
 )
@@ -52,7 +52,6 @@ func DisplayPhoneHUD(p models.PhoneData) {
 	fmt.Printf("%s[*] Risk Level:  %s%s\n", White, NeonPink, p.Risk)
 	fmt.Printf("%s[!] BREACH:     %sMATCH FOUND IN PUBLIC LEAKS\n", NeonPink, White)
 	fmt.Printf("%s[*] Alias Hint:  %s%s\n", White, NeonYellow, p.HandleHint)
-	fmt.Printf("%s[*] Footprint:   %s%s\n", White, NeonBlue, strings.Join(p.AliasMatches, ", "))
 	fmt.Printf("%s[*] Social:      %s%s\n", White, NeonGreen, strings.Join(p.SocialPresence, ", "))
 	fmt.Printf("%s[*] Status:      %s%t\n[*] Type:        %s%s\n", White, NeonGreen, p.Valid, White, p.Type)
 	fmt.Printf("%s[*] Carrier:     %s%s\n[*] Location:    %s%s\n", White, NeonYellow, p.Carrier, NeonGreen, p.Country)
