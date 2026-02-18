@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-// ShieldInfo stores current session security status
 type ShieldInfo struct {
 	IsActive bool
 	IP       string
@@ -18,11 +17,10 @@ type ShieldInfo struct {
 	ISP      string
 }
 
-// CheckShield performs the triple-check and returns session data
 func CheckShield() ShieldInfo {
 	info := ShieldInfo{IsActive: false}
 
-	// 1. Check Interfaces & Routing
+	// 1. Check Interfaces & Routing Table
 	data, _ := os.ReadFile("/proc/net/dev")
 	route, _ := exec.Command("sh", "-c", "ip route").Output()
 	combined := string(data) + string(route)
@@ -31,7 +29,7 @@ func CheckShield() ShieldInfo {
 		info.IsActive = true
 	}
 
-	// 2. ISP Identity Check (External Verification)
+	// 2. ISP Identity Verification (The "External Truth")
 	client := &http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Get("http://ip-api.com/json/?fields=status,country,city,isp,query")
 	if err == nil {
@@ -51,7 +49,7 @@ func CheckShield() ShieldInfo {
 			info.Location = r.City + ", " + r.Country
 			info.ISP = r.Isp
 			
-			// Verification for Datacamp/Proton/M247
+			// Detect Datacamp (Proton) or M247
 			sIsp := strings.ToLower(r.Isp)
 			if strings.Contains(sIsp, "datacamp") || strings.Contains(sIsp, "proton") || strings.Contains(sIsp, "m247") {
 				info.IsActive = true
