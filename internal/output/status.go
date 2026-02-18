@@ -15,9 +15,9 @@ func PrintShieldStatus(active bool, location string, isp string) {
 	
 	fmt.Printf("%s[SECURE]%s\n", NeonGreen, Reset)
 	
-	// Sub-line with session details in your Electric/Gray style
+	// Sub-line with session details using Gray for the separators
 	fmt.Printf("    %s↳ %sNode: %s%s %s| %sISP: %s%s%s\n\n", 
-		Cyan, White, NeonBlue, location, Electric, White, NeonYellow, isp, Reset)
+		Cyan, White, NeonBlue, location, Gray, White, NeonYellow, isp, Reset)
 }
 
 // PrintScanStart is a small helper for the initial uplink message
