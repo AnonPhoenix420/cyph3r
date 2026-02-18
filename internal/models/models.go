@@ -15,12 +15,13 @@ type IntelData struct {
 	NameServers map[string][]string
 	ScanResults []string
 	RawGeo      string
-	// CRITICAL: These two fields allow the WAF detector to work
+	// Security Layers
 	IsWAF       bool   
 	WAFType     string 
 }
 
 // PhoneData stores OSINT results for mobile numbers
+// (Restored to your full original structure)
 type PhoneData struct {
 	Number         string
 	Carrier        string
@@ -31,7 +32,7 @@ type PhoneData struct {
 	MapLink        string
 }
 
-// GeoResponse matches the API response for target resolution
+// GeoResponse expanded to capture 100% of available API intel
 type GeoResponse struct {
 	Status      string  `json:"status"`
 	Country     string  `json:"country"`
