@@ -1,5 +1,6 @@
 package models
 
+// IntelData aggregates all reconnaissance findings
 type IntelData struct {
 	TargetName  string
 	TargetIPs   []string
@@ -13,9 +14,13 @@ type IntelData struct {
 	Latency     string 
 	NameServers map[string][]string
 	ScanResults []string
-	RawGeo      string 
+	RawGeo      string
+	// CRITICAL: These two fields allow the WAF detector to work
+	IsWAF       bool   
+	WAFType     string 
 }
 
+// PhoneData stores OSINT results for mobile numbers
 type PhoneData struct {
 	Number         string
 	Carrier        string
@@ -26,7 +31,7 @@ type PhoneData struct {
 	MapLink        string
 }
 
-// GeoResponse expanded to capture 100% of available API intel
+// GeoResponse matches the API response for target resolution
 type GeoResponse struct {
 	Status      string  `json:"status"`
 	Country     string  `json:"country"`
@@ -40,8 +45,8 @@ type GeoResponse struct {
 	Isp         string  `json:"isp"`
 	Org         string  `json:"org"`
 	As          string  `json:"as"`
-	Mobile      bool    `json:"mobile"`  // NEW: Cellular connection?
-	Proxy       bool    `json:"proxy"`   // NEW: Is it a proxy/VPN?
-	Hosting     bool    `json:"hosting"` // NEW: Is it a data center?
+	Mobile      bool    `json:"mobile"`  
+	Proxy       bool    `json:"proxy"`   
+	Hosting     bool    `json:"hosting"` 
 	Query       string  `json:"query"`
 }
