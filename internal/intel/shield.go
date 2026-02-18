@@ -1,0 +1,62 @@
+package intel
+
+import (
+	"encoding/json"
+	"io"
+	"net/http"
+	"os"
+	"os/exec"
+	"strings"
+	"time"
+)
+
+// ShieldInfo stores current session security status
+type ShieldInfo struct {
+	IsActive bool
+	IP       string
+	Location string
+	ISP      string
+}
+
+// CheckShield performs the triple-check and returns session data
+func CheckShield() ShieldInfo {
+	info := ShieldInfo{IsActive: false}
+
+	// 1. Check Interfaces & Routing
+	data, _ := os.ReadFile("/proc/net/dev")
+	route, _ := exec.Command("sh", "-c", "ip route").Output()
+	combined := string(data) + string(route)
+	
+	if strings.Contains(combined, "tun") || strings.Contains(combined, "proton") || strings.Contains(combined, "wg") {
+		info.IsActive = true
+	}
+
+	// 2. ISP Identity Check (External Verification)
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Get("http://ip-api.com/json/?fields=status,country,city,isp,query")
+	if err == nil {
+		defer resp.Body.Close()
+		body, _ := io.ReadAll(resp.Body)
+		var r struct {
+			Status  string `json:"status"`
+			Country string `json:"country"`
+			City    string `json:"city"`
+			Isp     string `json:"isp"`
+			Query   string `json:"query"`
+		}
+		json.Unmarshal(body, &r)
+
+		if r.Status == "success" {
+			info.IP = r.Query
+			info.Location = r.City + ", " + r.Country
+			info.ISP = r.Isp
+			
+			// Verification for Datacamp/Proton/M247
+			sIsp := strings.ToLower(r.Isp)
+			if strings.Contains(sIsp, "datacamp") || strings.Contains(sIsp, "proton") || strings.Contains(sIsp, "m247") {
+				info.IsActive = true
+			}
+		}
+	}
+	return info
+}
