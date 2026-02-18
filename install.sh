@@ -1,24 +1,17 @@
 #!/bin/bash
-echo "[*] Initializing CYPH3R Installation..."
+echo -e "\033[38;5;39m[*] Setting up Cyph3r Environment...\033[0m"
 
-# 1. Tidy modules and build
+# Ensure script permissions
+chmod +x backup.sh
+
+# Run Go Tidy to verify dependencies
 go mod tidy
-go build -o cyph3r ./cmd/cyph3r/main.go
 
-if [ $? -eq 0 ]; then
-    echo "[+] Build Successful."
+# Build the tool
+make build
+
+if [ -f "./cyph3r" ]; then
+    echo -e "\033[38;5;82m[+] Cyph3r is ready. Run with ./cyph3r -t <target>\033[0m"
 else
-    echo "[-] Build Failed. Check your Go environment."
-    exit 1
-fi
-
-# 2. Move to system path
-sudo mv cyph3r /usr/local/bin/
-
-# 3. Final verification
-if command -v cyph3r &> /dev/null; then
-    echo "[+] CYPH3R installed to /usr/local/bin/cyph3r"
-    echo "[!] Run it using: cyph3r -target google.com"
-else
-    echo "[-] Installation failed to map to PATH."
+    echo -e "\033[31m[!] Build failed. Check Go installation.\033[0m"
 fi
