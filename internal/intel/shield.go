@@ -19,8 +19,6 @@ type ShieldInfo struct {
 
 func CheckShield() ShieldInfo {
 	info := ShieldInfo{IsActive: false}
-
-	// 1. Check Interfaces & Routing Table
 	data, _ := os.ReadFile("/proc/net/dev")
 	route, _ := exec.Command("sh", "-c", "ip route").Output()
 	combined := string(data) + string(route)
@@ -29,7 +27,6 @@ func CheckShield() ShieldInfo {
 		info.IsActive = true
 	}
 
-	// 2. ISP Identity Verification (The "External Truth")
 	client := &http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Get("http://ip-api.com/json/?fields=status,country,city,isp,query")
 	if err == nil {
@@ -43,13 +40,8 @@ func CheckShield() ShieldInfo {
 			Query   string `json:"query"`
 		}
 		json.Unmarshal(body, &r)
-
 		if r.Status == "success" {
-			info.IP = r.Query
-			info.Location = r.City + ", " + r.Country
-			info.ISP = r.Isp
-			
-			// Detect Datacamp (Proton) or M247
+			info.IP, info.Location, info.ISP = r.Query, r.City+", "+r.Country, r.Isp
 			sIsp := strings.ToLower(r.Isp)
 			if strings.Contains(sIsp, "datacamp") || strings.Contains(sIsp, "proton") || strings.Contains(sIsp, "m247") {
 				info.IsActive = true
