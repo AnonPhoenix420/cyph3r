@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-
 	"github.com/AnonPhoenix420/cyph3r/internal/intel"
 	"github.com/AnonPhoenix420/cyph3r/internal/output"
 )
@@ -19,18 +18,14 @@ func main() {
 	// 2. Initialize Visual Uplink & Banner
 	output.Banner()
 	
-	// 3. Pre-Flight Shield Check (OPSEC Verification)
-	fmt.Printf("\033[37m[*] INFO: Verifying Shield Status... \033[0m")
+	// 3. Pre-Flight Shield Check (Synchronized with status.go)
 	shield := intel.CheckShield()
+	output.PrintShieldStatus(shield.IsActive, shield.Location, shield.ISP)
 	
 	if !shield.IsActive {
-		fmt.Printf("\033[31m[UNSECURED]\033[0m\n")
-		fmt.Println("[!] CRITICAL: VPN required for OPSEC. Connection Terminated.")
+		fmt.Printf("\n\033[31m[!] CRITICAL: VPN required for OPSEC. Connection Terminated.\033[0m\n")
 		os.Exit(1)
 	}
-	
-	fmt.Printf("\033[32m[SECURE]\033[0m\n")
-	fmt.Printf("\033[90m    ↳ Node: %s | ISP: %s\033[0m\n\n", shield.Location, shield.ISP)
 
 	// 4. Vector Execution Logic
 	if *targetPtr != "" {
@@ -57,14 +52,13 @@ func runTargetScan(target string, verbose bool) {
 	go output.LoadingAnimation(done, target)
 	
 	data, err := intel.GetTargetIntel(target)
-	done <- true // Stop the animation
+	done <- true 
 
 	if err != nil {
 		fmt.Printf("\n\033[31m[!] UPLINK FAILURE: %v\033[0m\n", err)
 		return
 	}
 
-	// Pass all gathered data (including WAF/PTR) to the HUD
 	output.DisplayHUD(data, verbose)
 }
 
@@ -74,7 +68,7 @@ func runPhoneTrace(number string) {
 	go output.LoadingAnimation(done, number)
 	
 	data, err := intel.GetPhoneIntel(number)
-	done <- true // Stop the animation
+	done <- true 
 
 	if err != nil {
 		fmt.Printf("\n\033[31m[!] TRACE FAILURE: %v\033[0m\n", err)
