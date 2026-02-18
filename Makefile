@@ -1,48 +1,23 @@
-# CYPH3R Tactical Makefile
+# Cyph3r Tactical Build System
 BINARY_NAME=cyph3r
-BUILD_DIR=./bin
-MAIN_PATH=./cmd/cyph3r/main.go
 
-.PHONY: all build clean install repair docker backup help
+all: build
 
-all: repair build
-
-## build: Compiles the binary to the bin directory
 build:
-	@echo "[*] Building $(BINARY_NAME)..."
-	@mkdir -p $(BUILD_DIR)
-	@go build -o $(BUILD_DIR)/$(BINARY_NAME) $(MAIN_PATH)
-	@echo "[+] Build complete: $(BUILD_DIR)/$(BINARY_NAME)"
+	@echo "[\033[38;5;99m*\033[0m] Compiling Cyph3r God Mode..."
+	@go build -o $(BINARY_NAME) ./cmd/cyph3r
+	@chmod +x $(BINARY_NAME)
 
-## clean: Removes build artifacts
-clean:
-	@echo "[*] Cleaning build artifacts..."
-	@rm -rf $(BUILD_DIR)
-	@go clean
-	@echo "[+] Workspace clean."
-
-## repair: Forces a module refresh and fixes dependencies
-repair:
-	@echo "[!] Initializing Toolchain Repair..."
-	@go mod tidy
-	@go mod verify
-	@echo "[+] Dependencies verified."
-
-## install: Builds and moves the binary to /usr/local/bin
 install: build
-	@echo "[*] Installing to system path..."
-	@sudo mv $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/
-	@echo "[+] Installation successful. Type 'cyph3r' to run."
+	@echo "[\033[38;5;82m+\033[0m] Installing to /usr/local/bin..."
+	@sudo cp $(BINARY_NAME) /usr/local/bin/
 
-## docker: Builds the Docker image
-docker:
-	@docker build -t $(BINARY_NAME):latest .
+uninstall:
+	@echo "[\033[31m!\033[0m] Removing Cyph3r from system..."
+	@sudo rm -f /usr/local/bin/$(BINARY_NAME)
+	@rm -f $(BINARY_NAME)
 
-## backup: Runs the backup script
-backup:
-	@chmod +x backup.sh
-	@./backup.sh
-
-help:
-	@echo "CYPH3R Build System Commands:"
-	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' | sed -e 's/^/ /'
+clean:
+	@go clean
+	@rm -f $(BINARY_NAME)
+	@rm -rf backups/
