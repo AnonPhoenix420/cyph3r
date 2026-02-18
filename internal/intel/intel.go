@@ -1,64 +1,91 @@
 package intel
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"os"
 	"strings"
+	"time"
+
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// Global Redaction Map
-var redactionList = []string{
-	"/data/data/com.termux/files/home", // Termux Home
-	"parrot",                            // OS Name
-	os.Getenv("USER"),                   // Current User
-}
-
-// FailSafeCheck confirms VPN and scrubs the environment
-func FailSafeCheck() {
-	if !isVPNActive() {
-		fmt.Println("\n\033[31m[!] CRITICAL: PROTON VPN NOT DETECTED.\033[0m")
-		fmt.Println("[*] OPSEC LOCK: Terminating process to prevent IP leak.")
-		os.Exit(1)
+// GetClient routes through system's active VPN and ignores invalid certs
+func GetClient() *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+		Timeout: 5 * time.Second,
 	}
 }
 
+// isVPNActive checks for ProtonVPN interfaces to prevent leaks
 func isVPNActive() bool {
-	ifaces, _ := net.Interfaces()
-	// Proton typically uses tun0 (OpenVPN) or wg0/proton0 (WireGuard)
-	for _, i := range ifaces {
-		if (i.Flags&net.FlagUp != 0) && (strings.HasPrefix(i.Name, "tun") || strings.HasPrefix(i.Name, "wg") || strings.HasPrefix(i.Name, "proton")) {
-			return true
-		}
+	data, err := os.ReadFile("/proc/net/dev")
+	if err != nil {
+		return false
 	}
-	return false
+	content := string(data)
+	return strings.Contains(content, "tun") || 
+	       strings.Contains(content, "proton") || 
+	       strings.Contains(content, "wg")
 }
 
+// scrub redacts local identity data from output strings
 func scrub(input string) string {
 	output := input
 	hostname, _ := os.Hostname()
+	user := os.Getenv("USER")
 	output = strings.ReplaceAll(output, hostname, "TARGET_NODE")
-	
-	for _, item := range redactionList {
-		if item != "" {
-			output = strings.ReplaceAll(output, item, "[REDACTED]")
-		}
+	if user != "" {
+		output = strings.ReplaceAll(output, user, "operator")
 	}
+	output = strings.ReplaceAll(output, "/data/data/com.termux/files/home", "~")
 	return output
 }
 
-// Full Drop-in Replacement for fetchGeo
-func fetchGeo(ip string) (models.GeoResponse, string) {
-	// Step 0: Kill process if no VPN
-	FailSafeCheck()
+func GetTargetIntel(input string) (models.IntelData, error) {
+	// FAIL-SAFE: Check VPN status before any networking
+	if !isVPNActive() {
+		fmt.Println("\n\033[31m[!] PROTON VPN NOT DETECTED. KILLING PROCESS.\033[0m")
+		os.Exit(1)
+	}
 
+	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
+	
+	ips, _ := net.LookupIP(input)
+	for _, ip := range ips {
+		data.TargetIPs = append(data.TargetIPs, ip.String())
+	}
+	
+	if len(data.TargetIPs) > 0 {
+		geo, raw := fetchGeo(data.TargetIPs[0])
+		data.Org, data.City, data.Country = geo.Org, geo.City, geo.Country
+		data.Lat, data.Lon = geo.Lat, geo.Lon
+		data.RawGeo = raw // This is already scrubbed in fetchGeo
+		data.Latency = pingTarget(data.TargetIPs[0])
+	}
+
+	nsRecords, _ := net.LookupNS(input)
+	for _, ns := range nsRecords {
+		addrs, _ := net.LookupHost(ns.Host)
+		data.NameServers[ns.Host] = addrs
+	}
+
+	data.ScanResults = performTacticalScan(input)
+	return data, nil
+}
+
+func fetchGeo(ip string) (models.GeoResponse, string) {
 	client := GetClient()
 	resp, err := client.Get("http://ip-api.com/json/" + ip)
 	if err != nil {
-		return models.GeoResponse{Org: "SECURE_UPLINK"}, "{}"
+		return models.GeoResponse{Org: "UPLINK_ENCRYPTED"}, "{}"
 	}
 	defer resp.Body.Close()
 
@@ -67,13 +94,72 @@ func fetchGeo(ip string) (models.GeoResponse, string) {
 	var r models.GeoResponse
 	json.Unmarshal(body, &r)
 
-	// Pretty Print & Scrub
 	var anyData interface{}
 	json.Unmarshal(body, &anyData)
-	prettyJSON, _ := json.MarshalIndent(anyData, "", "  ")
+	prettyJSON, err := json.MarshalIndent(anyData, "", "  ")
+	if err != nil {
+		return r, scrub(string(body))
+	}
 
-	// Apply 99.9% Clean Sanity
-	cleanRaw := scrub(string(prettyJSON))
+	return r, scrub(string(prettyJSON))
+}
 
-	return r, cleanRaw
+func pingTarget(ip string) string {
+	start := time.Now()
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "443"), 2*time.Second)
+	if err != nil {
+		return "TIMEOUT"
+	}
+	defer conn.Close()
+	return fmt.Sprintf("%dms", time.Since(start).Milliseconds())
+}
+
+func performTacticalScan(target string) []string {
+	var results []string
+	var serverHeader string
+	client := GetClient()
+	
+	ports := []int{80, 443, 8080}
+	for _, p := range ports {
+		addr := net.JoinHostPort(target, fmt.Sprintf("%d", p))
+		conn, err := net.DialTimeout("tcp", addr, 1500*time.Millisecond)
+		if err == nil {
+			conn.Close()
+			results = append(results, fmt.Sprintf("PORT %d: OPEN", p))
+			
+			if (p == 80 || p == 443) && serverHeader == "" {
+				proto := "http"
+				if p == 443 { proto = "https" }
+				if hResp, hErr := client.Get(fmt.Sprintf("%s://%s", proto, target)); hErr == nil {
+					serverHeader = hResp.Header.Get("Server")
+					hResp.Body.Close()
+				}
+			}
+		}
+	}
+	
+	if serverHeader == "" { serverHeader = "F_STACK_HIDDEN" }
+	results = append(results, "STACK: "+serverHeader)
+	return results
+}
+
+func GetPhoneIntel(number string) (models.PhoneData, error) {
+	clean := strings.TrimPrefix(number, "+")
+	d := models.PhoneData{
+		Number:         number,
+		Risk:           "LOW",
+		SocialPresence: []string{"WhatsApp", "Telegram", "Signal"},
+	}
+	
+	if strings.HasPrefix(clean, "98") {
+		d.Country, d.Carrier = "Iran", "MCI/Irancell"
+	} else if strings.HasPrefix(clean, "1") {
+		d.Country, d.Carrier = "USA/Canada", "Global Mobile"
+	} else {
+		d.Country, d.Carrier = "Unknown", "Provider Restricted"
+	}
+	
+	d.HandleHint = "uid_" + clean[len(clean)-6:]
+	d.MapLink = "https://www.google.com/maps/search/" + d.Country
+	return d, nil
 }
