@@ -1,23 +1,27 @@
 package output
 
-import "fmt"
+import (
+	"fmt"
+)
 
-// Error displays a critical failure message in red
-func Error(msg string) {
-	fmt.Printf("%s[!] ERROR: %s%s%s\n", Red, White, msg, Reset)
+// PrintShieldStatus displays the high-fidelity VPN session data
+func PrintShieldStatus(active bool, location string, isp string) {
+	fmt.Printf("%s[*] INFO: %sVerifying Shield Status... ", White, Cyan)
+	
+	if !active {
+		fmt.Printf("%s[UNSECURED]%s\n", Red, Reset)
+		return
+	}
+	
+	fmt.Printf("%s[SECURE]%s\n", NeonGreen, Reset)
+	
+	// Sub-line with session details in your Electric/Gray style
+	fmt.Printf("    %s↳ %sNode: %s%s %s| %sISP: %s%s%s\n\n", 
+		Cyan, White, NeonBlue, location, Electric, White, NeonYellow, isp, Reset)
 }
 
-// Info displays a tactical information message in blue
-func Info(msg string) {
-	fmt.Printf("%s[*] INFO: %s%s%s\n", NeonBlue, White, msg, Reset)
-}
-
-// Warning displays a non-critical alert in yellow
-func Warning(msg string) {
-	fmt.Printf("%s[!] WARNING: %s%s%s\n", NeonYellow, White, msg, Reset)
-}
-
-// Success displays a positive result in green
-func Success(msg string) {
-	fmt.Printf("%s[+] SUCCESS: %s%s%s\n", NeonGreen, White, msg, Reset)
+// PrintScanStart is a small helper for the initial uplink message
+func PrintScanStart(target string) {
+	fmt.Printf("%s[*] INFO: %sInitializing Satellite Uplink to %s%s%s...\n", 
+		White, Cyan, NeonPink, target, Reset)
 }
