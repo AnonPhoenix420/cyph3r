@@ -10,11 +10,15 @@ import (
 	"os"
 	"strings"
 	"time"
+
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
 func GetClient() *http.Client {
-	return &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}, Timeout: 5 * time.Second}
+	return &http.Client{
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+		Timeout:   5 * time.Second,
+	}
 }
 
 func GetTargetIntel(input string) (models.IntelData, error) {
@@ -30,9 +34,13 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		ipStr := ip.String()
 		data.TargetIPs = append(data.TargetIPs, ipStr)
 		names, _ := net.LookupAddr(ipStr)
-		if len(names) > 0 { data.ReverseDNS = append(data.ReverseDNS, strings.TrimSuffix(names[0], ".")) } else { data.ReverseDNS = append(data.ReverseDNS, "NO_PTR") }
+		if len(names) > 0 {
+			data.ReverseDNS = append(data.ReverseDNS, strings.TrimSuffix(names[0], "."))
+		} else {
+			data.ReverseDNS = append(data.ReverseDNS, "NO_PTR")
+		}
 	}
-	
+
 	if len(data.TargetIPs) > 0 {
 		geo, raw := fetchGeo(data.TargetIPs[0])
 		data.Org, data.City, data.Country, data.Lat, data.Lon = geo.Org, geo.City, geo.Country, geo.Lat, geo.Lon
@@ -57,7 +65,7 @@ func fetchGeo(ip string) (models.GeoResponse, string) {
 	json.Unmarshal(body, &r)
 	var pretty interface{}
 	json.Unmarshal(body, &pretty)
-	prettyJSON, _ := json.MarshalIndent(pretty, "", "  ")
+	prettyJSON, _ := json.MarshalIndent(pretty, "", " ")
 	return r, string(prettyJSON)
 }
 
@@ -94,6 +102,5 @@ func performTacticalScan(target string) []string {
 }
 
 func GetPhoneIntel(num string) (models.PhoneData, error) {
-	// Preserves your original phone logic skeleton
 	return models.PhoneData{Number: num, Carrier: "MCI/Irancell", Risk: "LOW", SocialPresence: []string{"WhatsApp", "Telegram"}}, nil
 }
