@@ -1,5 +1,6 @@
 package models
 
+// IntelData is your main reconnaissance structure
 type IntelData struct {
 	TargetName  string
 	TargetIPs   []string
@@ -15,6 +16,7 @@ type IntelData struct {
 	RawGeo      string 
 }
 
+// PhoneData stores OSINT results for phone numbers
 type PhoneData struct {
 	Number         string
 	Carrier        string
@@ -23,4 +25,23 @@ type PhoneData struct {
 	HandleHint     string
 	SocialPresence []string
 	MapLink        string
+}
+
+// GeoResponse matches the API response for target resolution
+// This was missing, causing your build errors
+type GeoResponse struct {
+	Status      string  `json:"status"`
+	Country     string  `json:"country"`
+	CountryCode string  `json:"countryCode"`
+	Region      string  `json:"region"`
+	RegionName  string  `json:"regionName"`
+	City        string  `json:"city"`
+	Zip         string  `json:"zip"`
+	Lat         float64 `json:"lat"`
+	Lon         float64 `json:"lon"`
+	Timezone    string  `json:"timezone"`
+	Isp         string  `json:"isp"`
+	Org         string  `json:"org"`
+	As          string  `json:"as"`
+	Query       string  `json:"query"`
 }
