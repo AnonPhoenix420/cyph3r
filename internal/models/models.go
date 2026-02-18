@@ -1,9 +1,9 @@
 package models
 
-// IntelData aggregates all reconnaissance findings
 type IntelData struct {
 	TargetName  string
 	TargetIPs   []string
+	ReverseDNS  []string 
 	Org         string
 	City        string
 	Region      string
@@ -16,7 +16,6 @@ type IntelData struct {
 	RawGeo      string 
 }
 
-// PhoneData stores OSINT results for phone numbers
 type PhoneData struct {
 	Number         string
 	Carrier        string
@@ -27,12 +26,11 @@ type PhoneData struct {
 	MapLink        string
 }
 
-// GeoResponse matches the API response for target resolution
+// GeoResponse expanded to capture 100% of available API intel
 type GeoResponse struct {
 	Status      string  `json:"status"`
 	Country     string  `json:"country"`
 	CountryCode string  `json:"countryCode"`
-	Region      string  `json:"region"`
 	RegionName  string  `json:"regionName"`
 	City        string  `json:"city"`
 	Zip         string  `json:"zip"`
@@ -42,5 +40,8 @@ type GeoResponse struct {
 	Isp         string  `json:"isp"`
 	Org         string  `json:"org"`
 	As          string  `json:"as"`
+	Mobile      bool    `json:"mobile"`  // NEW: Cellular connection?
+	Proxy       bool    `json:"proxy"`   // NEW: Is it a proxy/VPN?
+	Hosting     bool    `json:"hosting"` // NEW: Is it a data center?
 	Query       string  `json:"query"`
 }
