@@ -15,7 +15,6 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// GetClient routes through system's active VPN and ignores invalid certs
 func GetClient() *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
@@ -25,29 +24,21 @@ func GetClient() *http.Client {
 	}
 }
 
-// isVPNActive uses Triple-Check validation for Termux/Parrot environments
 func isVPNActive() bool {
-	// Check 1: Virtual Interface Check
 	data, _ := os.ReadFile("/proc/net/dev")
 	content := string(data)
 	if strings.Contains(content, "tun") || strings.Contains(content, "wg") || strings.Contains(content, "proton") {
 		return true
 	}
-
-	// Check 2: Routing Table Check (Bypasses PRoot limitations)
 	out, _ := exec.Command("sh", "-c", "ip route | grep -E 'tun|wg|proton'").Output()
-	if len(out) > 0 {
-		return true
-	}
-
-	// Check 3: ISP/Organization Identity Check (Targets Datacamp/Proton)
+	if len(out) > 0 { return true }
+	
 	client := &http.Client{Timeout: 2 * time.Second}
-	resp, err := client.Get("http://ip-api.com/json/")
+	resp, err := client.Get("http://ip-api.com/json/?fields=isp")
 	if err == nil {
 		defer resp.Body.Close()
 		body, _ := io.ReadAll(resp.Body)
 		sBody := strings.ToLower(string(body))
-		// Validates against your specific connection (Datacamp Limited)
 		if strings.Contains(sBody, "datacamp") || strings.Contains(sBody, "proton") || strings.Contains(sBody, "m247") {
 			return true
 		}
@@ -55,15 +46,12 @@ func isVPNActive() bool {
 	return false
 }
 
-// scrub redacts local identity data from output
 func scrub(input string) string {
 	output := input
 	hostname, _ := os.Hostname()
 	user := os.Getenv("USER")
 	output = strings.ReplaceAll(output, hostname, "TARGET_NODE")
-	if user != "" {
-		output = strings.ReplaceAll(output, user, "operator")
-	}
+	if user != "" { output = strings.ReplaceAll(output, user, "operator") }
 	output = strings.ReplaceAll(output, "/data/data/com.termux/files/home", "~")
 	return output
 }
@@ -75,15 +63,29 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 	}
 
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
+	
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips {
 		data.TargetIPs = append(data.TargetIPs, ip.String())
+		// NEW: Reverse DNS (PTR) Lookup - Tells you the server's true name
+		names, _ := net.LookupAddr(ip.String())
+		for _, name := range names {
+			data.ReverseDNS = append(data.ReverseDNS, strings.TrimSuffix(name, "."))
+		}
 	}
 	
 	if len(data.TargetIPs) > 0 {
 		geo, raw := fetchGeo(data.TargetIPs[0])
 		data.Org, data.City, data.Country = geo.Org, geo.City, geo.Country
 		data.Lat, data.Lon = geo.Lat, geo.Lon
+		
+		// NEW: Intelligence Labeling
+		usage := "RESIDENTIAL"
+		if geo.Hosting { usage = "DATA_CENTER" }
+		if geo.Mobile { usage = "MOBILE_NET" }
+		if geo.Proxy { usage += "/PROXY_DETECTED" }
+		data.ScanResults = append(data.ScanResults, "USAGE: "+usage)
+		
 		data.RawGeo = raw
 		data.Latency = pingTarget(data.TargetIPs[0])
 	}
@@ -94,16 +96,15 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		data.NameServers[ns.Host] = addrs
 	}
 
-	data.ScanResults = performTacticalScan(input)
+	data.ScanResults = append(data.ScanResults, performTacticalScan(input)...)
 	return data, nil
 }
 
 func fetchGeo(ip string) (models.GeoResponse, string) {
 	client := GetClient()
-	resp, err := client.Get("http://ip-api.com/json/" + ip)
-	if err != nil {
-		return models.GeoResponse{Org: "UPLINK_ENCRYPTED"}, "{}"
-	}
+	// Requesting full security fields: mobile, proxy, hosting
+	resp, err := client.Get("http://ip-api.com/json/" + ip + "?fields=status,message,country,countryCode,regionName,city,zip,lat,lon,timezone,isp,org,as,mobile,proxy,hosting,query")
+	if err != nil { return models.GeoResponse{Org: "OFFLINE"}, "{}" }
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
@@ -129,7 +130,6 @@ func performTacticalScan(target string) []string {
 	var results []string
 	var serverHeader string
 	client := GetClient()
-	
 	ports := []int{80, 443, 8080}
 	for _, p := range ports {
 		addr := net.JoinHostPort(target, fmt.Sprintf("%d", p))
@@ -156,6 +156,6 @@ func GetPhoneIntel(number string) (models.PhoneData, error) {
 	d := models.PhoneData{Number: number, Risk: "LOW", SocialPresence: []string{"WhatsApp", "Telegram"}}
 	if strings.HasPrefix(clean, "98") { d.Country, d.Carrier = "Iran", "MCI/Irancell" }
 	d.HandleHint = "uid_" + clean[len(clean)-6:]
-	d.MapLink = "http://maps.google.com/?q=" + d.Country
+	d.MapLink = "http://google.com/maps?q=" + d.Country
 	return d, nil
 }
