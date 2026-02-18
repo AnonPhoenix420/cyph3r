@@ -1,6 +1,6 @@
 package models
 
-// IntelData is your main reconnaissance structure
+// IntelData aggregates all reconnaissance findings
 type IntelData struct {
 	TargetName  string
 	TargetIPs   []string
@@ -28,7 +28,6 @@ type PhoneData struct {
 }
 
 // GeoResponse matches the API response for target resolution
-// This was missing, causing your build errors
 type GeoResponse struct {
 	Status      string  `json:"status"`
 	Country     string  `json:"country"`
