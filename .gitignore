@@ -1,5 +1,14 @@
+# Binaries
 cyph3r
 cyph3r.exe
 bin/
+
+# Dependency directories 
 vendor/
+
+# Environment / Sensitive data
 .env
+*.log
+
+# OS Metadata
+.DS_Store
