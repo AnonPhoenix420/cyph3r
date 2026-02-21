@@ -1,82 +1,73 @@
 package intel
 
 import (
-	"context"
+	"crypto/tls"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
-	"sync"
+	"strings"
 	"time"
-	"github.com/AnonPhoenix420/cyph3r/internal/output"
+
+	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-const (
-	SafetyLatency = 180 * time.Millisecond 
-	MaxBurst      = 40
-)
+func GetTargetIntel(input string) (models.IntelData, error) {
+	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 
-type TacticalConfig struct {
-	Target string
-	Vector string 
-	PPS    int    
-}
-
-func RunTacticalTest(cfg TacticalConfig, ctx context.Context) {
-	var wg sync.WaitGroup
-	sem := make(chan struct{}, MaxBurst)
-
-	// Pulls colors from your output package
-	fmt.Printf("\n%s[GHOST_MODE] ENGAGING %s VECTOR -> %s%s\n", output.NeonPink, cfg.Vector, cfg.Target, output.Reset)
-
-	for {
-		select {
-		case <-ctx.Done():
-			fmt.Printf("\n%s[+] Session Terminated. Scrubbing traces...%s\n", output.NeonGreen, output.Reset)
-			return
-		default:
-			if checkLocalCongestion() {
-				fmt.Printf("\r%s[!] GOVERNOR: Latency Spike Detected. Throttling...%s", output.Amber, output.Reset)
-				time.Sleep(1 * time.Second)
-				continue
-			}
-
-			sem <- struct{}{}
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				defer func() { <-sem }()
-				executeScrubbedVector(cfg)
-			}()
-			
-			time.Sleep(time.Second / time.Duration(cfg.PPS))
+	// DNS Resolution
+	ips, _ := net.LookupIP(input)
+	for _, ip := range ips {
+		if ip.To4() != nil {
+			data.TargetIPs = append(data.TargetIPs, ip.String())
 		}
 	}
-}
 
-func executeScrubbedVector(cfg TacticalConfig) {
-	client := &http.Client{Timeout: 2 * time.Second}
-	
-	switch cfg.Vector {
-	case "HULK":
-		// Layer 7: Cache-Busting & Header Randomization for ArvanCloud bypass
-		req, _ := http.NewRequest("GET", "https://"+cfg.Target, nil)
-		req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36")
-		req.Header.Set("X-Forwarded-For", fmt.Sprintf("10.0.%d.%d", time.Now().Second(), time.Now().Nanosecond()%255))
-		
-		resp, err := client.Do(req)
-		if err == nil { resp.Body.Close() }
-
-	case "SYN":
-		d := net.Dialer{Timeout: 500 * time.Millisecond}
-		conn, err := d.Dial("tcp", cfg.Target+":443")
-		if err == nil { conn.Close() }
+	// Fetch GEO Data & Signal Strength
+	if len(data.TargetIPs) > 0 {
+		geo, _ := fetchGeo(data.TargetIPs[0])
+		data.Org, data.City, data.Country = geo.Org, geo.City, geo.Country
+		data.Lat, data.Lon = geo.Lat, geo.Lon
+		data.Latency = pingTarget(data.TargetIPs[0])
 	}
+
+	analyzeExploitSurface(input, &data)
+
+	return data, nil
 }
 
-func checkLocalCongestion() bool {
+func fetchGeo(ip string) (models.GeoResponse, error) {
+	client := &http.Client{Timeout: 4 * time.Second}
+	resp, err := client.Get("http://ip-api.com/json/" + ip)
+	if err != nil { return models.GeoResponse{}, err }
+	defer resp.Body.Close()
+	
+	var r models.GeoResponse
+	json.NewDecoder(resp.Body).Decode(&r)
+	return r, nil
+}
+
+func pingTarget(ip string) string {
 	start := time.Now()
-	conn, err := net.DialTimeout("tcp", "1.1.1.1:53", 250*time.Millisecond)
-	if err != nil { return true }
-	conn.Close()
-	return time.Since(start) > SafetyLatency
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "443"), 1500*time.Millisecond)
+	if err != nil { return "TIMEOUT" }
+	defer conn.Close()
+	return fmt.Sprintf("%dms", time.Since(start).Milliseconds())
+}
+
+func analyzeExploitSurface(target string, data *models.IntelData) {
+	client := &http.Client{
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+		Timeout: 5 * time.Second,
+	}
+	resp, err := client.Get("http://" + target)
+	if err != nil { return }
+	defer resp.Body.Close()
+
+	srv := resp.Header.Get("Server")
+	if strings.Contains(strings.ToLower(srv), "arvan") || resp.Header.Get("ArvanCloud-Trace") != "" {
+		data.IsWAF, data.WAFType = true, "ArvanCloud (Regional WAF)"
+	}
+	data.ScanResults = append(data.ScanResults, "STACK: "+srv)
 }
