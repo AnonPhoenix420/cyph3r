@@ -7,7 +7,7 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// LoadingAnimation - Exported for main.go
+// LoadingAnimation is exported for main.go
 func LoadingAnimation(done chan bool, label string) {
 	frames := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 	i := 0
@@ -24,7 +24,7 @@ func LoadingAnimation(done chan bool, label string) {
 	}
 }
 
-// DisplayHUD - Main Target HUD
+// DisplayHUD renders the main target intelligence
 func DisplayHUD(data models.IntelData, verbose bool) {
 	fmt.Printf("\n%s╔═══════════════════════════════════════════════════════════════╗", NeonBlue)
 	fmt.Printf("\n║ %s[!] TARGET_NODE: %-42s %s║", Cyan, NeonPink+data.TargetName, NeonBlue)
@@ -55,7 +55,7 @@ func DisplayHUD(data models.IntelData, verbose bool) {
 	}
 }
 
-// DisplayPhoneHUD - Exported for main.go
+// DisplayPhoneHUD is exported for main.go
 func DisplayPhoneHUD(p models.PhoneData) {
 	fmt.Printf("\n%s╔═══════════════════════════════════════════════════════════════╗", NeonBlue)
 	fmt.Printf("\n║ %s[!] PHONE_INTEL: %-42s %s║", Cyan, NeonPink+p.Number, NeonBlue)
