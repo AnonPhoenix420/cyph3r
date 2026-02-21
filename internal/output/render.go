@@ -13,16 +13,16 @@ func DisplayHUD(data models.IntelData, verbose bool) {
 	}
 	fmt.Printf("\n╚═══════════════════════════════════════════════════════════════╝%s\n", Reset)
 
-	// --- TACTICAL TELEMETRY ---
-	fmt.Printf("\n%s[ TACTICAL_TELEMETRY ]%s\n", NeonBlue, Reset)
+	// --- TACTICAL TELEMETRY (Utilizing Electric) ---
+	fmt.Printf("\n%s[ TACTICAL_TELEMETRY ]%s\n", Electric, Reset)
 	mStatus, pStatus, hStatus := "OFF", "OFF", "OFF"
 	if data.IsMobile { mStatus = "ON (CELLULAR)" }
 	if data.IsProxy { pStatus = "ON (VPN/PROXY)" }
 	if data.IsHosting { hStatus = "ON (DATACENTER)" }
 	
-	fmt.Printf(" %s• %-12s %s%s\n", Cyan, "MOBILE_NET:", White, mStatus)
-	fmt.Printf(" %s• %-12s %s%s\n", Cyan, "PROXY_NODE:", White, pStatus)
-	fmt.Printf(" %s• %-12s %s%s\n", Cyan, "HOSTING:", White, hStatus)
+	fmt.Printf(" %s• %-12s %s%s\n", Electric, "MOBILE_NET:", White, mStatus)
+	fmt.Printf(" %s• %-12s %s%s\n", Electric, "PROXY_NODE:", White, pStatus)
+	fmt.Printf(" %s• %-12s %s%s\n", Electric, "HOSTING:", White, hStatus)
 
 	// --- NETWORK VECTORS ---
 	fmt.Printf("\n%s[ NETWORK_VECTORS ]%s\n", NeonBlue, Reset)
@@ -30,17 +30,11 @@ func DisplayHUD(data models.IntelData, verbose bool) {
 		fmt.Printf(" %s↳ [v] %-18s %s→ %s[LINK_ACTIVE]%s\n", Cyan, White+ip, Gray, NeonGreen, Reset)
 	}
 
-	// --- GEO_ENTITY ---
-	fmt.Printf("\n%s[ GEO_ENTITY ]%s\n", NeonBlue, Reset)
-	fmt.Printf(" %s• %sLOCATION: %s%s, %s\n", Cyan, White, NeonYellow, data.City, data.Country)
-	fmt.Printf(" %s• %sPOSITION: %s%.4f° N, %.4f° E %s📡 (%s)\n", Cyan, White, Cyan, data.Lat, data.Lon, Amber, data.Latency)
-
-	// --- INFRASTRUCTURE (Uniform Cluster Strings) ---
+	// --- UNIFORM CLUSTER STRINGS ---
 	if verbose && len(data.NameServers) > 0 {
 		fmt.Printf("\n%s[ AUTHORITATIVE_CLUSTERS ]%s\n", NeonBlue, Reset)
 		for ns, ips := range data.NameServers {
 			for _, ip := range ips {
-				// Uniform string format: [NAME] -> [IP]
 				fmt.Printf(" %s[*] %-28s %s→ %s%-15s %s[NODE]%s\n", Gray, White+ns, Gray, Cyan, ip, Gray, Reset)
 			}
 		}
