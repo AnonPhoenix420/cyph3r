@@ -22,7 +22,6 @@ func GetClient() *http.Client {
 }
 
 func GetTargetIntel(input string) (models.IntelData, error) {
-	// 1. VPN KILL-SWITCH
 	shield := CheckShield()
 	if !shield.IsActive {
 		fmt.Println("\n\033[31m[!] PROTON VPN DISCONNECTED. EMERGENCY HALT.\033[0m")
@@ -31,7 +30,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 
-	// 2. NETWORK VECTORS & PTR
+	// 1. RESOLVE & PTR
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips {
 		ipStr := ip.String()
@@ -44,12 +43,11 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		}
 	}
 
-	// 3. GEO & INFRA TYPE (FIXED RESIDENTIAL MISLABEL)
+	// 2. GEO & INFRA (Fixed Mislabeling)
 	if len(data.TargetIPs) > 0 {
 		geo, raw := fetchGeo(data.TargetIPs[0])
 		data.Org, data.City, data.Country, data.Lat, data.Lon = geo.Org, geo.City, geo.Country, geo.Lat, geo.Lon
 		data.RawGeo, data.Latency = raw, pingTarget(data.TargetIPs[0])
-		
 		usage := "RESIDENTIAL"
 		if geo.Hosting || strings.Contains(strings.ToLower(geo.Org), "arvan") || strings.Contains(strings.ToLower(geo.Isp), "anycast") {
 			usage = "DATA_CENTER/CDN"
@@ -57,7 +55,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		data.ScanResults = append(data.ScanResults, "USAGE: "+usage)
 	}
 
-	// 4. AUTHORITATIVE CLUSTERS
+	// 3. AUTHORITATIVE CLUSTERS
 	ns, _ := net.LookupNS(input)
 	for _, nameserver := range ns {
 		nsIPs, _ := net.LookupIP(nameserver.Host)
@@ -66,11 +64,34 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		}
 	}
 
+	// 4. SUBDOMAIN SHADOW-SCAN (The Origin Hunter)
+	huntSubdomains(input, &data)
+
 	// 5. EXPLOIT & BYPASS FINGERPRINTING
 	analyzeExploitSurface(input, &data)
 	data.ScanResults = append(data.ScanResults, performTacticalScan(input)...)
 
 	return data, nil
+}
+
+func huntSubdomains(target string, data *models.IntelData) {
+	subs := []string{"dev", "vpn", "mail", "api", "test", "staging", "internal", "webmail"}
+	for _, s := range subs {
+		host := s + "." + target
+		ips, err := net.LookupIP(host)
+		if err == nil {
+			result := fmt.Sprintf("SUBDOMAIN: %s → %s", host, ips[0].String())
+			// Check if subdomain IP is DIFFERENT from main IP (Potential Origin!)
+			isWaf := false
+			for _, mainIp := range data.TargetIPs {
+				if ips[0].String() == mainIp { isWaf = true }
+			}
+			if !isWaf {
+				data.ScanResults = append(data.ScanResults, "DEBUG: Potential Origin Found ["+ips[0].String()+"]")
+			}
+			data.ScanResults = append(data.ScanResults, result)
+		}
+	}
 }
 
 func analyzeExploitSurface(target string, data *models.IntelData) {
@@ -85,7 +106,6 @@ func analyzeExploitSurface(target string, data *models.IntelData) {
 		checkCVE(srv, data)
 	}
 
-	// ARVANCLOUD BYPASS LEAK DETECTION
 	if sid := resp.Header.Get("X-Sid"); sid != "" {
 		data.ScanResults = append(data.ScanResults, "DEBUG: Arvan-Node-ID ["+sid+"]")
 	}
@@ -93,7 +113,6 @@ func analyzeExploitSurface(target string, data *models.IntelData) {
 		data.ScanResults = append(data.ScanResults, "DEBUG: Trace-ID Detected")
 	}
 
-	// WAF IDENTIFICATION
 	if resp.Header.Get("CF-RAY") != "" {
 		data.IsWAF, data.WAFType = true, "Cloudflare (Global CDN)"
 	} else if strings.Contains(strings.ToLower(srv), "arvancloud") || resp.Header.Get("ArvanCloud-Trace") != "" {
@@ -108,9 +127,6 @@ func checkCVE(srv string, data *models.IntelData) {
 	}
 	if strings.Contains(s, "apache/2.4.49") {
 		data.ScanResults = append(data.ScanResults, "VULN_WARN: CVE-2021-41773 (Path Traversal)")
-	}
-	if strings.Contains(s, "php/5.") {
-		data.ScanResults = append(data.ScanResults, "VULN_WARN: EOL_PHP_DETECTED (High Risk)")
 	}
 }
 
