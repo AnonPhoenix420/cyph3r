@@ -16,7 +16,7 @@ import (
 func GetTargetIntel(input string) (models.IntelData, error) {
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 
-	// 1. DNS & Reverse PTR
+	// 1. IP & PTR Recovery
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips {
 		if ip.To4() != nil { 
@@ -29,7 +29,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		}
 	}
 
-	// 2. Real-Intel Geo Sync
+	// 2. Full-Spectrum Public Dox (Orange/Pink Sync)
 	if len(data.TargetIPs) > 0 {
 		client := &http.Client{Timeout: 5 * time.Second}
 		resp, _ := client.Get("http://ip-api.com/json/" + data.TargetIPs[0] + "?fields=66846719")
@@ -45,7 +45,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 			resp.Body.Close()
 		}
 
-		// 3. Port Scan (Green Intel)
+		// 3. Infrastructure Probe (Green Active Status)
 		ports := []int{80, 443, 8080, 2082, 2083, 2086, 2087}
 		var wg sync.WaitGroup
 		for _, p := range ports {
@@ -82,7 +82,7 @@ func mineLeaks(target string, data *models.IntelData) {
 		Timeout: 4 * time.Second,
 	}
 	req, _ := http.NewRequest("GET", "https://"+target, nil)
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 	
 	resp, err := client.Do(req)
 	if err == nil {
@@ -90,7 +90,7 @@ func mineLeaks(target string, data *models.IntelData) {
 		data.WAFType = resp.Header.Get("Server")
 		if data.WAFType != "" { data.IsWAF = true }
 		
-		// LEAK SYNC
+		// Capture Shield IDs
 		if id := resp.Header.Get("Ar-Request-Id"); id != "" { 
 			data.ScanResults = append(data.ScanResults, "DEBUG: Arvan-Node-ID ["+id+"]") 
 		}
