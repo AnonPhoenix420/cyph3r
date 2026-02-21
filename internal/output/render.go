@@ -7,20 +7,8 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// ANSI Color Escape Codes
-const (
-	Reset       = "\033[0m"
-	Red         = "\033[38;5;196m"
-	NeonGreen   = "\033[38;5;82m"
-	NeonPink    = "\033[38;5;13m"
-	Electric    = "\033[38;5;39m"
-	Amber       = "\033[38;5;214m"
-	White       = "\033[37m"
-	Gray        = "\033[90m"
-	Cyan        = "\033[36m"
-	NeonYellow  = "\033[38;5;226m"
-	ClearLine   = "\033[2K\r"
-)
+// ClearLine is likely not in your colors.go, so we keep it here or add it there.
+const ClearLine = "\033[2K\r"
 
 func LoadingAnimation(done chan bool, label string) {
 	frames := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
