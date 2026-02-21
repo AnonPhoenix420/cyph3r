@@ -26,14 +26,12 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		data.NameServers[host] = ipStrings
 	}
 
-	// 2. IP Mapping & REVERSE DNS (PTR) Recovery
+	// 2. IP Mapping & REVERSE DNS (PTR)
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips {
 		if ip.To4() != nil { 
 			ipStr := ip.String()
 			data.TargetIPs = append(data.TargetIPs, ipStr) 
-			
-			// Recover Reverse DNS Strings
 			ptrs, _ := net.LookupAddr(ipStr)
 			for _, ptr := range ptrs {
 				data.ReverseDNS = append(data.ReverseDNS, fmt.Sprintf("%s → %s", ipStr, strings.TrimSuffix(ptr, ".")))
@@ -79,4 +77,37 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 	return data, nil
 }
 
-// ... mineLeaks and pingTarget remain the same ...
+// RESTORING MISSING FUNCTIONS
+func pingTarget(ip string) string {
+	start := time.Now()
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "443"), 1200*time.Millisecond)
+	if err != nil { return "TIMEOUT" }
+	defer conn.Close()
+	return time.Since(start).String()
+}
+
+func mineLeaks(target string, data *models.IntelData) {
+	client := &http.Client{
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+		Timeout: 5 * time.Second,
+	}
+	resp, err := client.Get("https://" + target)
+	if err != nil { return }
+	defer resp.Body.Close()
+
+	data.WAFType = resp.Header.Get("Server")
+	if data.WAFType != "" { data.IsWAF = true }
+
+	// Search for Node/Trace Leaks
+	leaks := map[string]string{
+		"Arvan-Node-ID": resp.Header.Get("Ar-Request-Id"),
+		"Trace-ID":      resp.Header.Get("X-Trace-Id"),
+		"CF-Ray":        resp.Header.Get("CF-RAY"),
+	}
+
+	for key, val := range leaks {
+		if val != "" {
+			data.ScanResults = append(data.ScanResults, fmt.Sprintf("DEBUG: %s [%s]", key, val))
+		}
+	}
+}
