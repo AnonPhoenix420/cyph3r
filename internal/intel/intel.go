@@ -31,7 +31,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 	}
 
 	if len(data.TargetIPs) > 0 {
-		client := &http.http.Client{Timeout: 5 * time.Second}
+		client := &http.Client{Timeout: 5 * time.Second}
 		resp, _ := client.Get("http://ip-api.com/json/" + data.TargetIPs[0] + "?fields=66846719")
 		if resp != nil {
 			body, _ := io.ReadAll(resp.Body)
