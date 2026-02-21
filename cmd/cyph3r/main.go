@@ -4,18 +4,18 @@ import (
 	"context"
 	"flag"
 	"time"
-
 	"github.com/AnonPhoenix420/cyph3r/internal/intel"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 	"github.com/AnonPhoenix420/cyph3r/internal/output"
 )
 
 func main() {
-	target := flag.String("t", "", "Target Domain")
-	vector := flag.String("test", "", "Vector: HULK, SYN, UDP, ACK, DNS, ICMP, TCP, HTTP, HTTPS")
-	port := flag.String("port", "443", "Target Port")
-	pps := flag.Int("pps", 20, "Speed (PPS)")
+	target  := flag.String("t", "", "Target Domain")
+	vector  := flag.String("test", "", "Vector: HULK, SYN, UDP, ACK, DNS, ICMP")
+	port    := flag.String("port", "443", "Tactical Port")
+	pps     := flag.Int("pps", 20, "Packets Per Second")
 	monitor := flag.Bool("monitor", false, "Infinite Mode")
+	verbose := flag.Bool("v", false, "Enable Verbose Output")
 
 	flag.Parse()
 	output.Banner()
@@ -25,11 +25,11 @@ func main() {
 		return
 	}
 
-	// 1. RECON PHASE (Persistence Restored)
+	// 1. RECON PHASE (Passing the verbose flag here)
 	data, _ := intel.GetTargetIntel(*target)
-	output.DisplayHUD(data, false)
+	output.DisplayHUD(data, *verbose)
 
-	// 2. TACTICAL PHASE (Omni-Vector Engine)
+	// 2. TACTICAL PHASE
 	if *vector != "" {
 		ctx := context.Background()
 		if !*monitor {
