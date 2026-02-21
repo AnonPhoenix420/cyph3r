@@ -7,7 +7,7 @@ import (
 )
 
 func DisplayHUD(data models.IntelData, verbose bool) {
-	// --- HEADER ---
+	// --- HEADER (NEON BLUE) ---
 	fmt.Printf("\n%s╔═══════════════════════════════════════════════════════════════╗", NeonBlue)
 	fmt.Printf("\n║ %s[!] TARGET_NODE: %-42s %s║", Cyan, NeonPink+data.TargetName, NeonBlue)
 	
@@ -24,7 +24,7 @@ func DisplayHUD(data models.IntelData, verbose bool) {
 		fmt.Printf(" %s↳ %s[v]%s %-18s %s[LINK_ACTIVE]%s\n", Cyan, NeonBlue, NeonGreen, ip, NeonBlue, Reset)
 	}
 
-	// --- GEO ---
+	// --- GEO (FIXED) ---
 	fmt.Printf("\n%s[ GEO_ENTITY ]%s\n", NeonBlue, Reset)
 	fmt.Printf(" %s•%s ENTITY:   %s%s\n", Cyan, White, NeonYellow, data.Org)
 	fmt.Printf(" %s•%s POSITION: %s%.4f° N, %.4f° E %s📡 %s(SIGNAL: %s)\n", Cyan, White, Cyan, data.Lat, data.Lon, Amber, Amber, data.Latency)
