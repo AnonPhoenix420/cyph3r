@@ -2,51 +2,42 @@ package intel
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
-	"os"
-	"os/exec"
 	"strings"
 	"time"
 )
 
-type ShieldInfo struct {
+type ShieldStatus struct {
 	IsActive bool
-	IP       string
 	Location string
 	ISP      string
 }
 
-func CheckShield() ShieldInfo {
-	info := ShieldInfo{IsActive: false}
-	data, _ := os.ReadFile("/proc/net/dev")
-	route, _ := exec.Command("sh", "-c", "ip route").Output()
-	combined := string(data) + string(route)
-	
-	if strings.Contains(combined, "tun") || strings.Contains(combined, "proton") || strings.Contains(combined, "wg") {
-		info.IsActive = true
-	}
-
+// CheckShield verifies VPN status via IP check
+func CheckShield() ShieldStatus {
 	client := &http.Client{Timeout: 3 * time.Second}
-	resp, err := client.Get("http://ip-api.com/json/?fields=status,country,city,isp,query")
-	if err == nil {
-		defer resp.Body.Close()
-		body, _ := io.ReadAll(resp.Body)
-		var r struct {
-			Status  string `json:"status"`
-			Country string `json:"country"`
-			City    string `json:"city"`
-			Isp     string `json:"isp"`
-			Query   string `json:"query"`
-		}
-		json.Unmarshal(body, &r)
-		if r.Status == "success" {
-			info.IP, info.Location, info.ISP = r.Query, r.City+", "+r.Country, r.Isp
-			sIsp := strings.ToLower(r.Isp)
-			if strings.Contains(sIsp, "datacamp") || strings.Contains(sIsp, "proton") || strings.Contains(sIsp, "m247") {
-				info.IsActive = true
-			}
-		}
+	resp, err := client.Get("http://ip-api.com/json/")
+	if err != nil {
+		return ShieldStatus{IsActive: false}
 	}
-	return info
+	defer resp.Body.Close()
+
+	var r struct {
+		Status  string `json:"status"`
+		Country string `json:"country"`
+		Isp     string `json:"isp"`
+		Query   string `json:"query"`
+	}
+	json.NewDecoder(resp.Body).Decode(&r)
+
+	// OPSEC: Detecting VPN Providers (Proton, M247, etc)
+	isVpn := strings.Contains(strings.ToLower(r.Isp), "m247") || 
+		     strings.Contains(strings.ToLower(r.Isp), "proton") ||
+			 strings.Contains(strings.ToLower(r.Isp), "datacentre")
+
+	return ShieldStatus{
+		IsActive: isVpn,
+		Location: r.Country,
+		ISP:      r.Isp,
+	}
 }
