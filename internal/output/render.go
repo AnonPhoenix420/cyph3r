@@ -7,6 +7,21 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
+// ANSI Color Escape Codes
+const (
+	Reset       = "\033[0m"
+	Red         = "\033[38;5;196m"
+	NeonGreen   = "\033[38;5;82m"
+	NeonPink    = "\033[38;5;13m"
+	Electric    = "\033[38;5;39m"
+	Amber       = "\033[38;5;214m"
+	White       = "\033[37m"
+	Gray        = "\033[90m"
+	Cyan        = "\033[36m"
+	NeonYellow  = "\033[38;5;226m"
+	ClearLine   = "\033[2K\r"
+)
+
 func LoadingAnimation(done chan bool, label string) {
 	frames := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 	i := 0
@@ -24,49 +39,47 @@ func LoadingAnimation(done chan bool, label string) {
 }
 
 func DisplayHUD(data models.IntelData, verbose bool) {
+	// --- HEADER TRENCH ---
 	fmt.Printf("\n%s╔═══════════════════════════════════════════════════════════════╗", Electric)
-	fmt.Printf("\n║ %s[!] TARGET_NODE: %-41s %s║", Cyan, NeonPink+data.TargetName, Electric)
+	fmt.Printf("\n║ %s[!] TARGET_NODE: %-42s %s║", Cyan, NeonPink+data.TargetName, Electric)
+	
 	if data.IsWAF {
-		fmt.Printf("\n║ %s[!] SHIELD:      %-41s %s║", Amber, NeonYellow+data.WAFType, Electric)
+		fmt.Printf("\n║ %s[!] SHIELD:      %-42s %s║", Amber, NeonYellow+data.WAFType, Electric)
 	} else {
-		fmt.Printf("\n║ %s[!] SHIELD:      %-41s %s║", Gray, "UNPROTECTED / DIRECT_IP", Electric)
+		fmt.Printf("\n║ %s[!] SHIELD:      %-42s %s║", Gray, "UNPROTECTED / DIRECT_IP", Electric)
 	}
 	fmt.Printf("\n╚═══════════════════════════════════════════════════════════════╝%s\n", Reset)
 
+	// --- NETWORK VECTORS ---
 	fmt.Printf("\n%s[ NETWORK_VECTORS ]%s\n", Cyan, Reset)
 	for i, ip := range data.TargetIPs {
-		ptr := "---"; if i < len(data.ReverseDNS) && data.ReverseDNS[i] != "NO_PTR" { ptr = data.ReverseDNS[i] }
-		fmt.Printf(" %s↳ %s[v]%s %-16s %s%s %-25s %s[LINK_ACTIVE]%s\n", Cyan, NeonBlue, NeonGreen, ip, Gray, "→", NeonPink+ptr, Electric, Reset)
+		ptr := "---"
+		if i < len(data.ReverseDNS) && data.ReverseDNS[i] != "NO_PTR" {
+			ptr = data.ReverseDNS[i]
+		}
+		fmt.Printf(" %s↳ %s[v]%s %-16s %s%s %-25s %s[LINK_ACTIVE]%s\n", Cyan, Electric, NeonGreen, ip, Gray, "→", NeonPink+ptr, Electric, Reset)
 	}
 
+	// --- GEO ENTITY ---
 	fmt.Printf("\n%s[ GEO_ENTITY ]%s\n", Cyan, Reset)
 	fmt.Printf(" %s•%s ENTITY:   %s%s\n", Cyan, White, NeonYellow, data.Org)
 	fmt.Printf(" %s•%s POSITION: %s%.4f° N, %.4f° E %s📡 %s(SIGNAL: %s)\n", Cyan, White, Cyan, data.Lat, data.Lon, Amber, Amber, data.Latency)
 
-	if len(data.NameServers) > 0 {
-		fmt.Printf("\n%s[ AUTHORITATIVE_CLUSTERS ]%s\n", Cyan, Reset)
-		for ns, ips := range data.NameServers {
-			fmt.Printf(" %s[-] %s%s\n", NeonPink, White, ns)
-			for _, ip := range ips {
-				fmt.Printf(" %s↳ %s%-35s %s[ONLINE]%s\n", Electric, NeonGreen, ip, NeonGreen, Reset)
-			}
-		}
-	}
-
+	// --- INFRASTRUCTURE STACK ---
 	fmt.Printf("\n%s[ INFRASTRUCTURE_STACK ]%s\n", Cyan, Reset)
 	for _, res := range data.ScanResults {
 		if strings.HasPrefix(res, "SUBDOMAIN:") {
-			fmt.Printf("%s[»] %s%-45s %s[FOUND]%s\n", NeonPink, White, res, NeonGreen, Reset)
+			fmt.Printf("%s[»] %-45s %s[FOUND]%s\n", NeonPink, White+res, NeonGreen, Reset)
 		} else if strings.Contains(res, "VULN_WARN") {
 			fmt.Printf("%s[!] ALERT:      %s%s\n", Red, White+strings.TrimPrefix(res, "VULN_WARN: "), Reset)
 		} else if strings.Contains(res, "DEBUG") {
-			fmt.Printf("%s[*] %s%-35s %s[LEAK]%s\n", Amber, White, res, Red, Reset)
+			fmt.Printf("%s[*] %-40s %s[LEAK]%s\n", Amber, White+res, Red, Reset)
 		} else if strings.Contains(res, "PORT") {
-			fmt.Printf("%s[+] %s%-35s %s[ACTIVE]%s\n", NeonGreen, White, res, Electric, Reset)
+			fmt.Printf("%s[+] %-40s %s[ACTIVE]%s\n", NeonGreen, White+res, Electric, Reset)
 		} else if strings.HasPrefix(res, "STACK:") {
-			fmt.Printf("%s[*] Software:   %s%-25s %s[]%s\n", NeonBlue, NeonYellow, strings.TrimPrefix(res, "STACK: "), NeonBlue, Reset)
+			fmt.Printf("%s[*] Software:   %s%-25s %s[]%s\n", Electric, NeonYellow, strings.TrimPrefix(res, "STACK: "), Electric, Reset)
 		} else {
-			fmt.Printf("%s[*] %s%s\n", NeonBlue, White, res)
+			fmt.Printf("%s[*] %s%s\n", Electric, White, res)
 		}
 	}
 }
