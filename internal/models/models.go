@@ -10,8 +10,8 @@ type TacticalConfig struct {
 
 type IntelData struct {
 	TargetName  string
-	TargetIPs   []string // v4
-	TargetIPv6s []string // v6
+	TargetIPs   []string
+	TargetIPv6s []string
 	ReverseDNS  []string
 	Org         string
 	ISP         string 
