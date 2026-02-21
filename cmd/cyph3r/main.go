@@ -12,87 +12,73 @@ import (
 )
 
 func main() {
-	// 1. Tactical Argument Mapping (RECON + GHOST TESTS)
-	targetPtr := flag.String("t", "", "Target domain (Network Intelligence)")
-	phonePtr  := flag.String("p", "", "Phone number (Mobile Intelligence)")
-	testVec   := flag.String("test", "", "Tactical Vector: SYN, UDP, HULK")
-	pps       := flag.Int("pps", 10, "Speed: Packets/Requests Per Second")
-	duration  := flag.Int("time", 30, "Test duration in seconds")
-	verbose   := flag.Bool("v", false, "Enable verbose output")
-	flag.Parse()
+	// Flags
+	target  := flag.String("t", "", "Target domain (e.g., president.ir)")
+	phone   := flag.String("p", "", "Phone number trace")
+	testVec := flag.String("test", "", "Tactical Vector: SYN, UDP, HULK")
+	pps     := flag.Int("pps", 10, "Speed: Packets Per Second")
+	sec     := flag.Int("time", 30, "Duration of test in seconds")
+	verbose := flag.Bool("v", false, "Enable Raw JSON output")
 
-	// 2. Initialize Visual Uplink (Banner)
+	flag.Usage = func() {
+		output.Banner()
+		fmt.Printf("\n\033[38;5;39m--- CYPH3R COMMAND INTERFACE ---\033[0m\n")
+		fmt.Printf("\033[38;5;82mRECON:\033[0m\n")
+		fmt.Println("  ./cyph3r -t <domain>          Deep infrastructure intel")
+		fmt.Println("  ./cyph3r -p <number>          Mobile intelligence trace")
+		
+		fmt.Printf("\n\033[38;5;196mTACTICAL (GHOST MODE):\033[0m\n")
+		fmt.Println("  -test HULK   High-volume L7 flood (Bypasses Cache)")
+		fmt.Println("  -test SYN    TCP Half-open handshake exhaustion")
+		fmt.Println("  -test UDP    Volumetric UDP bandwidth saturation")
+		
+		fmt.Printf("\n\033[38;5;214mSETTINGS:\033[0m\n")
+		fmt.Println("  -pps <10-50>  Packets per second (Speed control)")
+		fmt.Println("  -time <sec>   Auto-kill timer (Safety first)")
+		fmt.Println("---------------------------------------------------\n")
+	}
+
+	flag.Parse()
 	output.Banner()
 
-	// 3. Pre-Flight GHOST_MODE Shield Check
+	// OPSEC KILL-SWITCH
 	shield := intel.CheckShield()
 	output.PrintShieldStatus(shield.IsActive, shield.Location, shield.ISP)
 
 	if !shield.IsActive {
-		fmt.Printf("\n\033[31m[!] GHOST_MODE FAILURE: VPN Connection required. ABORTING.\033[0m\n")
+		fmt.Printf("\n\033[31m[!] GHOST_MODE FAILURE: VPN Connection Required.\033[0m\n")
 		os.Exit(1)
 	}
 
-	// 4. Vector Execution Logic
-	if *targetPtr != "" {
-		// Mandatory Intel Phase
-		data := runTargetScan(*targetPtr, *verbose)
-
-		// Check if Tactical Test is requested
+	if *target != "" {
+		runTargetScan(*target, *verbose)
 		if *testVec != "" {
-			executeTacticalGhostTest(*targetPtr, *testVec, *pps, *duration)
+			executeTactical(*target, *testVec, *pps, *sec)
 		}
 		os.Exit(0)
-	}
-
-	if *phonePtr != "" {
-		runPhoneTrace(*phonePtr)
+	} else if *phone != "" {
+		runPhoneTrace(*phone)
 		os.Exit(0)
+	} else {
+		flag.Usage()
 	}
-
-	// 5. Default Failover
-	flag.Usage()
-	os.Exit(1)
 }
 
-func runTargetScan(target string, verbose bool) interface{} {
-	done := make(chan bool)
-	go output.LoadingAnimation(done, target)
-
-	data, err := intel.GetTargetIntel(target)
-	done <- true
-	if err != nil {
-		fmt.Printf("\n\033[31m[!] UPLINK FAILURE: %v\033[0m\n", err)
-		os.Exit(1)
-	}
-	output.DisplayHUD(data, verbose)
-	return data
+func runTargetScan(t string, v bool) {
+	done := make(chan bool); go output.LoadingAnimation(done, t)
+	data, err := intel.GetTargetIntel(t); done <- true
+	if err != nil { fmt.Printf("\n[!] ERROR: %v\n", err); os.Exit(1) }
+	output.DisplayHUD(data, v)
 }
 
-func executeTacticalGhostTest(target, vector string, speed, seconds int) {
-	// Create a context that auto-terminates to prevent "Self-Suicide"
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(seconds)*time.Second)
+func executeTactical(t, v string, s, d int) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(d)*time.Second)
 	defer cancel()
-
-	cfg := intel.TacticalConfig{
-		Target: target,
-		Vector: vector,
-		PPS:    speed,
-	}
-
-	// Hand over to the Scrubbed Tactical Engine
-	intel.RunTacticalTest(cfg, ctx)
+	intel.RunTacticalTest(intel.TacticalConfig{Target: t, Vector: v, PPS: s}, ctx)
 }
 
-func runPhoneTrace(number string) {
-	done := make(chan bool)
-	go output.LoadingAnimation(done, number)
-
-	data, err := intel.GetPhoneIntel(number)
-	done <- true
-	if err != nil {
-		fmt.Printf("\n\033[31m[!] TRACE FAILURE: %v\033[0m\n", err)
-		return
-	}
+func runPhoneTrace(n string) {
+	done := make(chan bool); go output.LoadingAnimation(done, n)
+	data, _ := intel.GetPhoneIntel(n); done <- true
 	output.DisplayPhoneHUD(data)
 }
