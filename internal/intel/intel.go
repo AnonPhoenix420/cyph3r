@@ -16,7 +16,6 @@ import (
 func GetTargetIntel(input string) (models.IntelData, error) {
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 
-	// 1. DUAL STACK RESOLUTION (v4 & v6)
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips {
 		ipStr := ip.String()
@@ -25,17 +24,14 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		} else {
 			data.TargetIPv6s = append(data.TargetIPv6s, ipStr)
 		}
-		
-		// Map PTR for all discovered IPs
 		ptrs, _ := net.LookupAddr(ipStr)
 		for _, ptr := range ptrs {
 			data.ReverseDNS = append(data.ReverseDNS, fmt.Sprintf("%-15s → %s", ipStr, strings.TrimSuffix(ptr, ".")))
 		}
 	}
 
-	// 2. GEO/ORG TELEMETRY (via Primary v4)
 	if len(data.TargetIPs) > 0 {
-		client := &http.Client{Timeout: 5 * time.Second}
+		client := &http.http.Client{Timeout: 5 * time.Second}
 		resp, _ := client.Get("http://ip-api.com/json/" + data.TargetIPs[0] + "?fields=66846719")
 		if resp != nil {
 			body, _ := io.ReadAll(resp.Body)
@@ -49,7 +45,6 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 			resp.Body.Close()
 		}
 
-		// 3. MULTI-PORT PROBE
 		ports := []int{80, 443, 8080, 2082, 2083, 2086, 2087}
 		var wg sync.WaitGroup
 		for _, p := range ports {
@@ -66,7 +61,6 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		wg.Wait()
 	}
 
-	// 4. CLUSTER RECON
 	ns, _ := net.LookupNS(input)
 	for _, s := range ns {
 		host := strings.TrimSuffix(s.Host, ".")
@@ -94,9 +88,8 @@ func mineLeaks(target string, data *models.IntelData) {
 		data.WAFType = resp.Header.Get("Server")
 		if data.WAFType != "" { data.IsWAF = true }
 		
-		// LEAK SYNC
 		if id := resp.Header.Get("Ar-Request-Id"); id != "" { data.ScanResults = append(data.ScanResults, "DEBUG: Arvan-Node-ID ["+id+"]") }
 		if ray := resp.Header.Get("CF-RAY"); ray != "" { data.ScanResults = append(data.ScanResults, "DEBUG: Cloudflare-Ray ["+ray+"]") }
-		if edge := resp.Header.Get("X-Ar-Edge-Id"); edge != "" { data.ScanResults = append(data.ScanResults, "DEBUG: Arvan-Edge-Loc ["+edge+"]") }
+		if sid := resp.Header.Get("X-Ar-Sid"); sid != "" { data.ScanResults = append(data.ScanResults, "DEBUG: Arvan-Server-ID ["+sid+"]") }
 	}
 }
