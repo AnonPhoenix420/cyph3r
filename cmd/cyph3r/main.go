@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"net/http"
 	"time"
 	"github.com/AnonPhoenix420/cyph3r/internal/intel"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
@@ -10,26 +11,21 @@ import (
 )
 
 func main() {
-	target  := flag.String("t", "", "Target Domain")
-	vector  := flag.String("test", "", "Vector: HULK, SYN, UDP, ACK, DNS, ICMP")
-	port    := flag.String("port", "443", "Tactical Port")
-	pps     := flag.Int("pps", 20, "Packets Per Second")
+	target := flag.String("t", "", "Target Domain")
+	vector := flag.String("test", "", "Vector: HULK, SYN, UDP, ACK, DNS, ICMP, TCP, HTTP, HTTPS")
+	port := flag.String("port", "443", "Target Port")
+	pps := flag.Int("pps", 50, "Packets Per Second")
+	power := flag.Int("power", 100, "Force Multiplier")
 	monitor := flag.Bool("monitor", false, "Infinite Mode")
 	verbose := flag.Bool("v", false, "Enable Verbose Output")
 
 	flag.Parse()
 	output.Banner()
+	if *target == "" { flag.Usage(); return }
 
-	if *target == "" {
-		flag.Usage()
-		return
-	}
-
-	// 1. RECON PHASE (Passing the verbose flag here)
 	data, _ := intel.GetTargetIntel(*target)
 	output.DisplayHUD(data, *verbose)
 
-	// 2. TACTICAL PHASE
 	if *vector != "" {
 		ctx := context.Background()
 		if !*monitor {
@@ -38,11 +34,14 @@ func main() {
 			defer cancel()
 		}
 
+		transport := &http.Transport{
+			MaxIdleConns: 2000, MaxIdleConnsPerHost: 1000,
+			IdleConnTimeout: 30 * time.Second, DisableKeepAlives: false,
+		}
+		httpClient := &http.Client{Transport: transport, Timeout: 1 * time.Second}
+
 		intel.RunTacticalTest(models.TacticalConfig{
-			Target: *target,
-			Vector: *vector,
-			PPS:    *pps,
-			Port:   *port,
-		}, ctx)
+			Target: *target, Vector: *vector, PPS: *pps, Port: *port, Power: *power,
+		}, ctx, httpClient)
 	}
 }
