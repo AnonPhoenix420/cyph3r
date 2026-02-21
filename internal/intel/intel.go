@@ -16,7 +16,7 @@ import (
 func GetTargetIntel(input string) (models.IntelData, error) {
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 
-	// 1. IP Mapping & REVERSE DNS (PTR)
+	// 1. DNS & Reverse PTR
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips {
 		if ip.To4() != nil { 
@@ -29,7 +29,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		}
 	}
 
-	// 2. Deep Telemetry & Dox Sync (Orange + Pink Data)
+	// 2. Real-Intel Geo Sync
 	if len(data.TargetIPs) > 0 {
 		client := &http.Client{Timeout: 5 * time.Second}
 		resp, _ := client.Get("http://ip-api.com/json/" + data.TargetIPs[0] + "?fields=66846719")
@@ -37,7 +37,6 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 			body, _ := io.ReadAll(resp.Body)
 			var g models.GeoResponse
 			json.Unmarshal(body, &g)
-			
 			data.Org, data.ISP, data.AS = g.Org, g.Isp, g.As
 			data.City, data.Region, data.RegionName = g.City, g.Region, g.RegionName
 			data.Country, data.CountryCode, data.Zip = g.Country, g.CountryCode, g.Zip
@@ -46,7 +45,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 			resp.Body.Close()
 		}
 
-		// 3. Port Probing (Green Intel)
+		// 3. Port Scan (Green Intel)
 		ports := []int{80, 443, 8080, 2082, 2083, 2086, 2087}
 		var wg sync.WaitGroup
 		for _, p := range ports {
@@ -63,7 +62,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		wg.Wait()
 	}
 
-	// 4. Cluster Recon
+	// 4. Cluster Discovery
 	ns, _ := net.LookupNS(input)
 	for _, s := range ns {
 		host := strings.TrimSuffix(s.Host, ".")
@@ -82,12 +81,21 @@ func mineLeaks(target string, data *models.IntelData) {
 		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
 		Timeout: 4 * time.Second,
 	}
-	resp, err := client.Get("https://" + target)
+	req, _ := http.NewRequest("GET", "https://"+target, nil)
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+	
+	resp, err := client.Do(req)
 	if err == nil {
 		defer resp.Body.Close()
 		data.WAFType = resp.Header.Get("Server")
 		if data.WAFType != "" { data.IsWAF = true }
-		if id := resp.Header.Get("Ar-Request-Id"); id != "" { data.ScanResults = append(data.ScanResults, "DEBUG: Arvan-Node-ID ["+id+"]") }
-		if cf := resp.Header.Get("CF-RAY"); cf != "" { data.ScanResults = append(data.ScanResults, "DEBUG: Cloudflare-Ray ["+cf+"]") }
+		
+		// LEAK SYNC
+		if id := resp.Header.Get("Ar-Request-Id"); id != "" { 
+			data.ScanResults = append(data.ScanResults, "DEBUG: Arvan-Node-ID ["+id+"]") 
+		}
+		if ray := resp.Header.Get("CF-RAY"); ray != "" { 
+			data.ScanResults = append(data.ScanResults, "DEBUG: Cloudflare-Ray ["+ray+"]") 
+		}
 	}
 }
