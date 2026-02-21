@@ -17,7 +17,7 @@ import (
 func GetClient() *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}, 
-		Timeout:   6 * time.Second,
+		Timeout:   7 * time.Second,
 	}
 }
 
@@ -29,10 +29,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		os.Exit(1)
 	}
 
-	data := models.IntelData{
-		TargetName:  input,
-		NameServers: make(map[string][]string),
-	}
+	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 
 	// 2. NETWORK VECTORS & PTR
 	ips, _ := net.LookupIP(input)
@@ -47,12 +44,16 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		}
 	}
 
-	// 3. GEO & ISP INTELLIGENCE
+	// 3. GEO & INFRA TYPE (FIXED RESIDENTIAL MISLABEL)
 	if len(data.TargetIPs) > 0 {
 		geo, raw := fetchGeo(data.TargetIPs[0])
 		data.Org, data.City, data.Country, data.Lat, data.Lon = geo.Org, geo.City, geo.Country, geo.Lat, geo.Lon
 		data.RawGeo, data.Latency = raw, pingTarget(data.TargetIPs[0])
-		usage := "RESIDENTIAL"; if geo.Hosting { usage = "DATA_CENTER" }; if geo.Proxy { usage += "/PROXY" }
+		
+		usage := "RESIDENTIAL"
+		if geo.Hosting || strings.Contains(strings.ToLower(geo.Org), "arvan") || strings.Contains(strings.ToLower(geo.Isp), "anycast") {
+			usage = "DATA_CENTER/CDN"
+		}
 		data.ScanResults = append(data.ScanResults, "USAGE: "+usage)
 	}
 
@@ -65,10 +66,8 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		}
 	}
 
-	// 5. EXPLOIT FINGERPRINTING (VULN SCANNER)
+	// 5. EXPLOIT & BYPASS FINGERPRINTING
 	analyzeExploitSurface(input, &data)
-
-	// 6. PORT VECTORS
 	data.ScanResults = append(data.ScanResults, performTacticalScan(input)...)
 
 	return data, nil
@@ -83,29 +82,35 @@ func analyzeExploitSurface(target string, data *models.IntelData) {
 	srv := resp.Header.Get("Server")
 	if srv != "" {
 		data.ScanResults = append(data.ScanResults, "STACK: "+srv)
-		s := strings.ToLower(srv)
-		
-		// OS Detection
-		if strings.Contains(s, "ubuntu") { data.ScanResults = append(data.ScanResults, "OS_HINT: Linux (Ubuntu)") }
-		if strings.Contains(s, "centos") { data.ScanResults = append(data.ScanResults, "OS_HINT: Linux (CentOS)") }
-		if strings.Contains(s, "win") || strings.Contains(s, "iis") { data.ScanResults = append(data.ScanResults, "OS_HINT: Windows Server") }
-
-		// Vuln Logic: Flag old versions
-		if strings.Contains(s, "nginx/1.10") || strings.Contains(s, "apache/2.2") || strings.Contains(s, "php/5.") {
-			data.ScanResults = append(data.ScanResults, "VULN_WARN: OUTDATED_SOFTWARE_DETECTED")
-		}
+		checkCVE(srv, data)
 	}
 
-	// WAF Detection
-	if resp.Header.Get("CF-RAY") != "" || strings.ToLower(srv) == "cloudflare" {
+	// ARVANCLOUD BYPASS LEAK DETECTION
+	if sid := resp.Header.Get("X-Sid"); sid != "" {
+		data.ScanResults = append(data.ScanResults, "DEBUG: Arvan-Node-ID ["+sid+"]")
+	}
+	if rid := resp.Header.Get("X-Request-Id"); rid != "" {
+		data.ScanResults = append(data.ScanResults, "DEBUG: Trace-ID Detected")
+	}
+
+	// WAF IDENTIFICATION
+	if resp.Header.Get("CF-RAY") != "" {
 		data.IsWAF, data.WAFType = true, "Cloudflare (Global CDN)"
 	} else if strings.Contains(strings.ToLower(srv), "arvancloud") || resp.Header.Get("ArvanCloud-Trace") != "" {
 		data.IsWAF, data.WAFType = true, "ArvanCloud (Regional WAF)"
 	}
+}
 
-	// Framework Fingerprint
-	if pwr := resp.Header.Get("X-Powered-By"); pwr != "" {
-		data.ScanResults = append(data.ScanResults, "TECH: "+pwr)
+func checkCVE(srv string, data *models.IntelData) {
+	s := strings.ToLower(srv)
+	if strings.Contains(s, "nginx/1.10") {
+		data.ScanResults = append(data.ScanResults, "VULN_WARN: CVE-2021-23017 (RCE)")
+	}
+	if strings.Contains(s, "apache/2.4.49") {
+		data.ScanResults = append(data.ScanResults, "VULN_WARN: CVE-2021-41773 (Path Traversal)")
+	}
+	if strings.Contains(s, "php/5.") {
+		data.ScanResults = append(data.ScanResults, "VULN_WARN: EOL_PHP_DETECTED (High Risk)")
 	}
 }
 
@@ -135,8 +140,7 @@ func performTacticalScan(target string) []string {
 	var results []string
 	ports := []int{80, 443, 8080, 2082, 2083, 2086, 2087}
 	for _, p := range ports {
-		conn, err := net.DialTimeout("tcp", net.JoinHostPort(target, fmt.Sprintf("%d", p)), 1200*time.Millisecond)
-		if err == nil {
+		if conn, err := net.DialTimeout("tcp", net.JoinHostPort(target, fmt.Sprintf("%d", p)), 1200*time.Millisecond); err == nil {
 			results = append(results, fmt.Sprintf("PORT %d: OPEN", p))
 			conn.Close()
 		}
