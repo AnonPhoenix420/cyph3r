@@ -5,7 +5,7 @@ type TacticalConfig struct {
 	Vector string
 	PPS    int
 	Port   string
-	Power  int // Force Multiplier (e.g., set to 100 for God-Mode)
+	Power  int 
 }
 
 type IntelData struct {
