@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -16,7 +15,7 @@ import (
 func GetTargetIntel(input string) (models.IntelData, error) {
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 
-	// DNS Resolution
+	// 1. DNS Resolution
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips {
 		if ip.To4() != nil {
@@ -24,7 +23,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		}
 	}
 
-	// Fetch GEO Data & Signal Strength
+	// 2. GEO & Latency (Fixed to populate HUD)
 	if len(data.TargetIPs) > 0 {
 		geo, _ := fetchGeo(data.TargetIPs[0])
 		data.Org, data.City, data.Country = geo.Org, geo.City, geo.Country
@@ -33,14 +32,15 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 	}
 
 	analyzeExploitSurface(input, &data)
-
 	return data, nil
 }
 
 func fetchGeo(ip string) (models.GeoResponse, error) {
 	client := &http.Client{Timeout: 4 * time.Second}
 	resp, err := client.Get("http://ip-api.com/json/" + ip)
-	if err != nil { return models.GeoResponse{}, err }
+	if err != nil {
+		return models.GeoResponse{}, err
+	}
 	defer resp.Body.Close()
 	
 	var r models.GeoResponse
@@ -50,8 +50,11 @@ func fetchGeo(ip string) (models.GeoResponse, error) {
 
 func pingTarget(ip string) string {
 	start := time.Now()
-	conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "443"), 1500*time.Millisecond)
-	if err != nil { return "TIMEOUT" }
+	// Dialing port 443 to measure real-world response time
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "443"), 1200*time.Millisecond)
+	if err != nil {
+		return "TIMEOUT"
+	}
 	defer conn.Close()
 	return fmt.Sprintf("%dms", time.Since(start).Milliseconds())
 }
