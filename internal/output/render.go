@@ -6,7 +6,6 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// Helper for box alignment that ignores non-printable color codes
 func drawBoxLine(label, value, labelCol, valCol string) {
 	visibleText := fmt.Sprintf("[!] %s: %s", label, value)
 	width := 61 
@@ -38,7 +37,7 @@ func DisplayHUD(data models.IntelData, verbose bool) {
 	fmt.Printf(" • %-15s %s%s\n", "NETWORK_ASN:", NeonYellow, data.AS)
 	fmt.Printf(" • %-15s %s%s\n", "TIMEZONE:", NeonGreen, data.Timezone)
 
-	// 3. GEO ENTITY (Restored Region ID "23")
+	// 3. GEO ENTITY
 	fmt.Printf("\n%s[ GEO_ENTITY ]%s\n", NeonBlue, Reset)
 	loc := fmt.Sprintf("%s, %s, %s (%s)", data.City, data.RegionName, data.Country, data.CountryCode)
 	if data.Zip != "" { loc += fmt.Sprintf(" [%s]", data.Zip) }
@@ -75,9 +74,9 @@ func DisplayHUD(data models.IntelData, verbose bool) {
 	if verbose {
 		fmt.Printf("\n%s[ AUTHORITATIVE_CLUSTERS ]%s\n", NeonBlue, Reset)
 		for ns, ips := range data.NameServers {
-			fmt.Printf(" %s[-] %-20s%s\n", NeonPink, ns, Reset)
+			fmt.Printf(" %s[-] %s%s\n", NeonPink, ns, Reset)
 			for _, ip := range ips { 
-				fmt.Printf("  ↳ %-18s %s[ONLINE]%s\n", Cyan, ip, NeonGreen, Reset) 
+				fmt.Printf("  %s↳ %-20s %s[ONLINE]%s\n", Cyan, ip, NeonGreen, Reset) 
 			}
 		}
 	}
