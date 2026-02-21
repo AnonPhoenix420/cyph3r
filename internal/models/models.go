@@ -10,7 +10,8 @@ type TacticalConfig struct {
 
 type IntelData struct {
 	TargetName  string
-	TargetIPs   []string
+	TargetIPs   []string // v4
+	TargetIPv6s []string // v6
 	ReverseDNS  []string
 	Org         string
 	ISP         string 
@@ -24,13 +25,10 @@ type IntelData struct {
 	Timezone    string 
 	Lat         float64
 	Lon         float64
-	Latency     string
 	NameServers map[string][]string
 	ScanResults []string
 	IsWAF       bool
 	WAFType     string
-	IsMobile    bool 
-	IsProxy     bool
 	IsHosting   bool
 }
 
@@ -48,7 +46,5 @@ type GeoResponse struct {
 	Isp         string  `json:"isp"`
 	Org         string  `json:"org"`
 	As          string  `json:"as"`
-	Mobile      bool    `json:"mobile"`
-	Proxy       bool    `json:"proxy"`
 	Hosting     bool    `json:"hosting"`
 }
