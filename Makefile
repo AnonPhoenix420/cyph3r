@@ -1,31 +1,32 @@
-# Cyph3r Tactical Build System
+# CYPH3R PROJECT GHOST_BUILD
 BINARY_NAME=cyph3r
-INSTALL_PATH=/usr/local/bin/$(BINARY_NAME)
+CMD_PATH=./cmd/cyph3r
+OUT_DIR=bin
+
+.PHONY: all build clean install scrub
 
 all: build
 
 build:
-	@echo "[\033[38;5;99m*\033[0m] Compiling Cyph3r God Mode..."
-	@go build -o $(BINARY_NAME) ./cmd/cyph3r
-	@chmod +x $(BINARY_NAME)
+	@echo "\033[38;5;39m[*] Compiling Cyph3r Tactical Engine...\033[0m"
+	@mkdir -p $(OUT_DIR)
+	@go build -o $(OUT_DIR)/$(BINARY_NAME) $(CMD_PATH)
+	@echo "\033[38;5;82m[+] Build Complete: $(OUT_DIR)/$(BINARY_NAME)\033[0m"
 
-install: build
-	@echo "[\033[38;5;82m+\033[0m] Installing to /usr/local/bin..."
-	@sudo cp $(BINARY_NAME) /usr/local/bin/
-	@echo "[\033[38;5;82m+\033[0m] Success. You can now run 'cyph3r' from any directory."
-
-uninstall:
-	@echo "[\033[31m!\033[0m] Removing Cyph3r from system path..."
-	@if [ -f $(INSTALL_PATH) ]; then \
-		sudo rm -f $(INSTALL_PATH); \
-		echo "[\033[38;5;82m+\033[0m] System binary removed."; \
-	else \
-		echo "[\033[31m!\033[0m] Binary not found in /usr/local/bin."; \
-	fi
-	@rm -f $(BINARY_NAME)
-	@echo "[\033[38;5;198m*\033[0m] Cleanup complete."
+install:
+	@echo "\033[38;5;39m[*] Installing to /usr/local/bin...\033[0m"
+	@sudo cp $(OUT_DIR)/$(BINARY_NAME) /usr/local/bin/
+	@echo "\033[38;5;82m[+] Installation Successful.\033[0m"
 
 clean:
+	@echo "\033[38;5;214m[*] Removing temporary build files...\033[0m"
+	@rm -rf $(OUT_DIR)
 	@go clean
-	@rm -f $(BINARY_NAME)
-	@rm -rf backups/
+
+# OPSEC SCRUB: Wipes binary and shell history to prevent forensic trace
+scrub:
+	@echo "\033[38;5;196m[!] WARNING: PERFORMING OPSEC SCRUB...\033[0m"
+	@rm -rf $(OUT_DIR)
+	@rm -f /usr/local/bin/$(BINARY_NAME)
+	@history -c && history -w
+	@echo "\033[38;5;82m[+] System Scrubbed. No local trace remains.\033[0m"
