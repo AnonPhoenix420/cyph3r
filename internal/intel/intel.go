@@ -18,7 +18,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		NameServers: make(map[string][]string),
 	}
 
-	// 1. Authoritative Cluster Discovery
+	// 1. Cluster Lookup
 	ns, _ := net.LookupNS(input)
 	for _, s := range ns {
 		ips, _ := net.LookupIP(s.Host)
@@ -29,7 +29,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		data.NameServers[s.Host] = ipStrings
 	}
 
-	// 2. DNS Resolution & Vectors
+	// 2. IP Resolution
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips {
 		if ip.To4() != nil {
@@ -37,14 +37,14 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		}
 	}
 
-	// 3. Geo & Signal HUD Data
+	// 3. Geo & Ping
 	if len(data.TargetIPs) > 0 {
 		geo, _ := fetchGeo(data.TargetIPs[0])
 		data.Org, data.Lat, data.Lon = geo.Org, geo.Lat, geo.Lon
 		data.Latency = pingTarget(data.TargetIPs[0])
 	}
 
-	// 4. Infrastructure Stack Scan
+	// 4. Port Surface Recon
 	ports := []string{"80", "443", "8080", "2082", "2083", "2086", "2087"}
 	for _, p := range ports {
 		conn, err := net.DialTimeout("tcp", net.JoinHostPort(input, p), 400*time.Millisecond)
@@ -70,7 +70,7 @@ func fetchGeo(ip string) (models.GeoResponse, error) {
 
 func pingTarget(ip string) string {
 	start := time.Now()
-	conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "443"), 1200*time.Millisecond)
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "443"), 1*time.Second)
 	if err != nil { return "TIMEOUT" }
 	defer conn.Close()
 	return fmt.Sprintf("%dms", time.Since(start).Milliseconds())
@@ -89,8 +89,4 @@ func analyzeWAF(target string, data *models.IntelData) {
 		data.IsWAF, data.WAFType = true, "ArvanCloud (Regional WAF)"
 	}
 	data.ScanResults = append(data.ScanResults, "STACK: "+srv)
-}
-
-func GetPhoneIntel(num string) (models.PhoneData, error) {
-	return models.PhoneData{Number: num, Carrier: "MCI/Irancell", Risk: "LOW"}, nil
 }
