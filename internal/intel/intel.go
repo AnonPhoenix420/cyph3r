@@ -14,40 +14,61 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
+// GHOST_MODE Safety Constants
+const (
+	RequestTimeout = 5 * time.Second
+	UserAgent      = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+)
+
 func GetClient() *http.Client {
 	return &http.Client{
-		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}, 
-		Timeout:   7 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			// Prevent connection reuse to avoid TCP fingerprinting during Ghost Mode
+			DisableKeepAlives: true, 
+		},
+		Timeout: RequestTimeout,
 	}
 }
 
 func GetTargetIntel(input string) (models.IntelData, error) {
+	// 1. GHOST_MODE KILL-SWITCH: Pre-flight check
 	shield := CheckShield()
 	if !shield.IsActive {
-		fmt.Println("\n\033[31m[!] PROTON VPN DISCONNECTED. EMERGENCY HALT.\033[0m")
+		fmt.Println("\n\033[31m[!] GHOST_MODE FAILURE: VPN NOT DETECTED. EMERGENCY HALT.\033[0m")
 		os.Exit(1)
 	}
 
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 
-	// 1. RESOLVE & PTR
-	ips, _ := net.LookupIP(input)
+	// 2. NETWORK VECTORS (IPv4 Only to prevent IPv6 Leaks)
+	ips, err := net.LookupIP(input)
+	if err != nil {
+		return data, fmt.Errorf("DNS_RESOLUTION_FAILED")
+	}
+
 	for _, ip := range ips {
-		ipStr := ip.String()
-		data.TargetIPs = append(data.TargetIPs, ipStr)
-		names, _ := net.LookupAddr(ipStr)
-		if len(names) > 0 {
-			data.ReverseDNS = append(data.ReverseDNS, strings.TrimSuffix(names[0], "."))
-		} else {
-			data.ReverseDNS = append(data.ReverseDNS, "NO_PTR")
+		// Strict IPv4 filter for Ghost Anonymity
+		if ip.To4() != nil {
+			ipStr := ip.String()
+			data.TargetIPs = append(data.TargetIPs, ipStr)
+			
+			// PTR Reverse lookup
+			names, _ := net.LookupAddr(ipStr)
+			if len(names) > 0 {
+				data.ReverseDNS = append(data.ReverseDNS, strings.TrimSuffix(names[0], "."))
+			} else {
+				data.ReverseDNS = append(data.ReverseDNS, "NO_PTR")
+			}
 		}
 	}
 
-	// 2. GEO & INFRA (Fixed Mislabeling)
+	// 3. GEO & INFRA ANALYSIS
 	if len(data.TargetIPs) > 0 {
 		geo, raw := fetchGeo(data.TargetIPs[0])
 		data.Org, data.City, data.Country, data.Lat, data.Lon = geo.Org, geo.City, geo.Country, geo.Lat, geo.Lon
 		data.RawGeo, data.Latency = raw, pingTarget(data.TargetIPs[0])
+		
 		usage := "RESIDENTIAL"
 		if geo.Hosting || strings.Contains(strings.ToLower(geo.Org), "arvan") || strings.Contains(strings.ToLower(geo.Isp), "anycast") {
 			usage = "DATA_CENTER/CDN"
@@ -55,19 +76,21 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		data.ScanResults = append(data.ScanResults, "USAGE: "+usage)
 	}
 
-	// 3. AUTHORITATIVE CLUSTERS
+	// 4. AUTHORITATIVE CLUSTERS
 	ns, _ := net.LookupNS(input)
 	for _, nameserver := range ns {
 		nsIPs, _ := net.LookupIP(nameserver.Host)
 		for _, nsIP := range nsIPs {
-			data.NameServers[nameserver.Host] = append(data.NameServers[nameserver.Host], nsIP.String())
+			if nsIP.To4() != nil {
+				data.NameServers[nameserver.Host] = append(data.NameServers[nameserver.Host], nsIP.String())
+			}
 		}
 	}
 
-	// 4. SUBDOMAIN SHADOW-SCAN (The Origin Hunter)
+	// 5. SHADOW RECON (Subdomain Hunter)
 	huntSubdomains(input, &data)
 
-	// 5. EXPLOIT & BYPASS FINGERPRINTING
+	// 6. EXPLOIT SURFACE & WAF DETECTION
 	analyzeExploitSurface(input, &data)
 	data.ScanResults = append(data.ScanResults, performTacticalScan(input)...)
 
@@ -75,28 +98,33 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 }
 
 func huntSubdomains(target string, data *models.IntelData) {
-	subs := []string{"dev", "vpn", "mail", "api", "test", "staging", "internal", "webmail"}
+	subs := []string{"dev", "vpn", "mail", "api", "test", "staging", "internal", "webmail", "cloud"}
 	for _, s := range subs {
 		host := s + "." + target
 		ips, err := net.LookupIP(host)
-		if err == nil {
-			result := fmt.Sprintf("SUBDOMAIN: %s → %s", host, ips[0].String())
-			// Check if subdomain IP is DIFFERENT from main IP (Potential Origin!)
+		if err == nil && len(ips) > 0 {
+			ipStr := ips[0].String()
 			isWaf := false
 			for _, mainIp := range data.TargetIPs {
-				if ips[0].String() == mainIp { isWaf = true }
+				if ipStr == mainIp { isWaf = true }
 			}
 			if !isWaf {
-				data.ScanResults = append(data.ScanResults, "DEBUG: Potential Origin Found ["+ips[0].String()+"]")
+				data.ScanResults = append(data.ScanResults, "DEBUG: Potential Origin Found ["+ipStr+"]")
 			}
-			data.ScanResults = append(data.ScanResults, result)
+			data.ScanResults = append(data.ScanResults, fmt.Sprintf("SUBDOMAIN: %s → %s", host, ipStr))
 		}
 	}
 }
 
 func analyzeExploitSurface(target string, data *models.IntelData) {
 	client := GetClient()
-	resp, err := client.Get("http://" + target)
+	
+	// SCRUBBED REQUEST: Prevents metadata leakage
+	req, _ := http.NewRequest("GET", "http://"+target, nil)
+	req.Header.Set("User-Agent", UserAgent)
+	req.Header.Set("Accept", "*/*")
+
+	resp, err := client.Do(req)
 	if err != nil { return }
 	defer resp.Body.Close()
 
@@ -106,16 +134,14 @@ func analyzeExploitSurface(target string, data *models.IntelData) {
 		checkCVE(srv, data)
 	}
 
+	// WAF & LEAK DETECTION
 	if sid := resp.Header.Get("X-Sid"); sid != "" {
 		data.ScanResults = append(data.ScanResults, "DEBUG: Arvan-Node-ID ["+sid+"]")
 	}
-	if rid := resp.Header.Get("X-Request-Id"); rid != "" {
-		data.ScanResults = append(data.ScanResults, "DEBUG: Trace-ID Detected")
-	}
-
+	
 	if resp.Header.Get("CF-RAY") != "" {
 		data.IsWAF, data.WAFType = true, "Cloudflare (Global CDN)"
-	} else if strings.Contains(strings.ToLower(srv), "arvancloud") || resp.Header.Get("ArvanCloud-Trace") != "" {
+	} else if strings.Contains(strings.ToLower(srv), "arvan") || resp.Header.Get("ArvanCloud-Trace") != "" {
 		data.IsWAF, data.WAFType = true, "ArvanCloud (Regional WAF)"
 	}
 }
@@ -138,6 +164,7 @@ func fetchGeo(ip string) (models.GeoResponse, string) {
 	body, _ := io.ReadAll(resp.Body)
 	var r models.GeoResponse
 	json.Unmarshal(body, &r)
+	
 	var pretty interface{}
 	json.Unmarshal(body, &pretty)
 	prettyJSON, _ := json.MarshalIndent(pretty, "", "  ")
@@ -146,6 +173,7 @@ func fetchGeo(ip string) (models.GeoResponse, string) {
 
 func pingTarget(ip string) string {
 	start := time.Now()
+	// Dialing through TCP 443 to measure signal latency
 	conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "443"), 2*time.Second)
 	if err != nil { return "TIMEOUT" }
 	defer conn.Close()
@@ -155,8 +183,11 @@ func pingTarget(ip string) string {
 func performTacticalScan(target string) []string {
 	var results []string
 	ports := []int{80, 443, 8080, 2082, 2083, 2086, 2087}
+	
 	for _, p := range ports {
-		if conn, err := net.DialTimeout("tcp", net.JoinHostPort(target, fmt.Sprintf("%d", p)), 1200*time.Millisecond); err == nil {
+		addr := net.JoinHostPort(target, fmt.Sprintf("%d", p))
+		conn, err := net.DialTimeout("tcp", addr, 1500*time.Millisecond)
+		if err == nil {
 			results = append(results, fmt.Sprintf("PORT %d: OPEN", p))
 			conn.Close()
 		}
