@@ -12,6 +12,7 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
+// GetTargetIntel resolves host data
 func GetTargetIntel(input string) (models.IntelData, error) {
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 	ips, _ := net.LookupIP(input)
@@ -32,7 +33,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 	return data, nil
 }
 
-// GetPhoneIntel - Added to fix main.go undefined error
+// GetPhoneIntel is exported for main.go
 func GetPhoneIntel(num string) (models.PhoneData, error) {
 	return models.PhoneData{
 		Number:  num,
