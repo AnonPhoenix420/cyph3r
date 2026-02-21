@@ -6,26 +6,18 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-const (
-	Reset       = "\033[0m"
-	Cyan        = "\033[36m"
-	NeonGreen   = "\033[38;5;121m"
-	NeonPink    = "\033[38;5;205m"
-	NeonBlue    = "\033[38;5;81m"
-	NeonYellow  = "\033[38;5;227m"
-	Amber       = "\033[38;5;214m"
-	Gray        = "\033[38;5;244m"
-)
-
 func DisplayHUD(data models.IntelData, verbose bool) {
-	// 1. IDENTITY HEADER (Fixed Alignment)
+	// 1. IDENTITY HEADER (Surgical Alignment Fix)
 	fmt.Printf("\n%s╔═══════════════════════════════════════════════════════════════╗", NeonBlue)
 	
+	// Target Node
 	fmt.Printf("\n║ %s[!] TARGET_NODE: %s%-34s %s║", Cyan, NeonPink, data.TargetName, NeonBlue)
 	
+	// IPv4
 	v4 := "NOT_DETECTED"; if len(data.TargetIPs) > 0 { v4 = data.TargetIPs[0] }
 	fmt.Printf("\n║ %s[!] TARGET_IPv4: %s%-34s %s║", Amber, NeonGreen, v4, NeonBlue)
 
+	// IPv6 (Using your Cyan for that high-voltage look)
 	v6 := "NOT_DETECTED"; if len(data.TargetIPv6s) > 0 { v6 = data.TargetIPv6s[0] }
 	fmt.Printf("\n║ %s[!] TARGET_IPv6: %s%-34s %s║", Amber, Cyan, v6, NeonBlue)
 
@@ -36,7 +28,9 @@ func DisplayHUD(data models.IntelData, verbose bool) {
 
 	// 2. ORGANIZATION DOX
 	fmt.Printf("\n%s[ ORGANIZATION_DOX ]%s\n", NeonPink, Reset)
-	if data.Org != "" { fmt.Printf(" %s• %-15s %s%s\n", Amber, "ENTITY_NAME:", NeonGreen, data.Org) }
+	if data.Org != "" {
+		fmt.Printf(" %s• %-15s %s%s\n", Amber, "ENTITY_NAME:", NeonGreen, data.Org)
+	}
 	fmt.Printf(" %s• %-15s %s%s\n", Amber, "DESCRIPTION:", Gray, data.ISP)
 	fmt.Printf(" %s• %-15s %s%s\n", Amber, "NETWORK_ASN:", NeonYellow, data.AS)
 	fmt.Printf(" %s• %-15s %s%s\n", Amber, "TIMEZONE:", NeonGreen, data.Timezone)
@@ -50,11 +44,13 @@ func DisplayHUD(data models.IntelData, verbose bool) {
 
 	// 4. INFRASTRUCTURE STACK
 	fmt.Printf("\n%s[ INFRASTRUCTURE_STACK ]%s\n", NeonBlue, Reset)
-	infra := "RESIDENTIAL"; if data.IsHosting || data.IsWAF { infra = "DATA_CENTER / CLOUD_PROXY" }
+	infra := "RESIDENTIAL"
+	if data.IsHosting || data.IsWAF { infra = "DATA_CENTER / CLOUD_PROXY" }
+	
 	fmt.Printf(" %s[*] INFRA_TYPE: %s%s\n", Amber, NeonGreen, infra)
 	for _, res := range data.ScanResults {
 		if strings.Contains(res, "PORT") {
-			fmt.Printf(" %s[+] %-20s %s[ACTIVE]%s\n", NeonGreen, NeonYellow+res, NeonGreen, Reset)
+			fmt.Printf(" %s[+] %s%-20s %s[ACTIVE]%s\n", NeonGreen, NeonYellow, res, NeonGreen, Reset)
 		}
 	}
 	fmt.Printf("\n %s[*] Software:   %s%s\n", Gray, NeonGreen, data.WAFType)
@@ -64,17 +60,21 @@ func DisplayHUD(data models.IntelData, verbose bool) {
 		}
 	}
 
-	// 5. PTR & CLUSTERS
+	// 5. PTR & AUTHORITATIVE CLUSTERS
 	if len(data.ReverseDNS) > 0 {
 		fmt.Printf("\n%s[ REVERSE_DNS_PTR ]%s\n", NeonBlue, Reset)
-		for _, ptr := range data.ReverseDNS { fmt.Printf(" %s[*] %s%s\n", Gray, NeonGreen, ptr) }
+		for _, ptr := range data.ReverseDNS {
+			fmt.Printf(" %s[*] %s%s\n", Gray, NeonGreen, ptr)
+		}
 	}
 
 	if verbose {
 		fmt.Printf("\n%s[ AUTHORITATIVE_CLUSTERS ]%s\n", NeonBlue, Reset)
 		for ns, ips := range data.NameServers {
 			fmt.Printf(" %s[-] %s%s\n", NeonPink, NeonGreen, ns)
-			for _, ip := range ips { fmt.Printf("  %s↳ %-18s %s[ONLINE]%s\n", Cyan, ip, NeonGreen, Reset) }
+			for _, ip := range ips {
+				fmt.Printf("  %s↳ %-18s %s[ONLINE]%s\n", Cyan, ip, NeonGreen, Reset)
+			}
 		}
 	}
 	fmt.Println()
