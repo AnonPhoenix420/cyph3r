@@ -16,6 +16,7 @@ import (
 func GetTargetIntel(input string) (models.IntelData, error) {
 	data := models.IntelData{TargetName: input, NameServers: make(map[string][]string)}
 
+	// 1. Dual-Stack Resolution
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips {
 		ipStr := ip.String()
@@ -30,6 +31,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		}
 	}
 
+	// 2. Telemetry Sync
 	if len(data.TargetIPs) > 0 {
 		client := &http.Client{Timeout: 5 * time.Second}
 		resp, _ := client.Get("http://ip-api.com/json/" + data.TargetIPs[0] + "?fields=66846719")
@@ -45,6 +47,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 			resp.Body.Close()
 		}
 
+		// 3. Port Probe
 		ports := []int{80, 443, 8080, 2082, 2083, 2086, 2087}
 		var wg sync.WaitGroup
 		for _, p := range ports {
@@ -61,6 +64,7 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		wg.Wait()
 	}
 
+	// 4. Cluster Recon
 	ns, _ := net.LookupNS(input)
 	for _, s := range ns {
 		host := strings.TrimSuffix(s.Host, ".")
