@@ -7,16 +7,13 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// ClearLine is likely not in your colors.go, so we keep it here or add it there.
-const ClearLine = "\033[2K\r"
-
 func LoadingAnimation(done chan bool, label string) {
 	frames := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 	i := 0
 	for {
 		select {
 		case <-done:
-			fmt.Print(ClearLine)
+			fmt.Print(ClearLine) // Uses definition from colors.go
 			return
 		default:
 			fmt.Printf("\r%s%s %sScanning %s%s...%s", ClearLine, NeonPink, frames[i%len(frames)], White, label, Reset)
