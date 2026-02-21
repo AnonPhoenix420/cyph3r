@@ -8,7 +8,7 @@ const (
 	Electric   = "\033[38;5;99m"
 	Cyan       = "\033[38;5;51m"
 	Amber      = "\033[38;5;214m"
-	Gray       = "\033[38;5;244m" // Added to fix the build
+	Gray       = "\033[38;5;244m" 
 	Red        = "\033[31m" 
 	White      = "\033[97m"
 	Reset      = "\033[0m"
