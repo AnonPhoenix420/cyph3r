@@ -4,11 +4,11 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"strings"
 	"time"
-
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
@@ -18,33 +18,26 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 		NameServers: make(map[string][]string),
 	}
 
-	// 1. Cluster Lookup
 	ns, _ := net.LookupNS(input)
 	for _, s := range ns {
 		ips, _ := net.LookupIP(s.Host)
 		var ipStrings []string
-		for _, ip := range ips {
-			ipStrings = append(ipStrings, ip.String())
-		}
+		for _, ip := range ips { ipStrings = append(ipStrings, ip.String()) }
 		data.NameServers[s.Host] = ipStrings
 	}
 
-	// 2. IP Resolution
 	ips, _ := net.LookupIP(input)
 	for _, ip := range ips {
-		if ip.To4() != nil {
-			data.TargetIPs = append(data.TargetIPs, ip.String())
-		}
+		if ip.To4() != nil { data.TargetIPs = append(data.TargetIPs, ip.String()) }
 	}
 
-	// 3. Geo & Ping
 	if len(data.TargetIPs) > 0 {
-		geo, _ := fetchGeo(data.TargetIPs[0])
+		geo, raw := fetchGeo(data.TargetIPs[0])
 		data.Org, data.Lat, data.Lon = geo.Org, geo.Lat, geo.Lon
+		data.RawGeo = raw
 		data.Latency = pingTarget(data.TargetIPs[0])
 	}
 
-	// 4. Port Surface Recon
 	ports := []string{"80", "443", "8080", "2082", "2083", "2086", "2087"}
 	for _, p := range ports {
 		conn, err := net.DialTimeout("tcp", net.JoinHostPort(input, p), 400*time.Millisecond)
@@ -58,14 +51,15 @@ func GetTargetIntel(input string) (models.IntelData, error) {
 	return data, nil
 }
 
-func fetchGeo(ip string) (models.GeoResponse, error) {
+func fetchGeo(ip string) (models.GeoResponse, string) {
 	client := &http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Get("http://ip-api.com/json/" + ip)
-	if err != nil { return models.GeoResponse{}, err }
+	if err != nil { return models.GeoResponse{}, "" }
 	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
 	var r models.GeoResponse
-	json.NewDecoder(resp.Body).Decode(&r)
-	return r, nil
+	json.Unmarshal(body, &r)
+	return r, string(body)
 }
 
 func pingTarget(ip string) string {
