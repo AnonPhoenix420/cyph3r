@@ -1,23 +1,25 @@
 package models
 
+// IntelData holds all recon intelligence for domains
 type IntelData struct {
 	TargetName  string
 	TargetIPs   []string
-	ReverseDNS  []string 
+	ReverseDNS  []string
 	Org         string
 	City        string
 	Region      string
 	Country     string
 	Lat         float64
 	Lon         float64
-	Latency     string 
+	Latency     string
 	NameServers map[string][]string
 	ScanResults []string
 	RawGeo      string
-	IsWAF       bool   
-	WAFType     string 
+	IsWAF       bool
+	WAFType     string
 }
 
+// PhoneData holds intelligence for mobile traces
 type PhoneData struct {
 	Number         string
 	Carrier        string
@@ -28,6 +30,7 @@ type PhoneData struct {
 	MapLink        string
 }
 
+// GeoResponse maps the API data for HUD display
 type GeoResponse struct {
 	Status      string  `json:"status"`
 	Country     string  `json:"country"`
@@ -41,8 +44,17 @@ type GeoResponse struct {
 	Isp         string  `json:"isp"`
 	Org         string  `json:"org"`
 	As          string  `json:"as"`
-	Mobile      bool    `json:"mobile"`  
-	Proxy       bool    `json:"proxy"`   
-	Hosting     bool    `json:"hosting"` 
+	Mobile      bool    `json:"mobile"`
+	Proxy       bool    `json:"proxy"`
+	Hosting     bool    `json:"hosting"`
 	Query       string  `json:"query"`
+}
+
+// TacticalConfig - ADDED to enable the power tools
+type TacticalConfig struct {
+	Target string
+	Vector string
+	PPS    int
+	Port   string
+	Power  int
 }
