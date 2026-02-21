@@ -5,7 +5,7 @@ type TacticalConfig struct {
 	Vector string
 	PPS    int
 	Port   string
-	Power  int 
+	Power  int
 }
 
 type IntelData struct {
@@ -24,6 +24,10 @@ type IntelData struct {
 	RawGeo      string
 	IsWAF       bool
 	WAFType     string
+	// Restored Phone/Network Data
+	IsMobile    bool 
+	IsProxy     bool
+	IsHosting   bool
 }
 
 type GeoResponse struct {
