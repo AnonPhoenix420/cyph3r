@@ -9,6 +9,15 @@ import (
 	"cyph3r/internal/models"
 )
 
+// ANSI Color Matrix Definitions local to package namespace
+const (
+	NeonPink  = "\033[38;5;201m"
+	Cyan      = "\033[38;5;51m"
+	NeonGreen = "\033[38;5;84m"
+	Gray      = "\033[38;5;244m"
+	Reset     = "\033[0m"
+)
+
 func Render(payload *models.IntelPayload) {
 	if strings.ToLower(payload.OutputFormat) == "json" {
 		renderJSON(payload)
@@ -26,41 +35,67 @@ func renderJSON(payload *models.IntelPayload) {
 }
 
 func renderTerminalHUD(p *models.IntelPayload) {
-	fmt.Printf("%s[+] CYPH3R INTELLIGENCE REPORT FOR: %s%s\n", NeonPink, p.Target, Reset)
+	fmt.Printf("%s[+] CYPH3R GHOST ELITE INTEL REPORT FOR: %s%s\n", NeonPink, p.Target, Reset)
+	fmt.Printf("%s[-] TARGET TYPE CLASSIFICATION: %s%s\n", Gray, p.Type, Reset)
 	fmt.Println(strings.Repeat("-", 63))
 
-	if p.ASN != "" || p.ISP != "" {
-		drawBoxLine(fmt.Sprintf("ASN: %s", fallback(p.ASN, "N/A")))
-		drawBoxLine(fmt.Sprintf("ISP: %s", fallback(p.ISP, "N/A")))
-	}
+	switch p.Type {
+	case models.TypePhoneTarget:
+		drawBoxLine(fmt.Sprintf("VALIDITY : %s", fallback(p.Phone.Valid, "UNKNOWN")))
+		drawBoxLine(fmt.Sprintf("FORMAT   : %s", fallback(p.Phone.LocalFormat, "N/A")))
+		drawBoxLine(fmt.Sprintf("COUNTRY  : %s", fallback(p.Phone.CountryCode, "N/A")))
+		drawBoxLine(fmt.Sprintf("LOCATION : %s", fallback(p.Phone.Location, "N/A")))
+		drawBoxLine(fmt.Sprintf("CARRIER  : %s", fallback(p.Phone.Carrier, "N/A")))
+		drawBoxLine(fmt.Sprintf("LINE TYPE: %s", fallback(p.Phone.LineType, "N/A")))
 
-	if p.Geo.Country != "" || p.Geo.City != "" || p.Geo.RegionID != "" {
-		geoString := fmt.Sprintf("LOC: %s, %s", fallback(p.Geo.City, "Unknown City"), fallback(p.Geo.Country, "Unknown Country"))
-		if p.Geo.RegionID != "" {
-			geoString += fmt.Sprintf(" (Region ID: %s)", p.Geo.RegionID)
+	case models.TypeEmailTarget:
+		drawBoxLine(fmt.Sprintf("DELIVERABLE: %s", fallback(p.Email.Deliverable, "UNKNOWN")))
+		drawBoxLine(fmt.Sprintf("USER STUB  : %s", fallback(p.Email.Username, "N/A")))
+		drawBoxLine(fmt.Sprintf("HOST STUB  : %s", fallback(p.Email.Domain, "N/A")))
+		drawBoxLine(fmt.Sprintf("DISPOSABLE : %s", fallback(p.Email.Disposable, "NO")))
+		if p.Email.ProfileLink != "" {
+			drawBoxLine(fmt.Sprintf("AVATAR REF : %s", p.Email.ProfileLink))
 		}
-		drawBoxLine(geoString)
-	}
-
-	if len(p.Clusters) > 0 {
-		fmt.Println(strings.Repeat("-", 63))
-		drawBoxLine("AUTHORITATIVE CLUSTERS:")
-		
-		for _, cluster := range p.Clusters {
-			if strings.TrimSpace(cluster.NameServer) == "" {
-				continue
+		if len(p.Email.MXRecords) > 0 {
+			fmt.Println(strings.Repeat("-", 63))
+			drawBoxLine("RESOLVED MX ROUTERS:")
+			for _, mx := range p.Email.MXRecords {
+				drawBoxLine(fmt.Sprintf("  ↳ %s", mx))
 			}
-			
-			nsLine := fmt.Sprintf("  [-] %-20s", cluster.NameServer)
-			drawBoxLine(nsLine)
+		}
 
-			if p.Verbose {
-				for _, ip := range cluster.IPs {
-					if strings.TrimSpace(ip) == "" {
-						continue
+	case models.TypeGeoTarget:
+		drawBoxLine(fmt.Sprintf("LATITUDE : %s", fallback(p.Geo.Latitude, "N/A")))
+		drawBoxLine(fmt.Sprintf("LONGITUDE: %s", fallback(p.Geo.Longitude, "N/A")))
+		drawBoxLine(fmt.Sprintf("CITY/LOC : %s", fallback(p.Geo.City, "N/A")))
+		drawBoxLine(fmt.Sprintf("COUNTRY  : %s", fallback(p.Geo.Country, "N/A")))
+		drawBoxLine(fmt.Sprintf("TIMEZONE : %s", fallback(p.Geo.Timezone, "N/A")))
+		if p.Geo.MapReference != "" {
+			drawBoxLine(fmt.Sprintf("MAP TRACE: %s", p.Geo.MapReference))
+		}
+
+	case models.TypeNetworkTarget:
+		if p.ASN != "" || p.ISP != "" {
+			drawBoxLine(fmt.Sprintf("ASN: %s", fallback(p.ASN, "N/A")))
+			drawBoxLine(fmt.Sprintf("ISP: %s", fallback(p.ISP, "N/A")))
+		}
+		if p.Geo.Country != "" || p.Geo.City != "" {
+			drawBoxLine(fmt.Sprintf("LOC: %s, %s", fallback(p.Geo.City, "Unknown City"), fallback(p.Geo.Country, "Unknown Country")))
+		}
+		if len(p.Clusters) > 0 {
+			fmt.Println(strings.Repeat("-", 63))
+			drawBoxLine("AUTHORITATIVE CLUSTERS:")
+			for _, cluster := range p.Clusters {
+				if strings.TrimSpace(cluster.NameServer) == "" {
+					continue
+				}
+				drawBoxLine(fmt.Sprintf("  [-] %-20s", cluster.NameServer))
+				if p.Verbose {
+					for _, ip := range cluster.IPs {
+						if strings.TrimSpace(ip) != "" {
+							drawBoxLine(fmt.Sprintf("    ↳ %-22s [ONLINE]", ip))
+						}
 					}
-					ipLine := fmt.Sprintf("    ↳ %-22s [ONLINE]", ip)
-					drawBoxLine(ipLine)
 				}
 			}
 		}
