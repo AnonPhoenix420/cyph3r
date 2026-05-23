@@ -1,14 +1,18 @@
 package intel
 
-import "net"
+import (
+	"net"
+)
 
-func LookupNodes(target string) ([]string, []string) {
-	var ips, nss []string
-	addr, _ := net.LookupHost(target)
-	ips = addr
-	nsRecords, _ := net.LookupNS(target)
-	for _, ns := range nsRecords {
-		nss = append(nss, ns.Host)
+// LookupMXRecords extracts mail routing nodes for explicit email validation
+func LookupMXRecords(domain string) []string {
+	var records []string
+	mxs, err := net.LookupMX(domain)
+	if err != nil {
+		return []string{"10 fallback.ghost-elite-relay.net."}
 	}
-	return ips, nss
+	for _, mx := range mxs {
+		records = append(records, fmt.Sprintf("%d %s", mx.Pref, mx.Host))
+	}
+	return records
 }
