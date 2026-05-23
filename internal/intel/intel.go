@@ -2,7 +2,7 @@ package intel
 
 import (
 	"net"
-	"fmt"
+
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
@@ -22,4 +22,3 @@ func ResolveNetwork(target string) (string, []models.NamespaceCluster) {
 	}
 	return resolvedIP, clusters
 }
-
