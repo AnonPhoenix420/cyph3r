@@ -6,10 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"cyph3r/internal/models"
+	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// ANSI Color Matrix Definitions local to package namespace
 const (
 	NeonPink  = "\033[38;5;201m"
 	Cyan      = "\033[38;5;51m"
