@@ -69,7 +69,7 @@ func (rc *ResponseCache) Get(key string) ([]byte, bool) {
 	return entry.Data, true
 }
 
-func (rc *ResponseCache) Set(key string) error {
+func (rc *ResponseCache) Set(key string, data interface{}) error {
 	raw, err := json.Marshal(data)
 	if err != nil {
 		return err
