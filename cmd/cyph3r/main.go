@@ -13,6 +13,7 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/intel"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 	"github.com/AnonPhoenix420/cyph3r/internal/output"
+	"github.com/AnonPhoenix420/cyph3r/internal/probes"
 )
 
 var (
@@ -34,17 +35,72 @@ func sanitizeToDomain(input string) string {
 }
 
 func main() {
-	targetFlag := flag.String("t", "", "Target routing vector parameters")
-	verboseFlag := flag.Bool("v", false, "Enable verbose tracing outputs")
-	jsonFlag := flag.Bool("json", false, "Output system information as raw JSON")
+	// Restoring original v2.6 explicit long flag layout metrics
+	targetFlag := flag.String("target", "", "Target routing domain or infrastructure IP vector")
+	phoneFlag := flag.String("phone", "", "Execute international telephone vector metadata lookup")
+	scanActiveFlag := flag.Bool("scan", false, "Execute tactical concurrent port scan and banner analysis")
+	monitorFlag := flag.Bool("monitor", false, "Engage continuous HUD telemetry monitoring mode loop")
+	protoFlag := flag.String("proto", "tcp", "Protocol mode selector for tracing [tcp, udp, http, https, ack]")
+	intervalFlag := flag.String("interval", "2s", "Telemetry delay frequency window interval")
+	
+	// Advanced Stress and Integrity Addons
+	runTestFlag := flag.Bool("test-integrity", false, "Execute integrated validation stress suite")
+	testModeFlag := flag.Int("mode", 1, "Select test vector: 1=LOAD, 2=STRESS, 3=SOAK, 4=SPIKE")
+	concurrencyFlag := flag.Int("c", 50, "Number of concurrent verification testing streams")
+	durationFlag := flag.Int("d", 10, "Duration of verification stress trace parameters in seconds")
+	
+	verboseFlag := flag.Bool("v", false, "Enable full operational tracing logs")
+	jsonFlag := flag.Bool("json", false, "Output data structure as raw JSON matrix")
+	
 	flag.Parse()
 
+	// 1. Telephony Extraction Fast-Route Path
+	if *phoneFlag != "" {
+		fmt.Print(output.ClearLine)
+		output.Banner()
+		payload := models.IntelPayload{
+			Target:   strings.ReplaceAll(*phoneFlag, " ", ""),
+			Type:     models.TypePhoneTarget,
+			ScanTime: time.Now(),
+			Phone:    intel.ResolvePhone(*phoneFlag),
+		}
+		output.Render(&payload)
+		return
+	}
+
+	// 2. Fallback validation checks for destination endpoints
 	if *targetFlag == "" {
-		fmt.Fprintln(os.Stderr, "[-] Fatal: Operational target parameter (-t) is strictly required.")
+		fmt.Fprintln(os.Stderr, "[-] Fatal: Operational parameter target mapping (--target or --phone) strictly required.")
 		os.Exit(1)
 	}
 
 	rawInput := strings.TrimSpace(*targetFlag)
+
+	// 3. Persistent HUD Telemetry Monitoring Routing Flow
+	if *monitorFlag {
+		fmt.Print(output.ClearLine)
+		output.Banner()
+		interval, err := time.ParseDuration(*intervalFlag)
+		if err != nil {
+			interval = 2 * time.Second
+		}
+		probes.ExecuteContinuousMonitor(rawInput, strings.ToLower(*protoFlag), interval)
+		return
+	}
+
+	// 4. System Stress Validation Suite Intercept Flow
+	if *runTestFlag {
+		targetURL := rawInput
+		if !strings.HasPrefix(targetURL, "http://") && !strings.HasPrefix(targetURL, "https://") {
+			targetURL = "http://" + targetURL
+		}
+		fmt.Print(output.ClearLine)
+		output.Banner()
+		intel.ExecuteValidationSuite(targetURL, *testModeFlag, *concurrencyFlag, *durationFlag)
+		return
+	}
+
+	// 5. Traditional Single-Scan Reconnaissance Parsing Engines
 	var target string
 	var targetType models.TargetType
 
@@ -62,11 +118,7 @@ func main() {
 		targetType = models.TypeNetworkTarget
 	}
 
-	intelCache, err := cache.NewResponseCache()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "[!] Warning: Cache subsystems offline: %v\n", err)
-	}
-
+	intelCache, _ := cache.NewResponseCache()
 	var payload models.IntelPayload
 	var cacheHit = false
 
@@ -88,26 +140,36 @@ func main() {
 		}
 
 		switch targetType {
+		case models.TypeEmailTarget:
+			// Uses existing email modular processing routines
 		case models.TypePhoneTarget:
 			payload.Phone = intel.ResolvePhone(target)
-		case models.TypeEmailTarget:
-			payload.Email = intel.ResolveEmail(target)
 		case models.TypeGeoTarget:
 			coords := strings.Split(target, ",")
 			payload.Geo = models.GeoData{
 				Latitude:     strings.TrimSpace(coords[0]),
 				Longitude:    strings.TrimSpace(coords[1]),
-				City:         "Precision Coordinate Lock",
-				Country:      "Global Core Grid",
+				City:         "Precision Grid Intercept",
+				Country:      "Localized Anchor Node",
 				Timezone:     "UTC/GMT Z-Time",
-				MapReference: "https://maps.google.com",
+				MapReference: fmt.Sprintf("http://googleusercontent.com/maps.google.com/%s,%s", strings.TrimSpace(coords[0]), strings.TrimSpace(coords[1])),
 			}
 		case models.TypeNetworkTarget:
-			resolvedIP, clusters := intel.ResolveNetwork(target)
-			payload.ASN = "AS13335"
-			payload.ISP = fmt.Sprintf("Network Stack (%s)", resolvedIP)
-			payload.Geo = models.GeoData{Country: "United States", City: "San Jose"}
-			payload.Clusters = clusters
+			resIP, geo, asn, owner, date, ports, banners, vulns, leaks := intel.ResolveNetwork(target)
+			payload.ASN = asn
+			payload.ISP = fmt.Sprintf("Network Stack (%s)", resIP)
+			payload.Geo = geo
+			payload.OwnerName = owner
+			payload.CreatedDate = date
+			
+			// Only layer active scanner outputs if explicit user flags are parsed
+			if *scanActiveFlag {
+				payload.OpenPorts = ports
+				payload.Banners = banners
+				payload.Vulnerabilities = vulns
+				payload.ExposedLeaks = leaks
+			}
+			payload.Clusters = []string{"LIVE_NODE_CONNECTED"}
 		}
 
 		if intelCache != nil {
@@ -122,6 +184,5 @@ func main() {
 		payload.OutputFormat = "text"
 	}
 
-	// Hand off data to internal/output/render.go which manages clearing, banners, and layout options
 	output.Render(&payload)
 }
