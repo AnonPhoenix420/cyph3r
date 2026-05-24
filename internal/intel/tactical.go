@@ -1,9 +1,6 @@
 package intel
 
-import (
-	"github.com/AnonPhoenix420/cyph3r/internal/models"
-)
-
+// Legacy Phone Metrics
 type PhoneMetrics struct {
 	LineStatus string
 	Carrier    string
@@ -11,9 +8,7 @@ type PhoneMetrics struct {
 	Risk       int
 }
 
-// Legacy handler for basic -phone command
 func GetPhoneMetrics(phone string) PhoneMetrics {
-	// This can call into the new logic later
 	return PhoneMetrics{
 		LineStatus: "ACTIVE_SUBSCRIBER_LINE",
 		Carrier:    "Global Mobile Network Routing",
