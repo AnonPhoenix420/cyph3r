@@ -56,7 +56,7 @@ func main() {
 
 	// 1. Direct Telephony Flag Override Shortcut
 	if *phoneFlag != "" {
-		output.ClearLine()
+		fmt.Print(output.ClearLine) // Fixed: Print string constant directly
 		output.Banner()
 		payload := models.IntelPayload{
 			Target:   strings.ReplaceAll(*phoneFlag, " ", ""),
@@ -78,7 +78,7 @@ func main() {
 
 	// 3. Persistent HUD Telemetry Monitoring Route
 	if *monitorFlag {
-		output.ClearLine()
+		fmt.Print(output.ClearLine) // Fixed: Print string constant directly
 		output.Banner()
 		interval, err := time.ParseDuration(*intervalFlag)
 		if err != nil {
@@ -94,7 +94,7 @@ func main() {
 		if !strings.HasPrefix(targetURL, "http://") && !strings.HasPrefix(targetURL, "https://") {
 			targetURL = "http://" + targetURL
 		}
-		output.ClearLine()
+		fmt.Print(output.ClearLine) // Fixed: Print string constant directly
 		output.Banner()
 		intel.ExecuteValidationSuite(targetURL, *testModeFlag, *concurrencyFlag, *durationFlag)
 		return
@@ -143,9 +143,8 @@ func main() {
 
 		switch targetType {
 		case models.TypeEmailTarget:
-			// Resolve the profile metadata string
 			avatarPtr := intel.ResolveEmail(target)
-			payload.OwnerName = avatarPtr // store fallback tracking signature
+			payload.OwnerName = avatarPtr 
 			payload.Clusters = []string{"IDENTITY_VERIFIED"}
 
 		case models.TypePhoneTarget:
@@ -192,7 +191,7 @@ func main() {
 	}
 
 	// Clear viewport, draw your native logo, and paint the matching layout cards
-	output.ClearLine()
+	fmt.Print(output.ClearLine) // Fixed: Print string constant directly
 	output.Banner()
 	output.Render(&payload)
 }
