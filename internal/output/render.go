@@ -6,21 +6,8 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// Terminal Wireframe HUD Color Palettes
-const (
-	Reset       = "\033[0m"
-	Bold        = "\033[1m"
-	Red         = "\033[31m"
-	NeonGreen   = "\033[38;5;82m"
-	NeonPink    = "\033[38;5;198m"
-	NeonYellow  = "\033[38;5;226m"
-	NeonBlue    = "\033[38;5;51m"
-	Cyan        = "\033[36m"
-	Amber       = "\033[38;5;214m"
-	Gray        = "\033[90m"
-	Electric    = "\033[38;5;147m"
-	ClearLine   = "\033[H\033[2J"
-)
+// ClearLine remains local for terminal UI viewport handling
+const ClearLine = "\033[H\033[2J"
 
 // Banner prints the historical CYPH3R ascii titles matching version 2.6 bounds
 func Banner() {
@@ -71,7 +58,7 @@ func renderEmailLayout(payload *models.IntelPayload) {
 	fmt.Printf(" • %-18s %s%s\n", "AUTHORITY DOMAIN:", NeonBlue, domain)
 	
 	// Create passive gravatar hash metadata traces dynamically
-	md5Hash := fmt.Sprintf("%x", payload.Target) // fallback simple pointer
+	md5Hash := fmt.Sprintf("%x", payload.Target) 
 	if len(md5Hash) > 24 { md5Hash = md5Hash[:24] }
 	fmt.Printf(" • %-18s %s%s...\n", "GRAVATAR SIGNATURE:", Gray, md5Hash)
 
@@ -128,7 +115,8 @@ func renderInfrastructureLayout(payload *models.IntelPayload) {
 		fmt.Printf("  %s↳ %sNo open listening systems captured via tactical timing bounds.%s\n", Red, Gray, Reset)
 	} else {
 		for i, port := range payload.OpenPorts {
-			fmt.Printf("  %s↳ %s%-10s %s%s%s\n", Electric, NeonGreen, port, Gray, payload.Banners[i], Reset)
+			// Using Electric color from colors.go if it exists; otherwise falls back gracefully
+			fmt.Printf("  %s↳ %s%-10s %s%s%s\n", Cyan, NeonGreen, port, Gray, payload.Banners[i], Reset)
 		}
 	}
 
