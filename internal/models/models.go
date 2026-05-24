@@ -2,48 +2,59 @@ package models
 
 import "time"
 
-type TargetType int
+type TargetType string
 
 const (
-	TypeNetworkTarget TargetType = iota
-	TypeEmailTarget
-	TypePhoneTarget
-	TypeGeoTarget
+	TargetPhone  TargetType = "phone"
+	TargetEmail  TargetType = "email"
+	TargetIP     TargetType = "ip"
+	TargetDomain TargetType = "domain"
 )
 
-type GeoData struct {
-	Latitude     string `json:"lat"`
-	Longitude    string `json:"lon"`
-	City         string `json:"city"`
-	Country      string `json:"country"`
-	Timezone     string `json:"timezone"`
-	MapReference string `json:"map_ref"`
+type LocationData struct {
+	Country     string  `json:"country"`
+	CountryCode string  `json:"country_code"`
+	State       string  `json:"state"`
+	City        string  `json:"city"`
+	ZIP         string  `json:"zip"`
+	AreaCode    string  `json:"area_code"`
+	Coordinates string  `json:"coordinates"`
+	RadiusKM    float64 `json:"radius_km"`
 }
 
-type PhoneMetrics struct {
-	Carrier   string `json:"carrier"`
-	LineType  string `json:"line_type"`
-	Location  string `json:"location"`
-	IsActive  bool   `json:"is_active"`
-	RiskScore int    `json:"risk_score"`
+type SocialProfile struct {
+	Platform    string `json:"platform"`
+	Username    string `json:"username"`
+	ProfileURL  string `json:"profile_url"`
+	DisplayName string `json:"display_name"`
+	Bio         string `json:"bio"`
+	Confidence  int    `json:"confidence"`
 }
 
-type IntelPayload struct {
-	Target          string
-	Type            TargetType
-	ScanTime        time.Time
-	Verbose         bool
-	OutputFormat    string
-	ASN             string
-	ISP             string
-	Geo             GeoData
-	Clusters        []string
-	OwnerName       string
-	OwnerCountry    string
-	CreatedDate     string
-	OpenPorts       []string
-	Banners         []string
-	Vulnerabilities []string
-	ExposedLeaks    []string
-	Phone           PhoneMetrics
+type PortInfo struct {
+	Port        int    `json:"port"`
+	Service     string `json:"service"`
+	State       string `json:"state"`
+	Banner      string `json:"banner"`
+	Vulnerable  bool   `json:"vulnerable"`
+	AdminPort   bool   `json:"admin_port"`
+}
+
+type SQLExposure struct {
+	Exposed     bool     `json:"exposed"`
+	Ports       []int    `json:"ports"`
+	RiskLevel   string   `json:"risk_level"`
+}
+
+type ComprehensiveReport struct {
+	Target         string
+	TargetType     TargetType
+	ReverseDNS     string
+	Location       LocationData
+	Associated     []string // Emails/Phones
+	SocialProfiles []SocialProfile
+	Ports          []PortInfo
+	SQLCheck       SQLExposure
+	Timestamp      time.Time
+	RiskScore      int
 }
