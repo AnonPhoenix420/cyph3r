@@ -5,21 +5,16 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-var ClearLine = "\033[H\033[2J"
-
-func Banner() {
-	fmt.Println(`   ______      ____  __  __ _____ ____
-  / ____/_  __/ __ \/ / / /|__  // __ \
- / /   / / / / /_/ / /_/ /  /_ </ /_/ /
-/ /___/ /_/ / ____/ __  / ___/ / _, _/
-\____/\__, /_/   /_/ /_/ /____/_/ |_|
-     /____/         NETWORK_INTEL_SYSTEM`)
-}
-
 func Render(payload *models.IntelPayload) {
-	// Your original render logic here - keep as is
 	fmt.Printf("\n[!] TARGET_NODE: %s\n", payload.Target)
-	// ... (add more if needed)
+
+	if payload.Geo.City != "" {
+		fmt.Printf(" • LOCATION:     %s, %s\n", payload.Geo.City, payload.Geo.Country)
+	}
+	if len(payload.OpenPorts) > 0 {
+		fmt.Printf(" • OPEN PORTS:   %v\n", payload.OpenPorts)
+	}
+	fmt.Println("═══════════════════════════════════════════════════════════════\n")
 }
 
 func RenderReport(report *models.ComprehensiveReport) {
@@ -35,12 +30,18 @@ func RenderReport(report *models.ComprehensiveReport) {
 	fmt.Printf(" • AREA CODE:    %s\n", report.Location.AreaCode)
 	fmt.Printf(" • COORDINATES:  %s (≈ %.1f km radius)\n", report.Location.Coordinates, report.Location.RadiusKM)
 
+	fmt.Println("\n[ ASSOCIATED CONTACTS ]")
+	for _, contact := range report.Associated {
+		fmt.Printf(" • %s\n", contact)
+	}
+
 	fmt.Println("\n[ SOCIAL MEDIA ASSOCIATIONS ]")
 	for _, s := range report.SocialProfiles {
-		fmt.Printf(" • %s → %s (%d%%)\n", s.Platform, s.ProfileURL, s.Confidence)
+		fmt.Printf(" • %s → %s (%d%% confidence)\n", s.Platform, s.ProfileURL, s.Confidence)
 	}
 
 	fmt.Printf("\n[ RISK SCORE: %d/100 ]\n", report.RiskScore)
+	fmt.Println("═══════════════════════════════════════════════════════════════\n")
 }
 
 func RenderPhoneReport(target, lineStatus, carrier, locale string) {
