@@ -3,9 +3,8 @@ package output
 import "fmt"
 
 func Banner() {
-	// Using NeonBlue from your colors.go
+	// Using NeonBlue from colors.go for professional header
 	fmt.Printf("%s", NeonBlue)
-	// MUST use backticks (`) on both sides for multi-line strings
 	fmt.Println(`
    ______      ____  __  __ _____ ____  
   / ____/_  __/ __ \/ / / /|__  // __ \ 
@@ -14,4 +13,9 @@ func Banner() {
 \____/\__, /_/   /_/ /_/ /____/_/ |_|   
      /____/         NETWORK_INTEL_SYSTEM`)
 	fmt.Printf("%s", Reset)
+}
+
+// ClearScreen returns ANSI code to clear the terminal screen
+func ClearScreen() string {
+	return "\033[H\033[2J"
 }
