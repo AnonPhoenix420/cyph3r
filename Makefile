@@ -1,23 +1,24 @@
-# CYPH3R PROJECT GHOST_BUILD
-BINARY_NAME=cyph3r
-CMD_PATH=./cmd/cyph3r
+# ─── CYPH3R v2.6 SYSTEM MAINTENANCE MAKEFILE ──────────────────────────
 
-.PHONY: all build clean scrub
+BINARY_NAME=cyph3r
 
 all: build
 
 build:
-	@echo "\033[38;5;39m[*] Compiling Cyph3r Tactical Engine...\033[0m"
-	@go build -o $(BINARY_NAME) $(CMD_PATH)
-	@chmod +x $(BINARY_NAME)
-	@echo "\033[38;5;82m[+] Build Complete: ./$(BINARY_NAME)\033[0m"
+	@echo "[*] Building CYPH3R v2.6 production binary..."
+	go build -o $(BINARY_NAME) ./cmd/cyph3r
+
+repair:
+	@echo "[*] Initializing CYPH3R Self-Repair Routine..."
+	go clean -modcache
+	go mod tidy
+	go build -o $(BINARY_NAME) ./cmd/cyph3r
+	@echo "[✓] Environment successfully repaired and resynced."
 
 clean:
-	@rm -f $(BINARY_NAME)
-	@go clean
+	@echo "[*] Removing build artifacts and binaries..."
+	rm -f $(BINARY_NAME)
+	go clean
+	@echo "[✓] Project environment cleaned."
 
-scrub:
-	@echo "\033[38;5;196m[!] WARNING: PERFORMING OPSEC SCRUB...\033[0m"
-	@rm -f $(BINARY_NAME)
-	@history -c && history -w
-	@echo "\033[38;5;82m[+] System Scrubbed. No local trace remains.\033[0m"
+.PHONY: all build repair clean
