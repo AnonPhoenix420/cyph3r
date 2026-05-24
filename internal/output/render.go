@@ -1,122 +1,85 @@
 package output
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
-
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-func Render(payload *models.IntelPayload) {
-	if strings.ToLower(payload.OutputFormat) == "json" {
-		renderJSON(payload)
-		return
-	}
-	renderTerminalHUD(payload)
+// drawBoxLine handles the layout formatting specifically for infrastructure mode
+func drawBoxLine(label, value, labelCol, valCol string) {
+	visibleText := fmt.Sprintf("[!] %s: %s", label, value)
+	width := 59 
+	padding := width - len(visibleText)
+	if padding < 0 { padding = 0 }
+	fmt.Printf("\n║ %s[!] %s: %s%s%s %s║", labelCol, label, valCol, value, strings.Repeat(" ", padding), NeonBlue)
 }
 
-func renderJSON(payload *models.IntelPayload) {
-	encoder := json.NewEncoder(os.Stdout)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(payload); err != nil {
-		fmt.Fprintf(os.Stderr, "[-] Error rendering output payload to JSON format: %v\n", err)
-	}
-}
+// DisplayHUD automatically branches the UI based on the detected Vector Type
+func DisplayHUD(data models.IntelData, verbose bool) {
+	// 1. Clear any running terminal artifact lines
+	fmt.Print(ClearLine)
 
-func renderTerminalHUD(p *models.IntelPayload) {
-	// Dynamically pull colors straight from your pre-compiled internal/output/colors.go file
-	fmt.Printf("%s[+] CYPH3R GHOST ELITE INTEL REPORT FOR: %s%s\n", NeonPink, p.Target, Reset)
-	fmt.Printf("%s[-] TARGET VECTOR MATRIX CLASSIFICATION: %s%s\n", Gray, p.Type, Reset)
-	fmt.Println(strings.Repeat("-", 63))
+	// 2. Call your signature banner from banner.go
+	Banner()
 
-	switch p.Type {
-	case models.TypePhoneTarget:
-		drawBoxLine(fmt.Sprintf("VALIDITY : %s", fallback(p.Phone.Valid, "UNKNOWN")))
-		drawBoxLine(fmt.Sprintf("FORMAT   : %s", fallback(p.Phone.LocalFormat, "N/A")))
-		drawBoxLine(fmt.Sprintf("COUNTRY  : %s", fallback(p.Phone.CountryCode, "N/A")))
-		drawBoxLine(fmt.Sprintf("LOCATION : %s", fallback(p.Phone.Location, "N/A")))
-		drawBoxLine(fmt.Sprintf("CARRIER  : %s", fallback(p.Phone.Carrier, "N/A")))
-		drawBoxLine(fmt.Sprintf("LINE TYPE: %s", fallback(p.Phone.LineType, "N/A")))
-
-	case models.TypeEmailTarget:
-		drawBoxLine(fmt.Sprintf("STEALTH STATUS: %s", fallback(p.Email.Deliverable, "UNKNOWN")))
-		drawBoxLine(fmt.Sprintf("USER VECTOR   : %s", fallback(p.Email.Username, "N/A")))
-		drawBoxLine(fmt.Sprintf("HOST ROUTE    : %s", fallback(p.Email.Domain, "N/A")))
-		drawBoxLine(fmt.Sprintf("DISPOSABLE    : %s", fallback(p.Email.Disposable, "NO")))
-		if p.Email.ProfileLink != "" {
-			drawBoxLine(fmt.Sprintf("AVATAR TRACE  : %s", p.Email.ProfileLink))
-		}
-		if len(p.Email.MXRecords) > 0 {
-			fmt.Println(strings.Repeat("-", 63))
-			drawBoxLine("RESOLVED MX STEALTH PATHS:")
-			for _, mx := range p.Email.MXRecords {
-				drawBoxLine(fmt.Sprintf("  ↳ %s", mx))
-			}
-		}
-
-	case models.TypeGeoTarget:
-		drawBoxLine(fmt.Sprintf("LATITUDE  : %s", fallback(p.Geo.Latitude, "N/A")))
-		drawBoxLine(fmt.Sprintf("LONGITUDE : %s", fallback(p.Geo.Longitude, "N/A")))
-		drawBoxLine(fmt.Sprintf("GRID POINT: %s", fallback(p.Geo.City, "N/A")))
-		drawBoxLine(fmt.Sprintf("ZONE RANGE: %s", fallback(p.Geo.Country, "N/A")))
-		drawBoxLine(fmt.Sprintf("TIME TRACE: %s", fallback(p.Geo.Timezone, "N/A")))
-		if p.Geo.MapReference != "" {
-			drawBoxLine(fmt.Sprintf("MAP LINK  : %s", p.Geo.MapReference))
-		}
-
-	case models.TypeNetworkTarget:
-		if p.ASN != "" || p.ISP != "" {
-			drawBoxLine(fmt.Sprintf("ASN: %s", fallback(p.ASN, "N/A")))
-			drawBoxLine(fmt.Sprintf("ISP: %s", fallback(p.ISP, "N/A")))
-		}
-		if p.Geo.Country != "" || p.Geo.City != "" {
-			drawBoxLine(fmt.Sprintf("LOC: %s, %s", fallback(p.Geo.City, "Unknown City"), fallback(p.Geo.Country, "Unknown Country")))
-		}
-		if len(p.Clusters) > 0 {
-			fmt.Println(strings.Repeat("-", 63))
-			drawBoxLine("AUTHORITATIVE CLUSTERS:")
-			for _, cluster := range p.Clusters {
-				if strings.TrimSpace(cluster.NameServer) == "" {
-					continue
-				}
-				drawBoxLine(fmt.Sprintf("  [-] %-20s", cluster.NameServer))
-				if p.Verbose {
-					for _, ip := range cluster.IPs {
-						if strings.TrimSpace(ip) != "" {
-							drawBoxLine(fmt.Sprintf("    ↳ %-22s [ONLINE]", ip))
-						}
-					}
-				}
-			}
-		}
-	}
-
-	fmt.Println(strings.Repeat("-", 63))
-}
-
-func drawBoxLine(content string) {
-	cleanText := content
-	replacements := []string{NeonPink, Cyan, NeonGreen, Reset, Gray}
-	for _, r := range replacements {
-		cleanText = strings.ReplaceAll(cleanText, r, "")
-	}
-
-	visibleLength := len(cleanText)
-	targetWidth := 61
-
-	if visibleLength >= targetWidth {
-		fmt.Printf("| %s |\n", content)
+	// 3. Render the correct unboxed style or infra box layout
+	if data.VectorType == "EMAIL_STEALTH_VECTOR" {
+		renderEmailHUD(data)
 	} else {
-		padding := targetWidth - visibleLength
-		fmt.Printf("| %s%s |\n", content, strings.Repeat(" ", padding))
+		renderInfrastructureHUD(data)
 	}
 }
 
-func fallback(val, def string) string {
-	if strings.TrimSpace(val) == "" {
-		return def
+func renderEmailHUD(data models.IntelData) {
+	// Your custom unboxed open-matrix stream layout
+	fmt.Printf("\n%s[+] CYPH3R GHOST ELITE INTEL REPORT FOR: %s%s", NeonGreen, data.TargetName, Reset)
+	fmt.Printf("\n%s[-] TARGET VECTOR MATRIX CLASSIFICATION: %s%s\n", NeonPink, data.VectorType, Reset)
+	
+	stealthStr := "FALSE"; if data.StealthStatus { stealthStr = "TRUE_STEALTH_VERIFIED" }
+	dispStr := "FALSE"; if data.IsDisposable { dispStr = "TRUE" }
+
+	fmt.Printf("\n %s•%s %-15s %s%s", NeonPink, Reset, "STEALTH STATUS:", NeonGreen+Bold, stealthStr+Reset)
+	fmt.Printf("\n %s•%s %-15s %s%s", NeonPink, Reset, "USER VECTOR:", Cyan, data.UserVector)
+	fmt.Printf("\n %s•%s %-15s %s%s", NeonPink, Reset, "HOST ROUTE:", Amber, data.HostRoute)
+	fmt.Printf("\n %s•%s %-15s %s%s", NeonPink, Reset, "DISPOSABLE:", Red, dispStr)
+	fmt.Printf("\n %s•%s %-15s %s%s\n", NeonPink, Reset, "AVATAR TRACE:", Gray, data.AvatarTrace)
+	
+	fmt.Printf("\n%s[ RESOLVED MX STEALTH PATHS ]%s", NeonYellow, Reset)
+	for _, mx := range data.MXPaths {
+		fmt.Printf("\n  %s↳ %s%s", Electric, Reset, mx)
 	}
-	return val
+	fmt.Println("\n")
+}
+
+func renderInfrastructureHUD(data models.IntelData) {
+	// Legacy box mapping layout
+	fmt.Printf("\n%s╔═══════════════════════════════════════════════════════════════╗", NeonBlue)
+	drawBoxLine("TARGET_NODE", data.TargetName, Cyan, NeonPink)
+	
+	v4 := "NOT_DETECTED"; if len(data.TargetIPs) > 0 { v4 = data.TargetIPs[0] }
+	drawBoxLine("TARGET_IPv4", v4, Amber, NeonGreen)
+
+	v6 := "NOT_DETECTED"; if len(data.TargetIPv6s) > 0 { v6 = data.TargetIPv6s[0] }
+	drawBoxLine("TARGET_IPv6", v6, Amber, Cyan)
+
+	if data.IsWAF { drawBoxLine("SHIELD     ", data.WAFType, Amber, NeonYellow) }
+	fmt.Printf("\n╚═══════════════════════════════════════════════════════════════╝%s\n", Reset)
+
+	fmt.Printf("\n%s[ ORGANIZATION_DOX ]%s\n", NeonPink, Reset)
+	if data.Org != "" { fmt.Printf(" • %-18s %s%s\n", "ENTITY_NAME:", NeonGreen, data.Org) }
+	fmt.Printf(" • %-18s %s%s\n", "DESCRIPTION:", Gray, data.ISP)
+	fmt.Printf(" • %-18s %s%s\n", "NETWORK_ASN:", NeonYellow, data.AS)
+
+	fmt.Printf("\n%s[ GEO_ENTITY ]%s\n", NeonBlue, Reset)
+	loc := fmt.Sprintf("%s, %s, %s", data.City, data.RegionName, data.Country)
+	fmt.Printf(" • %-18s %s%s\n", "LOCATION:", NeonYellow, loc)
+
+	fmt.Printf("\n%s[ INFRASTRUCTURE_STACK ]%s\n", NeonBlue, Reset)
+	for _, res := range data.ScanResults {
+		if strings.Contains(res, "PORT") {
+			fmt.Printf(" [+] %-18s %s[ACTIVE]%s\n", NeonYellow+res, NeonGreen, Reset)
+		}
+	}
+	fmt.Println()
 }
