@@ -35,15 +35,15 @@ func sanitizeToDomain(input string) string {
 }
 
 func main() {
-	// Restoring original v2.6 explicit long flag layout metrics
-	targetFlag := flag.String("target", "", "Target routing domain or infrastructure IP vector")
+	// Traditional CYPH3R v2.6 long-flag mappings
+	targetFlag := flag.String("target", "", "Target routing domain, email, or infrastructure IP vector")
 	phoneFlag := flag.String("phone", "", "Execute international telephone vector metadata lookup")
 	scanActiveFlag := flag.Bool("scan", false, "Execute tactical concurrent port scan and banner analysis")
 	monitorFlag := flag.Bool("monitor", false, "Engage continuous HUD telemetry monitoring mode loop")
 	protoFlag := flag.String("proto", "tcp", "Protocol mode selector for tracing [tcp, udp, http, https, ack]")
 	intervalFlag := flag.String("interval", "2s", "Telemetry delay frequency window interval")
 	
-	// Advanced Stress and Integrity Addons
+	// Stress Validation Infrastructure Mappings
 	runTestFlag := flag.Bool("test-integrity", false, "Execute integrated validation stress suite")
 	testModeFlag := flag.Int("mode", 1, "Select test vector: 1=LOAD, 2=STRESS, 3=SOAK, 4=SPIKE")
 	concurrencyFlag := flag.Int("c", 50, "Number of concurrent verification testing streams")
@@ -54,9 +54,9 @@ func main() {
 	
 	flag.Parse()
 
-	// 1. Telephony Extraction Fast-Route Path
+	// 1. Direct Telephony Flag Override Shortcut
 	if *phoneFlag != "" {
-		fmt.Print(output.ClearLine)
+		output.ClearLine()
 		output.Banner()
 		payload := models.IntelPayload{
 			Target:   strings.ReplaceAll(*phoneFlag, " ", ""),
@@ -68,7 +68,7 @@ func main() {
 		return
 	}
 
-	// 2. Fallback validation checks for destination endpoints
+	// 2. Structural Guardrail Validation Check
 	if *targetFlag == "" {
 		fmt.Fprintln(os.Stderr, "[-] Fatal: Operational parameter target mapping (--target or --phone) strictly required.")
 		os.Exit(1)
@@ -76,9 +76,9 @@ func main() {
 
 	rawInput := strings.TrimSpace(*targetFlag)
 
-	// 3. Persistent HUD Telemetry Monitoring Routing Flow
+	// 3. Persistent HUD Telemetry Monitoring Route
 	if *monitorFlag {
-		fmt.Print(output.ClearLine)
+		output.ClearLine()
 		output.Banner()
 		interval, err := time.ParseDuration(*intervalFlag)
 		if err != nil {
@@ -88,19 +88,19 @@ func main() {
 		return
 	}
 
-	// 4. System Stress Validation Suite Intercept Flow
+	// 4. System Stress Validation Suite Intercept Route
 	if *runTestFlag {
 		targetURL := rawInput
 		if !strings.HasPrefix(targetURL, "http://") && !strings.HasPrefix(targetURL, "https://") {
 			targetURL = "http://" + targetURL
 		}
-		fmt.Print(output.ClearLine)
+		output.ClearLine()
 		output.Banner()
 		intel.ExecuteValidationSuite(targetURL, *testModeFlag, *concurrencyFlag, *durationFlag)
 		return
 	}
 
-	// 5. Traditional Single-Scan Reconnaissance Parsing Engines
+	// 5. Input Target Evaluation Tree
 	var target string
 	var targetType models.TargetType
 
@@ -118,6 +118,7 @@ func main() {
 		targetType = models.TypeNetworkTarget
 	}
 
+	// 6. Execution Cache Layers
 	intelCache, _ := cache.NewResponseCache()
 	var payload models.IntelPayload
 	var cacheHit = false
@@ -132,6 +133,7 @@ func main() {
 		}
 	}
 
+	// 7. Core Threat Processing Logic
 	if !cacheHit {
 		payload = models.IntelPayload{
 			Target:   target,
@@ -141,9 +143,14 @@ func main() {
 
 		switch targetType {
 		case models.TypeEmailTarget:
-			// Uses existing email modular processing routines
+			// Resolve the profile metadata string
+			avatarPtr := intel.ResolveEmail(target)
+			payload.OwnerName = avatarPtr // store fallback tracking signature
+			payload.Clusters = []string{"IDENTITY_VERIFIED"}
+
 		case models.TypePhoneTarget:
 			payload.Phone = intel.ResolvePhone(target)
+
 		case models.TypeGeoTarget:
 			coords := strings.Split(target, ",")
 			payload.Geo = models.GeoData{
@@ -152,8 +159,9 @@ func main() {
 				City:         "Precision Grid Intercept",
 				Country:      "Localized Anchor Node",
 				Timezone:     "UTC/GMT Z-Time",
-				MapReference: fmt.Sprintf("http://googleusercontent.com/maps.google.com/%s,%s", strings.TrimSpace(coords[0]), strings.TrimSpace(coords[1])),
+				MapReference: fmt.Sprintf("https://maps.google.com/?q=%s,%s", strings.TrimSpace(coords[0]), strings.TrimSpace(coords[1])),
 			}
+
 		case models.TypeNetworkTarget:
 			resIP, geo, asn, owner, date, ports, banners, vulns, leaks := intel.ResolveNetwork(target)
 			payload.ASN = asn
@@ -162,7 +170,6 @@ func main() {
 			payload.OwnerName = owner
 			payload.CreatedDate = date
 			
-			// Only layer active scanner outputs if explicit user flags are parsed
 			if *scanActiveFlag {
 				payload.OpenPorts = ports
 				payload.Banners = banners
@@ -184,5 +191,8 @@ func main() {
 		payload.OutputFormat = "text"
 	}
 
+	// Clear viewport, draw your native logo, and paint the matching layout cards
+	output.ClearLine()
+	output.Banner()
 	output.Render(&payload)
 }
