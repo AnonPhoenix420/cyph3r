@@ -6,19 +6,6 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// ClearLine remains local for terminal UI viewport handling
-const ClearLine = "\033[H\033[2J"
-
-// Banner prints the historical CYPH3R ascii titles matching version 2.6 bounds
-func Banner() {
-	fmt.Printf("%s   ______      ____  __  __ _____ ____\n", NeonPink)
-	fmt.Printf("  / ____/_  __/ __ \\/ / / /|__  // __ \\\n")
-	fmt.Printf(" / /   / / / / /_/ / /_/ /  /_ </ /_/ /\n")
-	fmt.Printf("/ /___/ /_/ / ____/ __  / ___/ / _, _/\n")
-	fmt.Printf("\\____/\\__, /_/   /_/ /_/ /____/_/ |_|\n")
-	fmt.Printf("     /____/         %sNETWORK_INTEL_SYSTEM %s⚡ v2.6 [STABLE]%s\n\n", Gray, NeonYellow, Reset)
-}
-
 // Render routes incoming data nodes to their matching terminal display interface
 func Render(payload *models.IntelPayload) {
 	// If output layout is raw json, dump payload straight to stdout instead of painting wireframes
@@ -115,7 +102,6 @@ func renderInfrastructureLayout(payload *models.IntelPayload) {
 		fmt.Printf("  %s↳ %sNo open listening systems captured via tactical timing bounds.%s\n", Red, Gray, Reset)
 	} else {
 		for i, port := range payload.OpenPorts {
-			// Using Electric color from colors.go if it exists; otherwise falls back gracefully
 			fmt.Printf("  %s↳ %s%-10s %s%s%s\n", Cyan, NeonGreen, port, Gray, payload.Banners[i], Reset)
 		}
 	}
