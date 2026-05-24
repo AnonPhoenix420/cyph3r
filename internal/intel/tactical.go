@@ -4,13 +4,20 @@ import (
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// ResolvePhone analyzes incoming phone vectors for registration and carrier properties
-func ResolvePhone(number string) models.PhoneMetrics {
-	return models.PhoneMetrics{
-		Carrier:   "Global Mobile Network Routing",
-		LineType:  "Mobile (LTE/5G)",
-		Location:  "Dynamic Matrix Cell",
-		IsActive:  true,
-		RiskScore: 12,
+type PhoneMetrics struct {
+	LineStatus string
+	Carrier    string
+	Locale     string
+	Risk       int
+}
+
+// Legacy handler for basic -phone command
+func GetPhoneMetrics(phone string) PhoneMetrics {
+	// This can call into the new logic later
+	return PhoneMetrics{
+		LineStatus: "ACTIVE_SUBSCRIBER_LINE",
+		Carrier:    "Global Mobile Network Routing",
+		Locale:     "Dynamic Matrix Cell",
+		Risk:       12,
 	}
 }
