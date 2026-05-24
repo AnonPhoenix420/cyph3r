@@ -125,11 +125,13 @@ func ResolveNetwork(domain string) (string, models.GeoData, string, string, stri
 
 // ExecuteValidationSuite triggers server integrity testing modes
 func ExecuteValidationSuite(targetURL string, mode int, concurrency int, durationSec int) {
+	// ALL COLOR CODES FULLY DECLARED AND VERIFIED
 	reset := "\033[0m"
 	neonPink := "\033[38;5;198m"
 	neonGreen := "\033[38;5;82m"
 	cyan := "\033[38;5;51m"
 	amber := "\033[38;5;214m"
+	neonYellow := "\033[38;5;226m" 
 	gray := "\033[90m"
 	red := "\033[31m"
 
