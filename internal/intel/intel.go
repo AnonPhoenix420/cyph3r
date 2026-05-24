@@ -38,14 +38,17 @@ func ExecuteFullDox(target string, tType models.TargetType) *models.Comprehensiv
 	report.ReverseDNS = getReverseDNS(target, tType)
 	report.Ports = executeFullPortScan(target, tType)
 	report.SQLCheck = checkSQLExposure(report.Ports)
-	report.SocialProfiles = getSocialLinks(target, tType)
+	report.SocialProfiles = GetSocialProfiles(target, tType) // Uses your expanded social.go
 	report.Associated = getAssociatedContacts(target, tType)
 	report.RiskScore = calculateRisk(report)
 
 	return report
 }
 
+// ... [getLocationData, resolveToIP, getReverseDNS remain the same as previous version]
+
 func getLocationData(target string, tType models.TargetType) models.LocationData {
+	// (Same accurate implementation as before - phone NPA + ip-api.com)
 	loc := models.LocationData{Country: "Unknown", State: "Unknown", RadiusKM: 0}
 
 	switch tType {
@@ -127,28 +130,19 @@ func getReverseDNS(target string, tType models.TargetType) string {
 	return "N/A"
 }
 
-func getSocialLinks(target string, tType models.TargetType) []models.SocialProfile {
-	if tType == models.TargetEmail || tType == models.TypeEmailTarget {
-		username := strings.Split(target, "@")[0]
-		return []models.SocialProfile{
-			{Platform: "Google / Gmail", Username: username, ProfileURL: "https://myaccount.google.com", DisplayName: username, Confidence: 90},
-			{Platform: "X (Twitter)", Username: username, ProfileURL: "https://x.com/" + username, Confidence: 45},
-			{Platform: "LinkedIn", Username: username, ProfileURL: "https://linkedin.com/in/" + username, Confidence: 40},
-		}
-	}
-	return []models.SocialProfile{}
-}
-
 func getAssociatedContacts(target string, tType models.TargetType) []string {
 	if tType == models.TargetEmail || tType == models.TypeEmailTarget {
 		domain := strings.Split(target, "@")[1]
-		return []string{target + " (Primary)", "admin@" + domain + " (WHOIS)"}
+		return []string{target + " (Primary)", "admin@" + domain + " (WHOIS)", "contact@" + domain}
+	}
+	if tType == models.TargetDomain || tType == models.TypeNetworkTarget {
+		return []string{"admin@" + target, "postmaster@" + target}
 	}
 	return []string{}
 }
 
 func executeFullPortScan(target string, tType models.TargetType) []models.PortInfo {
-	return []models.PortInfo{}
+	return []models.PortInfo{} // Ready for future expansion with probes package
 }
 
 func checkSQLExposure(ports []models.PortInfo) models.SQLExposure {
