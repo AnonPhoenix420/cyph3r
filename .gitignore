@@ -1,17 +1,65 @@
-# Compiled Binaries
+# Binaries
 cyph3r
 cyph3r.exe
+cyph3r_*
+
+# Build directories
+build/
+dist/
 bin/
+out/
 
-# Backups and Logs
-backups/
-*.log
-results/
-
-# Dependencies
+# Go modules
 vendor/
-go.sum
 
-# System
+# Go build cache
+*.test
+*.out
+go.sum
+*.exe
+*.exe\~
+*.dll
+*.so
+*.dylib
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*\~
 .DS_Store
-.env
+
+# Logs and temporary files
+*.log
+logs/
+temp/
+tmp/
+
+# Cache files
+.cache/
+*.cache
+
+# Configuration with secrets (if any)
+*.env
+config.json
+credentials.json
+
+# Docker
+.docker/
+Dockerfile.*
+.dockerignore
+
+# OS generated files
+Thumbs.db
+
+# Test coverage
+coverage.out
+coverage.html
+
+# Documentation temporary
+*.md.tmp
+
+# Installation artifacts
+install.sh.backup
+uninstall.sh.backup
