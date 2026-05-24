@@ -1,27 +1,22 @@
 #!/bin/bash
-# Cyph3r Emergency Uninstall Script
+# ─── CYPH3R AUTOMATED UNINSTALL ENGINE ────────────────────────────────
 
-RED='\033[31m'
-GREEN='\033[38;5;82m'
-PURPLE='\033[38;5;99m'
-NC='\033[0m'
+Reset="\033[0m"
+Red="\033[31m"
+NeonPink="\033[38;5;198m"
 
-echo -e "${PURPLE}[*] Initializing Cyph3r Uninstallation...${NC}"
+echo -e "${NeonPink}[*] Initializing CYPH3R Removal Sequence...${Reset}"
 
-# 1. Remove from local directory
-if [ -f "./cyph3r" ]; then
+# Remove the system global binary pathway mappings
+if [ -f /usr/local/bin/cyph3r ]; then
+    echo -e "${Red}[-] Deleting global system executable path...${Reset}"
+    sudo rm -f /usr/local/bin/cyph3r 2>/dev/null || rm -f /usr/local/bin/cyph3r 2>/dev/null
+fi
+
+# Clean localized folder directory parameters
+if [ -f ./cyph3r ]; then
+    echo -e "${Red}[-] Removing local compilation binaries...${Reset}"
     rm -f ./cyph3r
-    echo -e "${GREEN}[+] Local binary removed.${NC}"
 fi
 
-# 2. Remove from System Path
-if [ -f "/usr/local/bin/cyph3r" ]; then
-    sudo rm -f /usr/local/bin/cyph3r
-    echo -e "${GREEN}[+] System-wide binary removed.${NC}"
-fi
-
-# 3. Clean up temporary logs/backups (Optional - uncomment if desired)
-# rm -rf ./backups
-# rm -f *.log
-
-echo -e "${PURPLE}[*] Cyph3r has been scrubbed from this node.${NC}"
+echo -e "\033[38;5;82m[✓] CYPH3R has been cleanly uninstalled from your machine.${Reset}\n"
