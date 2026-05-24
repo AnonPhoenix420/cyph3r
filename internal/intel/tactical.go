@@ -1,6 +1,5 @@
 package intel
 
-// Legacy Phone Metrics
 type PhoneMetrics struct {
 	LineStatus string
 	Carrier    string
