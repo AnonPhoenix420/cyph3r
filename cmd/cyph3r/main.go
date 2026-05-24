@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -43,45 +42,40 @@ func detectTargetType(rawInput string) models.TargetType {
 		return models.TargetPhone
 	}
 	if geoRegex.MatchString(clean) {
-		return models.TargetGeo // Add to models if missing
+		return models.TypeGeoTarget
 	}
-	return models.TargetDomain // Default to network/domain
+	return models.TargetDomain
 }
 
 func main() {
-	// Traditional CYPH3R v2.6 flags
-	targetFlag := flag.String("target", "", "Target routing domain, email, or infrastructure IP vector")
-	phoneFlag := flag.String("phone", "", "Execute international telephone vector metadata lookup")
-	scanActiveFlag := flag.Bool("scan", false, "Execute tactical concurrent port scan and banner analysis")
-	monitorFlag := flag.Bool("monitor", false, "Engage continuous HUD telemetry monitoring mode loop")
-	protoFlag := flag.String("proto", "tcp", "Protocol mode selector for tracing [tcp, udp, http, https, ack]")
-	intervalFlag := flag.String("interval", "2s", "Telemetry delay frequency window interval")
-	
-	// Stress Validation
-	runTestFlag := flag.Bool("test-integrity", false, "Execute integrated validation stress suite")
-	testModeFlag := flag.Int("mode", 1, "Select test vector")
-	concurrencyFlag := flag.Int("c", 50, "Number of concurrent streams")
-	durationFlag := flag.Int("d", 10, "Duration in seconds")
-	
-	verboseFlag := flag.Bool("v", false, "Enable full operational tracing logs")
-	jsonFlag := flag.Bool("json", false, "Output data structure as raw JSON matrix")
-	fullFlag := flag.Bool("full", false, "Enable elite comprehensive dox report")
+	// Core flags
+	targetFlag := flag.String("target", "", "Target: IP, Domain, or Email")
+	phoneFlag := flag.String("phone", "", "Phone number lookup")
+	scanFlag := flag.Bool("scan", false, "Execute port scan")
+	monitorFlag := flag.Bool("monitor", false, "Continuous HUD monitor")
+	protoFlag := flag.String("proto", "tcp", "Protocol for monitor")
+	intervalFlag := flag.String("interval", "2s", "Monitor interval")
+	fullFlag := flag.Bool("full", false, "Enable elite full dox report")
+	verboseFlag := flag.Bool("v", false, "Verbose mode")
+	shieldFlag := flag.Bool("shield", false, "Check current connection shield")
+
+	// Stress test flags
+	runTestFlag := flag.Bool("test-integrity", false, "Run stress validation suite")
 
 	flag.Parse()
 
-	fmt.Println(`
-   ______      ____  __  __ _____ ____
-  / ____/_  __/ __ \/ / / /|__  // __ \
- / /   / / / / /_/ / /_/ /  /_ </ /_/ /
-/ /___/ /_/ / ____/ __  / ___/ / _, _/
-\____/\__, /_/   /_/ /_/ /____/_/ |_|
-     /____/         NETWORK_INTEL_SYSTEM
-`)
+	// Banner
+	fmt.Print(output.ClearLine)
+	output.Banner()
 
-	// 1. Direct Phone Handling (Legacy)
+	// Shield Check
+	if *shieldFlag {
+		output.RenderShieldReport()
+		return
+	}
+
+	// Direct Phone Lookup
 	if *phoneFlag != "" {
-		fmt.Print(output.ClearLine)
-		output.Banner()
 		metrics := intel.GetPhoneMetrics(*phoneFlag)
 		output.RenderPhoneReport(*phoneFlag, metrics.LineStatus, metrics.Carrier, metrics.Locale)
 
@@ -92,9 +86,10 @@ func main() {
 		return
 	}
 
-	// 2. Target Required Check
+	// Target required
 	if *targetFlag == "" {
-		fmt.Fprintln(os.Stderr, "[-] Fatal: Operational parameter target mapping (--target or --phone) strictly required.")
+		fmt.Fprintln(os.Stderr, "[-] Fatal: --target or --phone is required.")
+		flag.Usage()
 		os.Exit(1)
 	}
 
@@ -102,54 +97,41 @@ func main() {
 	targetType := detectTargetType(rawInput)
 	target := sanitizeToDomain(rawInput)
 
-	// 3. Monitoring Mode
+	// Monitor Mode
 	if *monitorFlag {
-		fmt.Print(output.ClearLine)
-		output.Banner()
 		interval, _ := time.ParseDuration(*intervalFlag)
 		probes.ExecuteContinuousMonitor(rawInput, strings.ToLower(*protoFlag), interval)
 		return
 	}
 
-	// 4. Stress Test Mode
-	if *runTestFlag {
-		fmt.Print(output.ClearLine)
-		output.Banner()
-		targetURL := rawInput
-		if !strings.HasPrefix(targetURL, "http") {
-			targetURL = "http://" + targetURL
-		}
-		intel.ExecuteValidationSuite(targetURL, *testModeFlag, *concurrencyFlag, *durationFlag)
-		return
-	}
-
-	// 5. Elite Full Dox Mode (New)
-	useFullDox := *fullFlag || *verboseFlag
-	if useFullDox {
-		fmt.Print(output.ClearLine)
-		output.Banner()
+	// Full Elite Dox Mode
+	if *fullFlag || *verboseFlag {
 		report := intel.ExecuteFullDox(target, targetType)
+
+		// Add port scan if requested
+		if *scanFlag && (targetType == models.TargetDomain || targetType == models.TargetIP) {
+			openPorts := probes.ExecutePortScan(target)
+			fmt.Printf("\n%s[ PORT SCAN RESULTS ]%s\n", output.Cyan, output.Reset)
+			for _, p := range openPorts {
+				fmt.Printf(" • %s\n", p)
+			}
+		}
+
 		output.RenderReport(report)
 		return
 	}
 
-	// 6. Legacy Processing Path (Preserved)
+	// Legacy Mode (original behavior)
 	intelCache, _ := cache.NewResponseCache()
 	var payload models.IntelPayload
-	var cacheHit = false
 
-	// Cache logic (your original)
 	if intelCache != nil {
-		if cachedData, found := intelCache.Get(target); found {
-			var unmarshaled models.IntelPayload
-			if err := json.Unmarshal(cachedData, &unmarshaled); err == nil {
-				payload = unmarshaled
-				cacheHit = true
-			}
+		if cached, found := intelCache.Get(target); found {
+			json.Unmarshal(cached, &payload)
 		}
 	}
 
-	if !cacheHit {
+	if payload.Target == "" {
 		payload = models.IntelPayload{
 			Target:   target,
 			Type:     targetType,
@@ -157,23 +139,17 @@ func main() {
 		}
 
 		switch targetType {
-		case models.TargetEmail:
-			payload.OwnerName = intel.ResolveEmail(target) // Keep your existing function
+		case models.TargetEmail, models.TypeEmailTarget:
+			payload.OwnerName = intel.ResolveEmail(target)
 		case models.TargetPhone:
 			payload.Phone = intel.ResolvePhone(target)
-		case models.TypeNetworkTarget, models.TargetDomain, models.TargetIP:
-			resIP, geo, asn, owner, date, ports, banners, vulns, leaks := intel.ResolveNetwork(target)
-			payload.ASN = asn
+		default:
+			resIP, geo, asn, owner, date, _, _, _, _ := intel.ResolveNetwork(target)
 			payload.ISP = fmt.Sprintf("Network Stack (%s)", resIP)
 			payload.Geo = geo
+			payload.ASN = asn
 			payload.OwnerName = owner
 			payload.CreatedDate = date
-			if *scanActiveFlag {
-				payload.OpenPorts = ports
-				payload.Banners = banners
-				payload.Vulnerabilities = vulns
-				payload.ExposedLeaks = leaks
-			}
 		}
 
 		if intelCache != nil {
@@ -181,14 +157,10 @@ func main() {
 		}
 	}
 
-	payload.Verbose = *verboseFlag
-	if *jsonFlag {
-		payload.OutputFormat = "json"
-	} else {
-		payload.OutputFormat = "text"
+	if *scanFlag {
+		openPorts := probes.ExecutePortScan(target)
+		payload.OpenPorts = openPorts
 	}
 
-	fmt.Print(output.ClearLine)
-	output.Banner()
 	output.Render(&payload)
 }
