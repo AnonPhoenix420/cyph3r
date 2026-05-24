@@ -148,7 +148,6 @@ func getAssociatedContacts(target string, tType models.TargetType) []string {
 }
 
 func executeFullPortScan(target string, tType models.TargetType) []models.PortInfo {
-	// TODO: Integrate your existing probes package
 	return []models.PortInfo{}
 }
 
@@ -160,7 +159,7 @@ func calculateRisk(report *models.ComprehensiveReport) int {
 	return 48
 }
 
-// Legacy functions
+// Legacy compatibility
 func ResolvePhone(phone string) string { return phone }
 func ResolveEmail(email string) string { return email }
 func ResolveNetwork(target string) (string, models.GeoData, string, string, string, []string, []string, []string, []string) {
