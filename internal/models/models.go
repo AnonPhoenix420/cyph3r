@@ -5,14 +5,14 @@ import "time"
 type TargetType string
 
 const (
-	TargetPhone     TargetType = "phone"
-	TargetEmail     TargetType = "email"
-	TargetIP        TargetType = "ip"
-	TargetDomain    TargetType = "domain"
-	TypePhoneTarget TargetType = "phone"     // Legacy
-	TypeEmailTarget TargetType = "email"     // Legacy
-	TypeGeoTarget   TargetType = "geo"       // Legacy
-	TypeNetworkTarget TargetType = "network" // Legacy
+	TargetPhone       TargetType = "phone"
+	TargetEmail       TargetType = "email"
+	TargetIP          TargetType = "ip"
+	TargetDomain      TargetType = "domain"
+	TypePhoneTarget   TargetType = "phone"
+	TypeEmailTarget   TargetType = "email"
+	TypeGeoTarget     TargetType = "geo"
+	TypeNetworkTarget TargetType = "network"
 )
 
 type GeoData struct {
