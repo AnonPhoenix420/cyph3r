@@ -41,9 +41,9 @@ type PortInfo struct {
 }
 
 type SQLExposure struct {
-	Exposed     bool     `json:"exposed"`
-	Ports       []int    `json:"ports"`
-	RiskLevel   string   `json:"risk_level"`
+	Exposed   bool   `json:"exposed"`
+	Ports     []int  `json:"ports"`
+	RiskLevel string `json:"risk_level"`
 }
 
 type ComprehensiveReport struct {
@@ -51,7 +51,7 @@ type ComprehensiveReport struct {
 	TargetType     TargetType
 	ReverseDNS     string
 	Location       LocationData
-	Associated     []string // Emails/Phones
+	Associated     []string
 	SocialProfiles []SocialProfile
 	Ports          []PortInfo
 	SQLCheck       SQLExposure
