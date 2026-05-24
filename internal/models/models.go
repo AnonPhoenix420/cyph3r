@@ -5,45 +5,77 @@ import "time"
 type TargetType string
 
 const (
-	TargetPhone  TargetType = "phone"
-	TargetEmail  TargetType = "email"
-	TargetIP     TargetType = "ip"
-	TargetDomain TargetType = "domain"
+	TargetPhone     TargetType = "phone"
+	TargetEmail     TargetType = "email"
+	TargetIP        TargetType = "ip"
+	TargetDomain    TargetType = "domain"
+	TypePhoneTarget TargetType = "phone"     // Legacy
+	TypeEmailTarget TargetType = "email"     // Legacy
+	TypeGeoTarget   TargetType = "geo"       // Legacy
+	TypeNetworkTarget TargetType = "network" // Legacy
 )
 
+type GeoData struct {
+	Latitude     string
+	Longitude    string
+	City         string
+	Country      string
+	Timezone     string
+	MapReference string
+}
+
+type IntelPayload struct {
+	Target         string
+	Type           TargetType
+	ScanTime       time.Time
+	Phone          string
+	OwnerName      string
+	ASN            string
+	ISP            string
+	Geo            GeoData
+	CreatedDate    string
+	OpenPorts      []string
+	Banners        []string
+	Vulnerabilities []string
+	ExposedLeaks   []string
+	Verbose        bool
+	OutputFormat   string
+	Clusters       []string
+}
+
 type LocationData struct {
-	Country     string  `json:"country"`
-	CountryCode string  `json:"country_code"`
-	State       string  `json:"state"`
-	City        string  `json:"city"`
-	ZIP         string  `json:"zip"`
-	AreaCode    string  `json:"area_code"`
-	Coordinates string  `json:"coordinates"`
-	RadiusKM    float64 `json:"radius_km"`
+	Country     string
+	CountryCode string
+	State       string
+	City        string
+	ZIP         string
+	AreaCode    string
+	Coordinates string
+	RadiusKM    float64
 }
 
 type SocialProfile struct {
-	Platform    string `json:"platform"`
-	Username    string `json:"username"`
-	ProfileURL  string `json:"profile_url"`
-	DisplayName string `json:"display_name"`
-	Bio         string `json:"bio"`
-	Confidence  int    `json:"confidence"`
+	Platform    string
+	Username    string
+	ProfileURL  string
+	DisplayName string
+	Bio         string
+	Confidence  int
 }
 
 type PortInfo struct {
-	Port        int    `json:"port"`
-	Service     string `json:"service"`
-	State       string `json:"state"`
-	Banner      string `json:"banner"`
-	Vulnerable  bool   `json:"vulnerable"`
-	AdminPort   bool   `json:"admin_port"`
+	Port       int
+	Service    string
+	State      string
+	Banner     string
+	Vulnerable bool
+	AdminPort  bool
 }
 
 type SQLExposure struct {
-	Exposed   bool   `json:"exposed"`
-	Ports     []int  `json:"ports"`
-	RiskLevel string `json:"risk_level"`
+	Exposed   bool
+	Ports     []int
+	RiskLevel string
 }
 
 type ComprehensiveReport struct {
