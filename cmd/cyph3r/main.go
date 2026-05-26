@@ -85,7 +85,7 @@ func main() {
 		return
 	}
 
-	// 4. System Stress Validation Suite Intercept Route (Uses runTestFlag cleanly)
+	// 4. System Stress Validation Suite Intercept Route
 	if *runTestFlag {
 		targetURL := rawInput
 		if !strings.HasPrefix(targetURL, "http://") && !strings.HasPrefix(targetURL, "https://") {
@@ -140,11 +140,11 @@ func main() {
 
 		switch targetType {
 		case models.TypeEmailTarget:
-			payload.ExposedLeaks = intel.ResolveEmail(target)
+			// Fixed: Wrap your ResolveEmail string output inside a slice literal to match the model property schema perfectly
+			payload.ExposedLeaks = []string{intel.ResolveEmail(target)}
 			payload.Clusters = []string{"IDENTITY_VERIFIED"}
 
 		case models.TypePhoneTarget:
-			// If fallback structural data modeling maps require simple payload initialization, populate line context here
 			payload.Clusters = []string{"TELEPHONY_INTELLIGENCE_NODE"}
 
 		case models.TypeGeoTarget:
