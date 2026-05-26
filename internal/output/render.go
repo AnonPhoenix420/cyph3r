@@ -2,98 +2,116 @@ package output
 
 import (
 	"fmt"
+	"strings"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-// Render handles legacy IntelPayload rendering (backward compatibility)
+// Render routes incoming data nodes to their matching terminal display interface
 func Render(payload *models.IntelPayload) {
-	fmt.Print(ClearLine) // Use global from colors.go or banner.go
-	Banner()
-
-	fmt.Printf("%s[!] TARGET_NODE: %s%s\n\n", NeonBlue, payload.Target, Reset)
-
-	if payload.Geo.City != "" || payload.Geo.Country != "" {
-		fmt.Printf("%s[ GEO_ENTITY ]%s\n", Cyan, Reset)
-		fmt.Printf(" • LOCATION:     %s, %s\n", payload.Geo.City, payload.Geo.Country)
+	if payload.OutputFormat == "json" {
+		return
 	}
 
-	if payload.OwnerName != "" {
-		fmt.Printf(" • ENTITY OWNER: %s\n", payload.OwnerName)
+	switch payload.Type {
+	case models.TypeEmailTarget:
+		renderEmailLayout(payload)
+	case models.TypePhoneTarget:
+		renderPhoneLayout(payload)
+	case models.TypeGeoTarget:
+		renderGeoLayout(payload)
+	case models.TypeNetworkTarget:
+		renderInfrastructureLayout(payload)
+	}
+}
+
+func renderEmailLayout(payload *models.IntelPayload) {
+	fmt.Printf("%s╔═══════════════════════════════════════════════════════════════╗", NeonPink)
+	visibleText := fmt.Sprintf("[!] TARGET_IDENTITY: %s", payload.Target)
+	width := 59 
+	padding := width - len(visibleText)
+	if padding < 0 { padding = 0 }
+	fmt.Printf("\n║ %s[!] TARGET_IDENTITY: %s%s%s %s║", Cyan, NeonYellow, payload.Target, strings.Repeat(" ", padding), NeonPink)
+	fmt.Printf("\n╚═══════════════════════════════════════════════════════════════╝%s\n", Reset)
+
+	fmt.Printf("\n%s[ IDENTITY PROFILE VECTOR ]%s\n", NeonGreen, Reset)
+	parts := strings.Split(payload.Target, "@")
+	fmt.Printf(" • %-18s %s%s\n", "ACCOUNT NODE:", Cyan, parts[0])
+	fmt.Printf(" • %-18s %s%s\n", "AUTHORITY DOMAIN:", NeonBlue, parts[1])
+
+	fmt.Printf("\n%s[ PASSIVE FOOTPRINT SECURITY BREACH DETAILS ]%s\n", Red, Reset)
+	if len(payload.ExposedLeaks) == 0 {
+		fmt.Printf("  %s↳ %sCLEAN FILTER: No verified public exposures found.%s\n", NeonGreen, Gray, Reset)
+	} else {
+		for _, leak := range payload.ExposedLeaks {
+			fmt.Printf(" %s[!] DATA_LEAK:   %s %s\n", NeonPink, Reset, leak)
+		}
+	}
+	fmt.Println()
+}
+
+func renderPhoneLayout(payload *models.IntelPayload) {
+	fmt.Printf("\n%s[+] TELEPHONY INTELLIGENCE VECTOR: %s%s", NeonGreen, payload.Target, Reset)
+	fmt.Printf("\n%s[-] TARGET MATRIX CLASSIFICATION: CEL_TRACKING_REPORT%s\n", NeonPink, Reset)
+	stateStr := "DISCONNECTED"; if payload.Phone.IsActive { stateStr = "ACTIVE_SUBSCRIBER_LINE" }
+	fmt.Printf("\n • %-18s %s%s", "LINE STATUS:", NeonGreen+Bold, stateStr+Reset)
+	fmt.Printf("\n • %-18s %s%s", "CARRIER PROVIDER:", Cyan, payload.Phone.Carrier)
+	fmt.Printf("\n • %-18s %s%s", "ROUTING TYPE:", Amber, payload.Phone.LineType)
+	fmt.Printf("\n • %-18s %s%s", "CELL LOCALE:", NeonYellow, payload.Phone.Location)
+	fmt.Printf("\n • %-18s %s%d/100\n\n", "RISK PROFILING:", Red, payload.Phone.RiskScore)
+}
+
+func renderGeoLayout(payload *models.IntelPayload) {
+	fmt.Printf("\n%s[+] COORD INTERCEPT GRID MATRIX: %s%s", NeonGreen, payload.Target, Reset)
+	fmt.Printf("\n%s[-] TARGET MATRIX CLASSIFICATION: GEO_PRECISION_LOCK%s\n", NeonPink, Reset)
+	fmt.Printf("\n • %-18s %s%s", "LATITUDE VECTOR:", Cyan, payload.Geo.Latitude)
+	fmt.Printf("\n • %-18s %s%s", "LONGITUDE VECTOR:", Cyan, payload.Geo.Longitude)
+	fmt.Printf("\n • %-18s %s%s", "GRID POSITION:", NeonYellow, payload.Geo.City)
+	fmt.Printf("\n • %-18s %s%s", "COUNTRY CODE:", NeonYellow, payload.Geo.Country)
+	fmt.Printf("\n • %-18s %s%s\n\n", "SATELLITE TRACE:", Gray, payload.Geo.MapReference)
+}
+
+func renderInfrastructureLayout(payload *models.IntelPayload) {
+	fmt.Printf("\n%s╔═══════════════════════════════════════════════════════════════╗", NeonBlue)
+	visibleText := fmt.Sprintf("[!] TARGET_NODE: %s", payload.Target)
+	width := 59 
+	padding := width - len(visibleText)
+	if padding < 0 { padding = 0 }
+	fmt.Printf("\n║ %s[!] TARGET_NODE: %s%s%s %s║", Cyan, NeonPink, payload.Target, strings.Repeat(" ", padding), NeonBlue)
+	fmt.Printf("\n╚═══════════════════════════════════════════════════════════════╝%s\n", Reset)
+
+	fmt.Printf("\n%s[ REGISTRATION INTEL ]%s\n", NeonYellow, Reset)
+	fmt.Printf(" • %-18s %s%s\n", "ENTITY OWNER:", NeonGreen, payload.OwnerName)
+	fmt.Printf(" • %-18s %s%s\n", "ALLOCATED DATE:", Gray, payload.CreatedDate)
+
+	fmt.Printf("\n%s[ INFRASTRUCTURE STACK ]%s\n", NeonBlue, Reset)
+	fmt.Printf(" • %-18s %s%s\n", "DESCRIPTION:", Gray, payload.ISP)
+	fmt.Printf(" • %-18s %s%s\n", "NETWORK_ASN:", NeonYellow, payload.ASN)
+
+	// UNCONDITIONAL DISPLAY: Open Port Block
+	fmt.Printf("\n%s[ ACTIVE ATTACHED INTERFACES & SERVICE BANNERS ]%s\n", Cyan, Reset)
+	if len(payload.OpenPorts) == 0 {
+		fmt.Printf("  %s↳ %sNo open listening systems captured via tactical timing bounds (Protected Edge Firewall).\n", Red, Gray)
+	} else {
+		for i, port := range payload.OpenPorts {
+			fmt.Printf("  %s↳ %s%-10s %s%s%s\n", Cyan, NeonGreen, port, Gray, payload.Banners[i], Reset)
+		}
 	}
 
-	if payload.ASN != "" {
-		fmt.Printf(" • NETWORK_ASN:  %s\n", payload.ASN)
-	}
-
-	if len(payload.OpenPorts) > 0 {
-		fmt.Printf("%s[ ACTIVE PORTS ]%s\n", Cyan, Reset)
-		fmt.Printf(" • OPEN PORTS:   %v\n", payload.OpenPorts)
-	}
-
-	if len(payload.Vulnerabilities) > 0 {
-		fmt.Printf("%s[ SECURITY EXPOSURES ]%s\n", Red, Reset)
+	// UNCONDITIONAL DISPLAY: Recon & Security Leak Block
+	fmt.Printf("\n%s[ SECURITY EXPOSURES & RECONNAISSANCE LEAKS ]%s\n", Red, Reset)
+	if len(payload.Vulnerabilities) == 0 && len(payload.ExposedLeaks) == 0 {
+		fmt.Printf("  %s↳ %sZero exposures identified via tactical signature passes.%s\n", NeonGreen, Gray, Reset)
+	} else {
 		for _, vuln := range payload.Vulnerabilities {
-			fmt.Printf(" • %s\n", vuln)
+			fmt.Printf(" %s[!] VULNERABILITY:%s %s\n", Red, Reset, vuln)
+		}
+		for _, leak := range payload.ExposedLeaks {
+			fmt.Printf(" %s[-] PASSIVE_LEAK:  %s %s\n", NeonPink, Reset, leak)
 		}
 	}
 
-	fmt.Printf("\n%s[ RISK PROFILING: %d/100 ]%s\n", NeonYellow, 42, Reset)
-	fmt.Println("═══════════════════════════════════════════════════════════════\n")
-}
-
-// RenderReport handles the new elite ComprehensiveReport (used with --full / -v)
-func RenderReport(report *models.ComprehensiveReport) {
-	fmt.Print(ClearLine)
-	Banner()
-
-	fmt.Printf("%s╔═══════════════════════════════════════════════════════════════╗%s\n", NeonBlue, Reset)
-	fmt.Printf("%s║ [!] TARGET_NODE: %-45s ║%s\n", NeonBlue, report.Target, Reset)
-	fmt.Printf("%s╚═══════════════════════════════════════════════════════════════╝%s\n\n", NeonBlue, Reset)
-
-	// Geo & Location Intelligence
-	fmt.Printf("%s[ GEO & REGISTRATION INTEL ]%s\n", Cyan, Reset)
-	fmt.Printf(" • COUNTRY:      %s (%s)\n", report.Location.Country, report.Location.CountryCode)
-	fmt.Printf(" • STATE:        %s\n", report.Location.State)
-	fmt.Printf(" • CITY:         %s\n", report.Location.City)
-	fmt.Printf(" • ZIP:          %s\n", report.Location.ZIP)
-	fmt.Printf(" • AREA CODE:    %s\n", report.Location.AreaCode)
-	fmt.Printf(" • COORDINATES:  %s (≈ %.1f km radius)\n", report.Location.Coordinates, report.Location.RadiusKM)
-
-	if report.ReverseDNS != "" && report.ReverseDNS != "N/A" {
-		fmt.Printf(" • REVERSE DNS:  %s\n", report.ReverseDNS)
-	}
-
-	// Associated Contacts & DNS
-	fmt.Printf("\n%s[ ASSOCIATED CONTACTS & DNS ]%s\n", Cyan, Reset)
-	for _, contact := range report.Associated {
-		fmt.Printf(" • %s\n", contact)
-	}
-
-	// Social Media Intelligence
-	if len(report.SocialProfiles) > 0 {
-		fmt.Printf("\n%s[ SOCIAL MEDIA ASSOCIATIONS ]%s\n", Cyan, Reset)
-		for _, social := range report.SocialProfiles {
-			fmt.Printf(" • %s: %s %s(%d%% confidence)%s\n", 
-				social.Platform, social.ProfileURL, Gray, social.Confidence, Reset)
-		}
-	}
-
-	// Risk & Summary
-	fmt.Printf("\n%s[ RISK SCORE: %d/100 ]%s\n", NeonYellow, report.RiskScore, Reset)
-	fmt.Println("═══════════════════════════════════════════════════════════════\n")
-}
-
-// RenderPhoneReport maintains legacy phone output
-func RenderPhoneReport(target, lineStatus, carrier, locale string) {
-	fmt.Print(ClearLine)
-	Banner()
-
-	fmt.Printf("%s[+] TELEPHONY INTELLIGENCE VECTOR: %s%s\n", NeonBlue, target, Reset)
-	fmt.Printf("%s[-] TARGET MATRIX CLASSIFICATION: CEL_TRACKING_REPORT%s\n\n", Cyan, Reset)
-
-	fmt.Printf(" • LINE STATUS:       %s\n", lineStatus)
-	fmt.Printf(" • CARRIER PROVIDER:  %s\n", carrier)
-	fmt.Printf(" • CELL LOCALE:       %s\n", locale)
-	fmt.Printf(" • RISK PROFILING:    12/100\n\n")
-	fmt.Println("═══════════════════════════════════════════════════════════════\n")
+	fmt.Printf("\n%s[ GEO_ENTITY ]%s\n", NeonBlue, Reset)
+	loc := fmt.Sprintf("%s, %s", payload.Geo.City, payload.Geo.Country)
+	fmt.Printf(" • %-18s %s%s\n", "LOCATION:", NeonYellow, loc)
+	fmt.Println()
 }
