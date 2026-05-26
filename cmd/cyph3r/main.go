@@ -52,7 +52,6 @@ func main() {
 	
 	flag.Parse()
 
-	// 1. Direct Telephony Flag Override Shortcut
 	if *phoneFlag != "" {
 		fmt.Print(output.ClearLine)
 		output.Banner()
@@ -65,7 +64,6 @@ func main() {
 		return
 	}
 
-	// 2. Structural Guardrail Validation Check
 	if *targetFlag == "" {
 		fmt.Fprintln(os.Stderr, "[-] Fatal: Operational parameter target mapping (--target or --phone) strictly required.")
 		os.Exit(1)
@@ -73,7 +71,6 @@ func main() {
 
 	rawInput := strings.TrimSpace(*targetFlag)
 
-	// 3. Persistent HUD Telemetry Monitoring Route
 	if *monitorFlag {
 		fmt.Print(output.ClearLine)
 		output.Banner()
@@ -85,7 +82,6 @@ func main() {
 		return
 	}
 
-	// 4. System Stress Validation Suite Intercept Route
 	if *runTestFlag {
 		targetURL := rawInput
 		if !strings.HasPrefix(targetURL, "http://") && !strings.HasPrefix(targetURL, "https://") {
@@ -97,7 +93,6 @@ func main() {
 		return
 	}
 
-	// 5. Input Target Evaluation Tree
 	var target string
 	var targetType models.TargetType
 
@@ -115,7 +110,6 @@ func main() {
 		targetType = models.TypeNetworkTarget
 	}
 
-	// 6. Execution Cache Layers
 	intelCache, _ := cache.NewResponseCache()
 	var payload models.IntelPayload
 	var cacheHit = false
@@ -130,7 +124,6 @@ func main() {
 		}
 	}
 
-	// 7. Core Threat Processing Logic
 	if !cacheHit {
 		payload = models.IntelPayload{
 			Target:   target,
@@ -140,7 +133,6 @@ func main() {
 
 		switch targetType {
 		case models.TypeEmailTarget:
-			// Fixed: Wrap your ResolveEmail string output inside a slice literal to match the model property schema perfectly
 			payload.ExposedLeaks = []string{intel.ResolveEmail(target)}
 			payload.Clusters = []string{"IDENTITY_VERIFIED"}
 
@@ -166,12 +158,14 @@ func main() {
 			payload.OwnerName = owner
 			payload.CreatedDate = date
 			
+			// RESTORED: Bind deep passive DNS harvesting leaks to the payload structure
 			payload.ExposedLeaks = leaks 
-			if *scanActiveFlag {
-				payload.OpenPorts = ports
-				payload.Banners = banners
-				payload.Vulnerabilities = vulns
-			}
+			
+			// RESTORED: Bind open sockets, active banners, and CVE mappings cleanly
+			payload.OpenPorts = ports
+			payload.Banners = banners
+			payload.Vulnerabilities = vulns
+			
 			payload.Clusters = []string{"LIVE_NODE_CONNECTED"}
 		}
 
@@ -187,7 +181,6 @@ func main() {
 		payload.OutputFormat = "text"
 	}
 
-	// Output visualization tracking passes
 	fmt.Print(output.ClearLine)
 	output.Banner()
 	output.Render(&payload)
