@@ -158,13 +158,15 @@ func main() {
 			payload.OwnerName = owner
 			payload.CreatedDate = date
 			
-			// RESTORED: Bind deep passive DNS harvesting leaks to the payload structure
+			// Always append passive DNS blueprints
 			payload.ExposedLeaks = leaks 
 			
-			// RESTORED: Bind open sockets, active banners, and CVE mappings cleanly
-			payload.OpenPorts = ports
-			payload.Banners = banners
-			payload.Vulnerabilities = vulns
+			// FIXED: Use scanActiveFlag cleanly to control active scanning fields
+			if *scanActiveFlag {
+				payload.OpenPorts = ports
+				payload.Banners = banners
+				payload.Vulnerabilities = vulns
+			}
 			
 			payload.Clusters = []string{"LIVE_NODE_CONNECTED"}
 		}
