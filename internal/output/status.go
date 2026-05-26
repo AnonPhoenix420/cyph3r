@@ -2,43 +2,50 @@ package output
 
 import (
 	"fmt"
-	"github.com/AnonPhoenix420/cyph3r/internal/intel"
-	"github.com/AnonPhoenix420/cyph3r/internal/models"
+	"strings"
+	"time"
 )
 
-// PrintShieldStatus displays high-fidelity VPN/OPSEC session data
-func PrintShieldStatus(shield intel.ShieldStatus) {
-	fmt.Printf("%s[*] INFO: %sVerifying Shield Status... ", White, Cyan)
-	
-	if !shield.IsActive {
-		fmt.Printf("%s[UNSECURED]%s\n", Red, Reset)
+// DrawProgressBar paints a clean, high-visibility cyberpunk loading tracking metric
+func DrawProgressBar(label string, current, total int) {
+	if total <= 0 {
 		return
 	}
-	
-	if shield.VPNDetected {
-		fmt.Printf("%s[SECURE - VPN ACTIVE]%s\n", NeonGreen, Reset)
-	} else {
-		fmt.Printf("%s[SECURE]%s\n", NeonGreen, Reset)
+
+	width := 30
+	percentage := float64(current) / float64(total)
+	filledLength := int(percentage * float64(width))
+
+	if filledLength > width {
+		filledLength = width
 	}
-	
-	fmt.Printf("    %s↳ %sNode: %s%s %s| %sISP: %s%s %s| %sRisk: %d/100%s\n\n", 
-		Cyan, White, NeonBlue, shield.Location, Gray, White, NeonYellow, shield.ISP, Gray, 
-		func() string {
-			if shield.VPNDetected {
-				return NeonGreen
-			}
-			return Red
-		}(), shield.Recommendation == "Active shield / VPN detected - Good OPSEC" ? 25 : 75, Reset)
+	if filledLength < 0 {
+		filledLength = 0
+	}
+
+	// Create bar visualization components
+	filled := strings.Repeat("█", filledLength)
+	empty := strings.Repeat("░", width-filledLength)
+
+	// Clean rendering string using native color constants from colors.go
+	fmt.Printf("\r%s[%s]%s %-25s %s[%s%s]%s %3d%%",
+		NeonPink, label, Reset,
+		"",
+		Cyan, filled, empty, Reset,
+		int(percentage*100),
+	)
+
+	if current == total {
+		fmt.Println()
+	}
 }
 
-// PrintScanStart is a helper for scan initialization
-func PrintScanStart(target string) {
-	fmt.Printf("%s[*] INFO: %sInitializing Satellite Uplink to %s%s%s...\n", 
-		White, Cyan, NeonPink, target, Reset)
-}
-
-// RenderShieldReport renders full shield status using the new model
-func RenderShieldReport() {
-	report := intel.GetShieldReport()
-	RenderReport(&report)
+// DisplayStatusMessage renders a timed operational update to the telemetry screen
+func DisplayStatusMessage(message string, isError bool) {
+	timestamp := time.Now().Format("15:04:05")
+	if isError {
+		fmt.Printf("%s[%s] %s[-] ALERT: %s%s\n", Gray, timestamp, Red, message, Reset)
+	} else {
+		fmt.Printf("%s[%s] %s[+] INTEL: %s%s\n", Gray, timestamp, NeonGreen, message, Reset)
+	}
 }
