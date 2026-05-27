@@ -200,12 +200,20 @@ func main() {
 	}
 
 	payload.Verbose = *verboseFlag
+	
+	// INTERCEPT JSON FLAG HERE BEFORE ANY HUD GRAPHICS OR CUSTOM BANNERS CAN POLLUTE STDOUT
 	if *jsonFlag {
 		payload.OutputFormat = "json"
-	} else {
-		payload.OutputFormat = "text"
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ")
+		if err := encoder.Encode(payload); err != nil {
+			fmt.Fprintf(os.Stderr, "[-] Error compiling JSON matrix stream: %v\n", err)
+		}
+		return
 	}
 
+	// Default Text layout fallback routing paths
+	payload.OutputFormat = "text"
 	fmt.Print(output.ClearLine)
 	output.Banner()
 	output.Render(&payload)
