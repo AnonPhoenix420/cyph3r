@@ -16,77 +16,81 @@ const (
 )
 
 type GeoData struct {
-	Latitude     string
-	Longitude    string
-	City         string
-	Country      string
-	Timezone     string
-	MapReference string
+	Latitude     string `json:"latitude"`
+	Longitude    string `json:"longitude"`
+	City         string `json:"city"`
+	Country      string `json:"country"`
+	Timezone     string `json:"timezone"`
+	MapReference string `json:"map_reference"`
 }
 
 type IntelPayload struct {
-	Target         string
-	Type           TargetType
-	ScanTime       time.Time
-	Phone          string
-	OwnerName      string
-	ASN            string
-	ISP            string
-	Geo            GeoData
-	CreatedDate    string
-	OpenPorts      []string
-	Banners        []string
-	Vulnerabilities []string
-	ExposedLeaks   []string
-	Verbose        bool
-	OutputFormat   string
-	Clusters       []string
+	Target          string     `json:"target"`
+	Type            TargetType `json:"type"`
+	ScanTime        time.Time  `json:"scan_time"`
+	Phone           string     `json:"phone"`
+	OwnerName       string     `json:"owner_name"`
+	ASN             string     `json:"asn"`
+	ISP             string     `json:"isp"`
+	Geo             GeoData    `json:"geo"`
+	CreatedDate     string     `json:"created_date"`
+	OpenPorts       []string   `json:"open_ports"`
+	Banners         []string   `json:"banners"`
+	Vulnerabilities []string   `json:"vulnerabilities"`
+	ExposedLeaks    []string   `json:"exposed_leaks"`
+	Verbose         bool       `json:"verbose"`
+	OutputFormat    string     `json:"output_format"`
+	Clusters        []string   `json:"clusters"`
+	
+	// HTTP Header Interception Telemetry Elements
+	HTTPMethod      string              `json:"http_method"`
+	CapturedHeaders map[string][]string `json:"captured_headers"`
 }
 
 type LocationData struct {
-	Country     string
-	CountryCode string
-	State       string
-	City        string
-	ZIP         string
-	AreaCode    string
-	Coordinates string
-	RadiusKM    float64
+	Country     string  `json:"country"`
+	CountryCode string  `json:"country_code"`
+	State       string  `json:"state"`
+	City        string  `json:"city"`
+	ZIP         string  `json:"zip"`
+	AreaCode    string  `json:"area_code"`
+	Coordinates string  `json:"coordinates"`
+	RadiusKM    float64 `json:"radius_km"`
 }
 
 type SocialProfile struct {
-	Platform    string
-	Username    string
-	ProfileURL  string
-	DisplayName string
-	Bio         string
-	Confidence  int
+	Platform    string `json:"platform"`
+	Username    string `json:"username"`
+	ProfileURL  string `json:"profile_url"`
+	DisplayName string `json:"display_name"`
+	Bio         string `json:"bio"`
+	Confidence  int    `json:"confidence"`
 }
 
 type PortInfo struct {
-	Port       int
-	Service    string
-	State      string
-	Banner     string
-	Vulnerable bool
-	AdminPort  bool
+	Port       int    `json:"port"`
+	Service    string `json:"service"`
+	State      string `json:"state"`
+	Banner     string `json:"banner"`
+	Vulnerable bool   `json:"vulnerable"`
+	AdminPort  bool   `json:"admin_port"`
 }
 
 type SQLExposure struct {
-	Exposed   bool
-	Ports     []int
-	RiskLevel string
+	Exposed   bool   `json:"exposed"`
+	Ports     []int  `json:"ports"`
+	RiskLevel string `json:"risk_level"`
 }
 
 type ComprehensiveReport struct {
-	Target         string
-	TargetType     TargetType
-	ReverseDNS     string
-	Location       LocationData
-	Associated     []string
-	SocialProfiles []SocialProfile
-	Ports          []PortInfo
-	SQLCheck       SQLExposure
-	Timestamp      time.Time
-	RiskScore      int
+	Target         string          `json:"target"`
+	TargetType     TargetType      `json:"target_type"`
+	ReverseDNS     string          `json:"reverse_dns"`
+	Location       LocationData    `json:"location"`
+	Associated     []string        `json:"associated"`
+	SocialProfiles []SocialProfile `json:"social_profiles"`
+	Ports          []PortInfo      `json:"ports"`
+	SQLCheck       SQLExposure     `json:"sql_check"`
+	Timestamp      time.Time       `json:"timestamp"`
+	RiskScore      int             `json:"risk_score"`
 }
