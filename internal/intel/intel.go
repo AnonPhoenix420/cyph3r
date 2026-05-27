@@ -24,22 +24,31 @@ type APIResponse struct {
 	Lon         float64 `json:"lon"`
 }
 
+type ThreatSource struct {
+	Name string `json:"name"`
+	Date string `json:"date"`
+}
+
+type LeakCheckResp struct {
+	Success bool           `json:"success"`
+	Found   int            `json:"found"`
+	Sources []ThreatSource `json:"sources"`
+}
+
 func CheckThreatFeeds(target string) []string {
-	var detections []string
+	detections := make([]string, 0)
 	client := &http.Client{Timeout: 3 * time.Second}
 	cleanedTarget := strings.TrimSpace(target)
 	
-	url := fmt.Sprintf("https://leakcheck.io/api/public?key=free&check=%s", cleanedTarget)
+	url := fmt.Sprintf("https://leakcheck.io/api/public?check=%s", cleanedTarget)
 	resp, err := client.Get(url)
 	if err == nil {
 		defer resp.Body.Close()
-		type LeakCheckResp struct {
-			Success bool `json:"success"`
-			Found   int  `json:"found"`
-		}
 		var leakData LeakCheckResp
-		if json.NewDecoder(resp.Body).Decode(&leakData) == nil && leakData.Found > 0 {
-			detections = append(detections, fmt.Sprintf("CRITICAL ➔ Found in %d public data leaks/compromised lists.", leakData.Found))
+		if json.NewDecoder(resp.Body).Decode(&leakData) == nil && len(leakData.Sources) > 0 {
+			for _, src := range leakData.Sources {
+				detections = append(detections, fmt.Sprintf("CRITICAL ➔ Found inside breach: %s (%s)", src.Name, src.Date))
+			}
 		}
 	}
 
@@ -87,10 +96,11 @@ func ResolveNetworkElite(domain string, baseDelay time.Duration, customUserAgent
 	var ownerName = "WHOIS_PRIVACY_PROTECTED"
 	var createdDate = "METADATA_EXPEDITED"
 	
-	var openPorts []string
-	var banners []string
-	var vulns []string
-	var leaks []string
+	// FORCE EMPTY EXPLICIT ARRAYS INSTANTIATION INSTEAD OF NULL
+	openPorts := make([]string, 0)
+	banners := make([]string, 0)
+	vulns := make([]string, 0)
+	leaks := make([]string, 0)
 	var sqlMetrics models.SQLExposure
 
 	var targetIP string
@@ -146,9 +156,8 @@ func ResolveNetworkElite(domain string, baseDelay time.Duration, customUserAgent
 		}
 	}
 
-	// Active Interface Sweep List
 	portsToScan := []int{21, 22, 80, 443, 1433, 3306, 5432, 8080}
-	dialer := &net.Dialer{Timeout: 1500 * time.Millisecond}
+	dialer := &net.Dialer{Timeout: 1200 * time.Millisecond}
 
 	for _, port := range portsToScan {
 		if baseDelay > 0 {
@@ -158,12 +167,10 @@ func ResolveNetworkElite(domain string, baseDelay time.Duration, customUserAgent
 		address := net.JoinHostPort(targetIP, fmt.Sprintf("%d", port))
 		conn, err := dialer.Dial("tcp", address)
 		if err == nil {
-			// Enforce explicit verification read line boundary limits to confirm it's not a generic echo loop
-			_ = conn.SetReadDeadline(time.Now().Add(800 * time.Millisecond))
+			_ = conn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
 			buffer := make([]byte, 256)
 			n, readErr := conn.Read(buffer)
 			
-			// Track valid listening status parameters cleanly
 			openPorts = append(openPorts, fmt.Sprintf("%d/TCP", port))
 			
 			if port == 1433 || port == 3306 || port == 5432 {
@@ -176,11 +183,7 @@ func ResolveNetworkElite(domain string, baseDelay time.Duration, customUserAgent
 			if readErr == nil && n > 0 {
 				banners = append(banners, fmt.Sprintf("%d: %s", port, strings.TrimSpace(string(buffer[:n]))))
 			} else {
-				if port == 80 || port == 443 || port == 8080 {
-					banners = append(banners, fmt.Sprintf("%d: Active Web Server Endpoint (Handshake Confirmed)", port))
-				} else {
-					banners = append(banners, fmt.Sprintf("%d: Active Interface Node (No Header Banner Returned)", port))
-				}
+				banners = append(banners, fmt.Sprintf("%d: Interface Active (Handshake Confirmed)", port))
 			}
 			conn.Close()
 		}
@@ -191,8 +194,4 @@ func ResolveNetworkElite(domain string, baseDelay time.Duration, customUserAgent
 	}
 
 	return targetIP, geo, asn, ownerName, createdDate, openPorts, banners, vulns, leaks, sqlMetrics
-}
-
-func ExecuteValidationSuite(targetURL string, mode int, concurrency int, durationSec int) {
-	// Structural metrics engine mapping fully intact here
 }
