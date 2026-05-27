@@ -35,47 +35,44 @@ func sanitizeToDomain(input string) string {
 }
 
 func main() {
-	targetFlag := flag.String("target", "", "Target routing domain, email, or infrastructure IP vector")
-	phoneFlag := flag.String("phone", "", "Execute international telephone vector metadata lookup")
-	scanActiveFlag := flag.Bool("scan", false, "Execute tactical concurrent port scan and banner analysis")
-	monitorFlag := flag.Bool("monitor", false, "Engage continuous HUD telemetry monitoring mode loop")
-	protoFlag := flag.String("proto", "tcp", "Protocol mode selector for tracing [tcp, udp, http, https, ack]")
-	intervalFlag := flag.String("interval", "2s", "Telemetry delay frequency window interval")
+	targetFlag := flag.String("target", "", "Target input node routing configuration vector")
+	phoneFlag := flag.String("phone", "", "Execute standalone telephony metadata lookup")
 	
-	runTestFlag := flag.Bool("test-integrity", false, "Execute integrated validation stress suite")
-	testModeFlag := flag.Int("mode", 1, "Select test vector: 1=LOAD, 2=STRESS, 3=SOAK, 4=SPIKE")
-	concurrencyFlag := flag.Int("c", 50, "Number of concurrent verification testing streams")
-	durationFlag := flag.Int("d", 10, "Duration of verification stress trace parameters in seconds")
+	reconFlag := flag.Bool("recon", false, "Engage Elite True Reconnaissance footprint harvesting")
+	scanActiveFlag := flag.Bool("scan", false, "Execute explicit system socket interface profiling")
+	delayFlag := flag.String("delay", "0s", "Introduce spacing delays between validation packets")
+	agentFlag := flag.String("agent", "", "Override network footprint with a custom client signature")
+	methodFlag := flag.String("method", "GET", "HTTP verb operation configuration parameter (GET/POST)")
+
+	runTestFlag := flag.Bool("test-integrity", false, "Engage Elite Network Systems Testing suite")
+	testModeFlag := flag.Int("mode", 1, "Select verification model: 1=LOAD, 2=STRESS, 3=SOAK, 4=SPIKE")
+	concurrencyFlag := flag.Int("c", 50, "Simultaneous validation connection streams")
+	durationFlag := flag.Int("d", 10, "Testing matrix window duration parameter in seconds")
+
+	monitorFlag := flag.Bool("monitor", false, "Engage continuous HUD monitor loop execution")
+	protoFlag := flag.String("proto", "tcp", "Protocol mode selector for telemetry checking loops")
+	intervalFlag := flag.String("interval", "2s", "Telemetry tracking update frequency window interval")
 	
-	verboseFlag := flag.Bool("v", false, "Enable full operational tracing logs")
-	jsonFlag := flag.Bool("json", false, "Output data structure as raw JSON matrix")
+	jsonFlag := flag.Bool("json", false, "Format final target layout output structure as raw JSON matrix")
+	verboseFlag := flag.Bool("v", false, "Enable full logging debug tracing variables")
 	
 	flag.Parse()
 
-	if *phoneFlag != "" {
-		fmt.Print(output.ClearLine)
-		output.Banner()
-		payload := models.IntelPayload{
-			Target:   strings.ReplaceAll(*phoneFlag, " ", ""),
-			Type:     models.TypePhoneTarget,
-			ScanTime: time.Now(),
-		}
-		output.Render(&payload)
-		return
+	rawInput := strings.TrimSpace(*targetFlag)
+	if rawInput == "" && *phoneFlag != "" {
+		rawInput = strings.TrimSpace(*phoneFlag)
 	}
 
-	if *targetFlag == "" {
-		fmt.Fprintln(os.Stderr, "[-] Fatal: Operational parameter target mapping (--target or --phone) strictly required.")
+	if rawInput == "" {
+		fmt.Fprintln(os.Stderr, "[-] Fatal Parameter Error: An operational target identifier mapping (--target) is strictly required.")
 		os.Exit(1)
 	}
-
-	rawInput := strings.TrimSpace(*targetFlag)
 
 	if *monitorFlag {
 		fmt.Print(output.ClearLine)
 		output.Banner()
-		interval, err := time.ParseDuration(*intervalFlag)
-		if err != nil {
+		interval, _ := time.ParseDuration(*intervalFlag)
+		if interval == 0 {
 			interval = 2 * time.Second
 		}
 		probes.ExecuteContinuousMonitor(rawInput, strings.ToLower(*protoFlag), interval)
@@ -133,42 +130,62 @@ func main() {
 
 		switch targetType {
 		case models.TypeEmailTarget:
+			payload.ISP = "Enterprise Mail MX Architecture"
 			payload.ExposedLeaks = []string{intel.ResolveEmail(target)}
 			payload.Clusters = []string{"IDENTITY_VERIFIED"}
 
 		case models.TypePhoneTarget:
+			alloc, provider, zone := intel.ResolvePhone(target)
+			payload.Phone = target
+			payload.ISP = provider
+			payload.OwnerName = alloc
+			payload.CreatedDate = "TELEPHONY_RECORD_LIVE"
+			payload.ExposedLeaks = []string{fmt.Sprintf("Zone: %s", zone)}
 			payload.Clusters = []string{"TELEPHONY_INTELLIGENCE_NODE"}
 
 		case models.TypeGeoTarget:
 			coords := strings.Split(target, ",")
+			payload.ISP = "Satellite Mapping Coordinate Alignment"
 			payload.Geo = models.GeoData{
-				Latitude:     strings.TrimSpace(coords[0]),
-				Longitude:    strings.TrimSpace(coords[1]),
-				City:         "Precision Grid Intercept",
-				Country:      "Localized Anchor Node",
-				Timezone:     "UTC/GMT Z-Time",
-				MapReference: fmt.Sprintf("https://maps.google.com/?q=%s,%s", strings.TrimSpace(coords[0]), strings.TrimSpace(coords[1])),
+				Latitude:  strings.TrimSpace(coords[0]),
+				Longitude: strings.TrimSpace(coords[1]),
+				City:      "Precision Grid Intercept",
+				Country:   "Geocentric Anchor Point Cluster",
 			}
+			payload.Clusters = []string{"GEO_ANCHOR_VALIDATED"}
 
 		case models.TypeNetworkTarget:
-			resIP, geo, asn, owner, date, ports, banners, vulns, leaks := intel.ResolveNetwork(target)
+			parsedDelay, _ := time.ParseDuration(*delayFlag)
+			resIP, geo, asn, owner, date, ports, banners, vulns, leaks, sqlCheck := intel.ResolveNetworkElite(target, parsedDelay, *agentFlag)
+			
 			payload.ASN = asn
-			payload.ISP = fmt.Sprintf("Network Stack (%s)", resIP)
+			payload.ISP = fmt.Sprintf("Network Interface Stack (%s)", resIP)
 			payload.Geo = geo
 			payload.OwnerName = owner
 			payload.CreatedDate = date
-			
-			// Always append passive DNS blueprints
 			payload.ExposedLeaks = leaks 
+			payload.OpenPorts = ports
+			payload.Banners = banners
+			payload.Vulnerabilities = vulns
 			
-			// FIXED: Use scanActiveFlag cleanly to control active scanning fields
-			if *scanActiveFlag {
-				payload.OpenPorts = ports
-				payload.Banners = banners
-				payload.Vulnerabilities = vulns
+			// Verify SQL exposure telemetry parameters
+			if sqlCheck.Exposed {
+				payload.Clusters = append(payload.Clusters, fmt.Sprintf("SQL_EXPOSED_RISK_%s", sqlCheck.RiskLevel))
 			}
-			
-			payload.Clusters = []string{"LIVE_NODE_CONNECTED"}
+			payload.Clusters = append(payload.Clusters, "LIVE_NODE_CONNECTED")
+
+			// Check HTTP request telemetry context (GET/POST Tracking parameters)
+			payload.HTTPMethod = strings.ToUpper(*methodFlag)
+			client := &http.Client{Timeout: 3 * time.Second}
+			urlStr := "http://" + target
+			if req, err := http.NewRequest(payload.HTTPMethod, urlStr, nil); err == nil {
+				if *agentFlag != "" {
+					req.Header.Set("User-Agent", *agentFlag)
+				} else {
+					req.Header.Set("User-Agent", "CYPH3R/Master-Engine-2026")
+				}
+				payload.CapturedHeaders = req.Header
+			}
 		}
 
 		if intelCache != nil {
