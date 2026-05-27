@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net"
+	"net/http"
 	"os"
 	"regexp"
 	"strings"
@@ -38,8 +40,6 @@ func main() {
 	targetFlag := flag.String("target", "", "Target input node routing configuration vector")
 	phoneFlag := flag.String("phone", "", "Execute standalone telephony metadata lookup")
 	
-	reconFlag := flag.Bool("recon", false, "Engage Elite True Reconnaissance footprint harvesting")
-	scanActiveFlag := flag.Bool("scan", false, "Execute explicit system socket interface profiling")
 	delayFlag := flag.String("delay", "0s", "Introduce spacing delays between validation packets")
 	agentFlag := flag.String("agent", "", "Override network footprint with a custom client signature")
 	methodFlag := flag.String("method", "GET", "HTTP verb operation configuration parameter (GET/POST)")
@@ -128,7 +128,6 @@ func main() {
 			ScanTime: time.Now(),
 		}
 
-		// Cross-reference any string alpha target against social handles as an extra identity vector layer
 		var socialTracks []string
 		if targetType != models.TypeGeoTarget {
 			foundProfiles := intel.ResolveSocialFootprint(target)
@@ -185,7 +184,6 @@ func main() {
 			payload.Clusters = append(payload.Clusters, "LIVE_NODE_CONNECTED")
 
 			payload.HTTPMethod = strings.ToUpper(*methodFlag)
-			client := &http.Client{Timeout: 3 * time.Second}
 			urlStr := "http://" + target
 			if req, err := http.NewRequest(payload.HTTPMethod, urlStr, nil); err == nil {
 				if *agentFlag != "" {
