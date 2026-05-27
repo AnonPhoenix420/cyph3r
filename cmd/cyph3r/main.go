@@ -128,11 +128,21 @@ func main() {
 			ScanTime: time.Now(),
 		}
 
+		// Cross-reference any string alpha target against social handles as an extra identity vector layer
+		var socialTracks []string
+		if targetType != models.TypeGeoTarget {
+			foundProfiles := intel.ResolveSocialFootprint(target)
+			for _, profile := range foundProfiles {
+				socialTracks = append(socialTracks, fmt.Sprintf("[%s Nodes] ➔ %s", profile.Platform, profile.ProfileURL))
+			}
+		}
+
 		switch targetType {
 		case models.TypeEmailTarget:
 			payload.ISP = "Enterprise Mail MX Architecture"
-			payload.ExposedLeaks = []string{intel.ResolveEmail(target)}
-			payload.Clusters = []string{"IDENTITY_VERIFIED"}
+			payload.ExposedLeaks = append(intel.CheckThreatFeeds(target), intel.ResolveEmail(target))
+			payload.Vulnerabilities = socialTracks
+			payload.Clusters = []string{"IDENTITY_VERIFIED", "GLOBAL_CROSS_REFERENCE_ENGAGED"}
 
 		case models.TypePhoneTarget:
 			alloc, provider, zone := intel.ResolvePhone(target)
@@ -140,8 +150,9 @@ func main() {
 			payload.ISP = provider
 			payload.OwnerName = alloc
 			payload.CreatedDate = "TELEPHONY_RECORD_LIVE"
-			payload.ExposedLeaks = []string{fmt.Sprintf("Zone: %s", zone)}
-			payload.Clusters = []string{"TELEPHONY_INTELLIGENCE_NODE"}
+			payload.ExposedLeaks = append(intel.CheckThreatFeeds(target), fmt.Sprintf("Zone: %s", zone))
+			payload.Vulnerabilities = socialTracks
+			payload.Clusters = []string{"TELEPHONY_INTELLIGENCE_NODE", "E164_ALIGNED"}
 
 		case models.TypeGeoTarget:
 			coords := strings.Split(target, ",")
@@ -163,18 +174,16 @@ func main() {
 			payload.Geo = geo
 			payload.OwnerName = owner
 			payload.CreatedDate = date
-			payload.ExposedLeaks = leaks 
+			payload.ExposedLeaks = append(leaks, intel.CheckThreatFeeds(target)...)
 			payload.OpenPorts = ports
 			payload.Banners = banners
-			payload.Vulnerabilities = vulns
+			payload.Vulnerabilities = append(vulns, socialTracks...)
 			
-			// Verify SQL exposure telemetry parameters
 			if sqlCheck.Exposed {
 				payload.Clusters = append(payload.Clusters, fmt.Sprintf("SQL_EXPOSED_RISK_%s", sqlCheck.RiskLevel))
 			}
 			payload.Clusters = append(payload.Clusters, "LIVE_NODE_CONNECTED")
 
-			// Check HTTP request telemetry context (GET/POST Tracking parameters)
 			payload.HTTPMethod = strings.ToUpper(*methodFlag)
 			client := &http.Client{Timeout: 3 * time.Second}
 			urlStr := "http://" + target
