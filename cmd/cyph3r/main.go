@@ -115,6 +115,10 @@ func main() {
 			var unmarshaled models.IntelPayload
 			if err := json.Unmarshal(cachedData, &unmarshaled); err == nil {
 				payload = unmarshaled
+				// Enforce live timestamp synchronization on cache retrieval fields
+				if payload.ScanTime.IsZero() {
+					payload.ScanTime = time.Now()
+				}
 				cacheHit = true
 			}
 		}
@@ -127,7 +131,8 @@ func main() {
 			ScanTime: time.Now(),
 		}
 
-		var socialTracks []string
+		// Initialize required arrays explicitly as blank blocks to prevent JSON raw null parameters
+		socialTracks := make([]string, 0)
 		if targetType != models.TypeGeoTarget {
 			foundProfiles := intel.ResolveSocialFootprint(target)
 			for _, profile := range foundProfiles {
@@ -201,7 +206,6 @@ func main() {
 
 	payload.Verbose = *verboseFlag
 	
-	// INTERCEPT JSON FLAG HERE BEFORE ANY HUD GRAPHICS OR CUSTOM BANNERS CAN POLLUTE STDOUT
 	if *jsonFlag {
 		payload.OutputFormat = "json"
 		encoder := json.NewEncoder(os.Stdout)
@@ -212,7 +216,6 @@ func main() {
 		return
 	}
 
-	// Default Text layout fallback routing paths
 	payload.OutputFormat = "text"
 	fmt.Print(output.ClearLine)
 	output.Banner()
