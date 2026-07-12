@@ -24,23 +24,34 @@ type GeoData struct {
 	MapReference string `json:"map_reference"`
 }
 
+type SQLExposure struct {
+	Exposed   bool  `json:"exposed"`
+	Ports     []int `json:"ports"`
+	RiskLevel string `json:"risk_level"`
+}
+
 type IntelPayload struct {
-	Target          string     `json:"target"`
-	Type            TargetType `json:"type"`
-	ScanTime        time.Time  `json:"scan_time"`
-	Phone           string     `json:"phone"`
-	OwnerName       string     `json:"owner_name"`
-	ASN             string     `json:"asn"`
-	ISP             string     `json:"isp"`
-	Geo             GeoData    `json:"geo"`
-	CreatedDate     string     `json:"created_date"`
-	OpenPorts       []string   `json:"open_ports"`
-	Banners         []string   `json:"banners"`
-	Vulnerabilities []string   `json:"vulnerabilities"`
-	ExposedLeaks    []string   `json:"exposed_leaks"`
-	Verbose         bool       `json:"verbose"`
-	OutputFormat    string     `json:"output_format"`
-	Clusters        []string   `json:"clusters"`
+	Target          string              `json:"target"`
+	Type            TargetType          `json:"type"`
+	ScanTime        time.Time           `json:"scan_time"`
+	Phone           string              `json:"phone"`
+	OwnerName       string              `json:"owner_name"`
+	ASN             string              `json:"asn"`
+	ISP             string              `json:"isp"`
+	Geo             GeoData             `json:"geo"`
+	CreatedDate     string              `json:"created_date"`
+	OpenPorts       []string            `json:"open_ports"`
+	Banners         []string            `json:"banners"`
+	Vulnerabilities []string            `json:"vulnerabilities"`
+	ExposedLeaks    []string            `json:"exposed_leaks"`
+	
+	// Added fields for ResolveNetworkElite mapping
+	TargetIP        string              `json:"target_ip"`
+	SQLMetrics      SQLExposure         `json:"sql_metrics"`
+	
+	Verbose         bool                `json:"verbose"`
+	OutputFormat    string              `json:"output_format"`
+	Clusters        []string            `json:"clusters"`
 	
 	// HTTP Header Interception Telemetry Elements
 	HTTPMethod      string              `json:"http_method"`
@@ -74,12 +85,6 @@ type PortInfo struct {
 	Banner     string `json:"banner"`
 	Vulnerable bool   `json:"vulnerable"`
 	AdminPort  bool   `json:"admin_port"`
-}
-
-type SQLExposure struct {
-	Exposed   bool   `json:"exposed"`
-	Ports     []int  `json:"ports"`
-	RiskLevel string `json:"risk_level"`
 }
 
 type ComprehensiveReport struct {
