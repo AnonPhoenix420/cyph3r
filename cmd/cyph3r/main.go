@@ -21,7 +21,6 @@ import (
 var (
 	phoneRegex = regexp.MustCompile(`^\+?[1-9]\d{1,14}$|^7\d{9}$`)
 	emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-	geoRegex   = regexp.MustCompile(`^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$`)
 )
 
 func sanitizeToDomain(input string) string {
@@ -41,14 +40,12 @@ func isIP(input string) bool {
 }
 
 func main() {
-	// Essential Flags
 	targetFlag := flag.String("target", "", "Target input node")
 	phoneFlag := flag.String("phone", "", "Standalone telephony lookup")
 	portFlag := flag.Int("p", 80, "Target port")
 	hulkFlag := flag.Bool("hulk", false, "Engage resilience stress testing")
 	protoFlag := flag.String("proto", "tcp", "Protocol (tcp/udp/http)")
 	methodFlag := flag.String("method", "GET", "HTTP method (GET/POST)")
-	
 	concurrencyFlag := flag.Int("c", 50, "Concurrency streams")
 	durationFlag := flag.Int("d", 10, "Duration in seconds")
 	monitorFlag := flag.Bool("monitor", false, "HUD monitor loop")
@@ -57,7 +54,6 @@ func main() {
 	runTestFlag := flag.Bool("test-integrity", false, "Run integrity suite")
 	testModeFlag := flag.Int("mode", 1, "Mode: 1=LOAD, 2=STRESS")
 
-	// Custom Help
 	flag.Usage = func() { output.DisplayHelp() }
 	flag.Parse()
 
@@ -82,24 +78,18 @@ func main() {
 			stress.ExecuteTCPFlood(targetAddr, *concurrencyFlag, *durationFlag)
 		case "http":
 			stress.ExecuteHTTPCapacityTest(targetURL, strings.ToUpper(*methodFlag), *concurrencyFlag, *durationFlag)
-		default:
-			fmt.Println("[-] Invalid protocol. Use tcp, udp, or http.")
 		}
 		return
 	}
 
-	// MONITOR
+	// MONITOR & INTEGRITY
 	if *monitorFlag {
-		fmt.Print(output.ClearLine)
 		output.Banner()
 		interval, _ := time.ParseDuration(*intervalFlag)
 		probes.ExecuteContinuousMonitor(targetAddr, strings.ToLower(*protoFlag), interval)
 		return
 	}
-
-	// INTEGRITY
 	if *runTestFlag {
-		fmt.Print(output.ClearLine)
 		output.Banner()
 		intel.ExecuteValidationSuite("http://"+cleanHost, *testModeFlag, *concurrencyFlag, *durationFlag)
 		return
@@ -109,20 +99,16 @@ func main() {
 	var target string
 	var targetType models.TargetType
 	if emailRegex.MatchString(rawInput) {
-		target = strings.ReplaceAll(rawInput, " ", "")
+		target = rawInput
 		targetType = models.TypeEmailTarget
-	} else if phoneRegex.MatchString(strings.ReplaceAll(rawInput, " ", "")) {
-		target = strings.ReplaceAll(rawInput, " ", "")
+	} else if phoneRegex.MatchString(rawInput) {
+		target = rawInput
 		targetType = models.TypePhoneTarget
-	} else if geoRegex.MatchString(strings.ReplaceAll(rawInput, " ", "")) {
-		target = strings.ReplaceAll(rawInput, " ", "")
-		targetType = models.TypeGeoTarget
 	} else {
 		target = cleanHost
 		targetType = models.TypeNetworkTarget
 	}
 
-	// EXECUTE RECON
 	intelCache, _ := cache.NewResponseCache()
 	var payload models.IntelPayload
 	var cacheHit = false
@@ -137,16 +123,24 @@ func main() {
 		payload = models.IntelPayload{Target: target, Type: targetType, ScanTime: time.Now()}
 		
 		if targetType == models.TypeNetworkTarget {
-			if !isIP(target) {
-				fmt.Println("[+] Domain detected. Performing passive DNS analysis...")
-			} else {
-				fmt.Println("[+] IP detected. Skipping DNS analysis...")
-			}
+			fmt.Printf("[+] Analyzing: %s\n", target)
+			// Call the actual engine you provided
+			ip, geo, asn, owner, created, ports, banners, vulns, leaks, sql := intel.ResolveNetworkElite(target, 0, "")
+			
+			// Map results to payload (Assumes matching fields in models.IntelPayload)
+			payload.TargetIP = ip
+			payload.Geo = geo
+			payload.ASN = asn
+			payload.Owner = owner
+			payload.Created = created
+			payload.OpenPorts = ports
+			payload.Banners = banners
+			payload.Vulns = vulns
+			payload.Leaks = leaks
+			payload.SQLMetrics = sql
 		}
-		// (Continue with your existing intel logic here)
 	}
 	
-	// Final Output
 	if *jsonFlag {
 		encoder := json.NewEncoder(os.Stdout)
 		encoder.SetIndent("", " ")
