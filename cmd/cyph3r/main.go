@@ -41,7 +41,7 @@ func isIP(input string) bool {
 }
 
 func main() {
-	// Flags
+	// Essential Flags
 	targetFlag := flag.String("target", "", "Target input node")
 	phoneFlag := flag.String("phone", "", "Standalone telephony lookup")
 	portFlag := flag.Int("p", 80, "Target port")
@@ -49,16 +49,13 @@ func main() {
 	protoFlag := flag.String("proto", "tcp", "Protocol (tcp/udp/http)")
 	methodFlag := flag.String("method", "GET", "HTTP method (GET/POST)")
 	
-	delayFlag := flag.String("delay", "0s", "Spacing delays")
-	agentFlag := flag.String("agent", "", "Custom client signature")
-	runTestFlag := flag.Bool("test-integrity", false, "Run integrity suite")
-	testModeFlag := flag.Int("mode", 1, "Mode: 1=LOAD, 2=STRESS")
 	concurrencyFlag := flag.Int("c", 50, "Concurrency streams")
 	durationFlag := flag.Int("d", 10, "Duration in seconds")
 	monitorFlag := flag.Bool("monitor", false, "HUD monitor loop")
 	intervalFlag := flag.String("interval", "2s", "Interval")
 	jsonFlag := flag.Bool("json", false, "Output as JSON")
-	verboseFlag := flag.Bool("v", false, "Verbose logging")
+	runTestFlag := flag.Bool("test-integrity", false, "Run integrity suite")
+	testModeFlag := flag.Int("mode", 1, "Mode: 1=LOAD, 2=STRESS")
 
 	// Custom Help
 	flag.Usage = func() { output.DisplayHelp() }
@@ -138,7 +135,6 @@ func main() {
 
 	if !cacheHit {
 		payload = models.IntelPayload{Target: target, Type: targetType, ScanTime: time.Now()}
-		socialTracks := make([]string, 0)
 		
 		if targetType == models.TypeNetworkTarget {
 			if !isIP(target) {
@@ -147,9 +143,7 @@ func main() {
 				fmt.Println("[+] IP detected. Skipping DNS analysis...")
 			}
 		}
-
-		// ... (Remainder of your existing logic for switch targetType) ...
-		// (Ensure you keep your existing switch targetType block here)
+		// (Continue with your existing intel logic here)
 	}
 	
 	// Final Output
