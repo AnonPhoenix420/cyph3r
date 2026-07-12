@@ -40,6 +40,7 @@ func isIP(input string) bool {
 }
 
 func main() {
+	// Flags
 	targetFlag := flag.String("target", "", "Target input node")
 	phoneFlag := flag.String("phone", "", "Standalone telephony lookup")
 	portFlag := flag.Int("p", 80, "Target port")
@@ -124,19 +125,20 @@ func main() {
 		
 		if targetType == models.TypeNetworkTarget {
 			fmt.Printf("[+] Analyzing: %s\n", target)
-			// Call the actual engine you provided
+			
+			// Call the engine with the exact 10 return values
 			ip, geo, asn, owner, created, ports, banners, vulns, leaks, sql := intel.ResolveNetworkElite(target, 0, "")
 			
-			// Map results to payload (Assumes matching fields in models.IntelPayload)
+			// Map results to the updated struct
 			payload.TargetIP = ip
 			payload.Geo = geo
 			payload.ASN = asn
-			payload.Owner = owner
-			payload.Created = created
+			payload.OwnerName = owner
+			payload.CreatedDate = created
 			payload.OpenPorts = ports
 			payload.Banners = banners
-			payload.Vulns = vulns
-			payload.Leaks = leaks
+			payload.Vulnerabilities = vulns
+			payload.ExposedLeaks = leaks
 			payload.SQLMetrics = sql
 		}
 	}
