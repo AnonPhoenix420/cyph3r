@@ -3,239 +3,118 @@ package intel
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
+	"io"
 	"net"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
-
-	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
-type APIResponse struct {
-	Status      string  `json:"status"`
-	Country     string  `json:"country"`
-	City        string  `json:"city"`
-	As          string  `json:"as"`
-	Org         string  `json:"org"`
-	RegionName  string  `json:"regionName"`
-	Zip         string  `json:"zip"`
-	Lat         float64 `json:"lat"`
-	Lon         float64 `json:"lon"`
+type CrtShEntry struct {
+	NameValue string `json:"name_value"`
 }
 
-type ThreatSource struct {
-	Name string `json:"name"`
-	Date string `json:"date"`
+type ExtractedIntel struct {
+	RealIPs       []string
+	Emails        []string
+	PhoneNumbers  []string
+	SocialHandles []string
+	Subdomains    []string
 }
 
-type LeakCheckResp struct {
-	Success bool           `json:"success"`
-	Found   int            `json:"found"`
-	Sources []ThreatSource `json:"sources"`
-}
+// DiscoverOriginAndOSINT performs deep extraction across CT logs, DNS records, and asset fields
+func DiscoverOriginAndOSINT(targetDomain string) ExtractedIntel {
+	var intel ExtractedIntel
+	subMap := make(map[string]bool)
 
-func CheckThreatFeeds(target string) []string {
-	detections := make([]string, 0)
-	client := &http.Client{Timeout: 3 * time.Second}
-	cleanedTarget := strings.TrimSpace(target)
-	
-	url := fmt.Sprintf("https://leakcheck.io/api/public?check=%s", cleanedTarget)
+	// 1. Query Certificate Transparency Logs
+	url := fmt.Sprintf("https://crt.sh/?q=%%.%s&output=json", targetDomain)
+	client := &http.Client{Timeout: 8 * time.Second}
 	resp, err := client.Get(url)
 	if err == nil {
 		defer resp.Body.Close()
-		var leakData LeakCheckResp
-		if json.NewDecoder(resp.Body).Decode(&leakData) == nil && len(leakData.Sources) > 0 {
-			for _, src := range leakData.Sources {
-				detections = append(detections, fmt.Sprintf("CRITICAL ➔ Found inside breach: %s (%s)", src.Name, src.Date))
-			}
-		}
-	}
-
-	if strings.Contains(cleanedTarget, "scam") || strings.Contains(cleanedTarget, "crypto-drain") {
-		detections = append(detections, "INTEL WARNING ➔ Target matches active systemic fraud tracking profile identifiers.")
-	}
-
-	if len(detections) == 0 {
-		detections = append(detections, "CLEAN ➔ Target not indexed in high-risk baseline network registries.")
-	}
-
-	return detections
-}
-
-func ResolveEmail(email string) string {
-	parts := strings.Split(email, "@")
-	if len(parts) < 2 {
-		return "Invalid Email Formatting Profile"
-	}
-	domain := parts[1]
-	mxRecords, err := net.LookupMX(domain)
-	if err != nil || len(mxRecords) == 0 {
-		return fmt.Sprintf("No active mail gateway associated with domain: %s", domain)
-	}
-	return fmt.Sprintf("Verified Active Enterprise Mail Gateway Handling: %s (Priority: %d)", mxRecords[0].Host, mxRecords[0].Pref)
-}
-
-func ResolvePhone(phone string) (string, string, string) {
-	cleaned := strings.ReplaceAll(strings.ReplaceAll(phone, "+", ""), " ", "")
-	if strings.HasPrefix(cleaned, "1") {
-		return "North American Numbering Plan (NANP)", "USA/Canada Carrier Block", "America/New_York Zone"
-	} else if strings.HasPrefix(cleaned, "44") {
-		return "United Kingdom Infrastructure", "BT/Vodafone Routing Cluster", "Europe/London Zone"
-	}
-	return "Global Telephony Allocation", "International Transit Gateway Selector", "UTC Offset Variable"
-}
-
-func ResolveNetwork(domain string) (string, models.GeoData, string, string, string, []string, []string, []string, []string, models.SQLExposure) {
-	return ResolveNetworkElite(domain, 0, "")
-}
-
-func ResolveNetworkElite(domain string, baseDelay time.Duration, customUserAgent string) (string, models.GeoData, string, string, string, []string, []string, []string, []string, models.SQLExposure) {
-	var geo models.GeoData
-	var asn = "UNKNOWN_ASN"
-	var ownerName = "WHOIS_PRIVACY_PROTECTED"
-	var createdDate = "METADATA_EXPEDITED"
-	
-	openPorts := make([]string, 0)
-	banners := make([]string, 0)
-	vulns := make([]string, 0)
-	leaks := make([]string, 0)
-	var sqlMetrics models.SQLExposure
-
-	var targetIP string
-	if net.ParseIP(domain) != nil {
-		targetIP = domain
-	} else {
-		ips, err := net.LookupIP(domain)
-		if err != nil || len(ips) == 0 {
-			return "0.0.0.0", geo, asn, ownerName, createdDate, openPorts, banners, vulns, leaks, sqlMetrics
-		}
-		targetIP = ips[0].String()
-	}
-
-	client := &http.Client{Timeout: 4 * time.Second}
-	fields := "status,country,city,as,org,regionName,zip,lat,lon"
-	req, err := http.NewRequest("GET", fmt.Sprintf("http://ip-api.com/json/%s?fields=%s", targetIP, fields), nil)
-	if err == nil {
-		if customUserAgent != "" {
-			req.Header.Set("User-Agent", customUserAgent)
-		} else {
-			req.Header.Set("User-Agent", "CYPH3R/Master-Engine-2026")
-		}
-		
-		if resp, err := client.Do(req); err == nil {
-			var data APIResponse
-			if json.NewDecoder(resp.Body).Decode(&data) == nil && data.Status == "success" {
-				geo.City = fmt.Sprintf("%s, %s (%s)", data.City, data.RegionName, data.Zip)
-				geo.Country = data.Country
-				geo.Latitude = fmt.Sprintf("%.4f", data.Lat)
-				geo.Longitude = fmt.Sprintf("%.4f", data.Lon)
-				geo.MapReference = fmt.Sprintf("http://maps.google.com/?q=%.4f,%.4f", data.Lat, data.Lon)
-				asn = data.As
-				if data.Org != "" {
-					ownerName = data.Org
-				}
-			}
-			resp.Body.Close()
-		}
-	}
-
-	if net.ParseIP(domain) == nil {
-		if mxRecords, err := net.LookupMX(domain); err == nil {
-			for _, mx := range mxRecords {
-				leaks = append(leaks, fmt.Sprintf("MX Mail Routing Node ➔ %s (Priority: %d)", mx.Host, mx.Pref))
-			}
-		}
-		if txtRecords, err := net.LookupTXT(domain); err == nil {
-			for _, txt := range txtRecords {
-				if strings.Contains(txt, "v=spf1") {
-					leaks = append(leaks, fmt.Sprintf("SPF Trust Blueprint ➔ %s", txt))
-				}
-			}
-		}
-	}
-
-	portsToScan := []int{21, 22, 80, 443, 1433, 3306, 5432, 8080}
-	dialer := &net.Dialer{Timeout: 1200 * time.Millisecond}
-
-	for _, port := range portsToScan {
-		if baseDelay > 0 {
-			time.Sleep(baseDelay + time.Duration(rand.Intn(200))*time.Millisecond)
-		}
-
-		address := net.JoinHostPort(targetIP, fmt.Sprintf("%d", port))
-		conn, err := dialer.Dial("tcp", address)
-		if err == nil {
-			_ = conn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
-			buffer := make([]byte, 256)
-			n, readErr := conn.Read(buffer)
-			
-			openPorts = append(openPorts, fmt.Sprintf("%d/TCP", port))
-			
-			if port == 1433 || port == 3306 || port == 5432 {
-				sqlMetrics.Exposed = true
-				sqlMetrics.Ports = append(sqlMetrics.Ports, port)
-				sqlMetrics.RiskLevel = "CRITICAL"
-				vulns = append(vulns, fmt.Sprintf("Database Port %d Open ➔ High Exposure Vector Risk", port))
-			}
-
-			if readErr == nil && n > 0 {
-				banners = append(banners, fmt.Sprintf("%d: %s", port, strings.TrimSpace(string(buffer[:n]))))
-			} else {
-				banners = append(banners, fmt.Sprintf("%d: Interface Active (Handshake Confirmed)", port))
-			}
-			conn.Close()
-		}
-	}
-
-	if !sqlMetrics.Exposed {
-		sqlMetrics.RiskLevel = "CLEAR"
-	}
-
-	return targetIP, geo, asn, ownerName, createdDate, openPorts, banners, vulns, leaks, sqlMetrics
-}
-
-// ExecuteValidationSuite runs target infrastructure stress-testing protocols
-func ExecuteValidationSuite(targetURL string, mode int, concurrency int, durationSec int) {
-	fmt.Printf("[+] Launching System Resilience Diagnostics Matrix ➔ Target: %s\n", targetURL)
-	fmt.Printf("[•] Mode Pattern Configuration: %d | Stream Connections: %d | Test Window: %ds\n", mode, concurrency, durationSec)
-	
-	stopSignal := time.After(time.Duration(durationSec) * time.Second)
-	client := &http.Client{Timeout: 2 * time.Second}
-	taskStream := make(chan struct{}, concurrency)
-
-	// Spin up workers
-	for i := 0; i < concurrency; i++ {
-		go func() {
-			for {
-				select {
-				case <-taskStream:
-					resp, err := client.Get(targetURL)
-					if err == nil {
-						resp.Body.Close()
+		body, _ := io.ReadAll(resp.Body)
+		var entries []CrtShEntry
+		if json.Unmarshal(body, &entries) == nil {
+			for _, entry := range entries {
+				for _, sub := range strings.Split(entry.NameValue, "\n") {
+					sub = strings.TrimSpace(sub)
+					if sub != "" && !strings.HasPrefix(sub, "*") && !subMap[sub] {
+						subMap[sub] = true
+						intel.Subdomains = append(intel.Subdomains, sub)
 					}
-				case <-stopSignal:
-					return
 				}
-			}
-		}()
-	}
-
-	// Supply work tracking streams loop until timer expires
-	ticker := time.NewTicker(5 * time.Millisecond)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-stopSignal:
-			fmt.Println("[+] Resilience Evaluation Completed. Vector interfaces aligned cleanly.")
-			return
-		case <-ticker.C:
-			select {
-			case taskStream <- struct{}{}:
-			default:
-				// Worker lanes fully utilized, skip step block safely
 			}
 		}
 	}
+
+	// 2. Resolve Subdomains and Filter out Cloudflare/CDN Edge Nodes to find Real IP
+	ipMap := make(map[string]bool)
+	for _, sub := range intel.Subdomains {
+		ips, err := net.LookupIP(sub)
+		if err == nil {
+			for _, ip := range ips {
+				ipStr := ip.String()
+				// Filter out common Cloudflare/CDN blocks to isolate true backend origin
+				if !strings.HasPrefix(ipStr, "104.") && 
+				   !strings.HasPrefix(ipStr, "172.64.") && 
+				   !strings.HasPrefix(ipStr, "173.245.") && 
+				   !strings.HasPrefix(ipStr, "192.254.") && !ipMap[ipStr] {
+					ipMap[ipStr] = true
+					intel.RealIPs = append(intel.RealIPs, fmt.Sprintf("%s (%s)", ipStr, sub))
+				}
+			}
+		}
+	}
+
+	// 3. Extract Deep OSINT Fields (Emails, Phones, Socials from TXT/MX/SPF records)
+	txtRecords, _ := net.LookupTXT(targetDomain)
+	rawText := strings.Join(txtRecordStrings(txtRecords), " ")
+	
+	// Also check SPF squash records if present
+	spfSquash, err := net.LookupTXT("spfsquash." + targetDomain)
+	if err == nil {
+		rawText += " " + strings.Join(txtRecordStrings(spfSquash), " ")
+	}
+
+	intel.Emails = extractEmails(rawText)
+	intel.PhoneNumbers = extractPhones(rawText)
+	intel.SocialHandles = extractSocials(rawText)
+
+	return intel
+}
+
+func txtRecordStrings(records []string) []string {
+	return records
+}
+
+func extractEmails(text string) []string {
+	re := regexp.MustCompile(`[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}`)
+	matches := re.FindAllString(text, -1)
+	return uniqueStrings(matches)
+}
+
+func extractPhones(text string) []string {
+	re := regexp.MustCompile(`(?:\+\d{1,3}\s?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}`)
+	matches := re.FindAllString(text, -1)
+	return uniqueStrings(matches)
+}
+
+func extractSocials(text string) []string {
+	re := regexp.MustCompile(`(?:twitter\.com|x\.com|linkedin\.com|github\.com|facebook\.com)/[a-zA-Z0-9_.-]+`)
+	matches := re.FindAllString(text, -1)
+	return uniqueStrings(matches)
+}
+
+func uniqueStrings(input []string) []string {
+	keys := make(map[string]bool)
+	var list []string
+	for _, entry := range input {
+		if !keys[entry] {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
 }
