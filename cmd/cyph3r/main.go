@@ -1,153 +1,100 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"net"
-	"os"
-	"regexp"
 	"strings"
 	"time"
 
-	"github.com/AnonPhoenix420/cyph3r/internal/cache"
-	"github.com/AnonPhoenix420/cyph3r/internal/intel"
-	"github.com/AnonPhoenix420/cyph3r/internal/models"
-	"github.com/AnonPhoenix420/cyph3r/internal/output"
-	"github.com/AnonPhoenix420/cyph3r/internal/probes"
-	"github.com/AnonPhoenix420/cyph3r/internal/stress"
+	"cyph3r/internal/intel"
+	"cyph3r/internal/probes"
+	"cyph3r/internal/stress"
 )
-
-var (
-	phoneRegex = regexp.MustCompile(`^\+?[1-9]\d{1,14}$|^7\d{9}$`)
-	emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-)
-
-func sanitizeToDomain(input string) string {
-	cleaned := strings.TrimSpace(input)
-	if strings.Contains(cleaned, "://") {
-		parts := strings.SplitN(cleaned, "://", 2)
-		cleaned = parts[1]
-	}
-	if idx := strings.IndexAny(cleaned, "/?#"); idx != -1 {
-		cleaned = cleaned[:idx]
-	}
-	return strings.TrimSpace(cleaned)
-}
-
-func isIP(input string) bool {
-	return net.ParseIP(input) != nil
-}
 
 func main() {
-	// Flags
-	targetFlag := flag.String("target", "", "Target input node")
-	phoneFlag := flag.String("phone", "", "Standalone telephony lookup")
-	portFlag := flag.Int("p", 80, "Target port")
-	hulkFlag := flag.Bool("hulk", false, "Engage resilience stress testing")
-	protoFlag := flag.String("proto", "tcp", "Protocol (tcp/udp/http)")
-	methodFlag := flag.String("method", "GET", "HTTP method (GET/POST)")
-	concurrencyFlag := flag.Int("c", 50, "Concurrency streams")
-	durationFlag := flag.Int("d", 10, "Duration in seconds")
-	monitorFlag := flag.Bool("monitor", false, "HUD monitor loop")
-	intervalFlag := flag.String("interval", "2s", "Interval")
-	jsonFlag := flag.Bool("json", false, "Output as JSON")
-	runTestFlag := flag.Bool("test-integrity", false, "Run integrity suite")
-	testModeFlag := flag.Int("mode", 1, "Mode: 1=LOAD, 2=STRESS")
+	targetFlag := flag.String("target", "", "Target domain or IP address")
+	portFlag := flag.Int("p", 443, "Target port")
+	protoFlag := flag.String("proto", "tcp", "Wire protocol (tcp/udp)")
+	monitorFlag := flag.Bool("monitor", false, "Engage live HUD connection monitor loop")
+	hulkFlag := flag.Bool("hulk", false, "Engage continuous resilience stress engine")
+	osintFlag := flag.Bool("osint", false, "Extract unmasked origin IPs, emails, phones, and social footprints")
+	concurrencyFlag := flag.Int("c", 1000, "Concurrency pool size for stress tests")
+	durationFlag := flag.Int("d", 0, "Test duration in seconds (0 for infinite loop)")
+	intervalFlag := flag.Duration("interval", 2*time.Second, "HUD monitor ping interval")
 
-	flag.Usage = func() { output.DisplayHelp() }
 	flag.Parse()
 
-	rawInput := strings.TrimSpace(*targetFlag)
-	if rawInput == "" && *phoneFlag != "" { rawInput = strings.TrimSpace(*phoneFlag) }
-	if rawInput == "" {
-		fmt.Fprintln(os.Stderr, "[-] Fatal Error: Target identifier required.")
-		os.Exit(1)
-	}
-
-	cleanHost := sanitizeToDomain(rawInput)
-	targetAddr := net.JoinHostPort(cleanHost, fmt.Sprintf("%d", *portFlag))
-
-	// HULK RESILIENCE ENGINE
-	if *hulkFlag {
-		fmt.Printf("[!] ENGAGING HULK MODE: %s on %s\n", targetAddr, *protoFlag)
-		targetURL := "http://" + targetAddr
-		switch strings.ToLower(*protoFlag) {
-		case "udp":
-			stress.ExecuteUDPFlood(targetAddr, *concurrencyFlag, *durationFlag)
-		case "tcp":
-			stress.ExecuteTCPFlood(targetAddr, *concurrencyFlag, *durationFlag)
-		case "http":
-			stress.ExecuteHTTPCapacityTest(targetURL, strings.ToUpper(*methodFlag), *concurrencyFlag, *durationFlag)
-		}
+	if *targetFlag == "" {
+		fmt.Println("[!] Error: --target parameter is required.")
 		return
 	}
 
-	// MONITOR & INTEGRITY
-	if *monitorFlag {
-		output.Banner()
-		interval, _ := time.ParseDuration(*intervalFlag)
-		probes.ExecuteContinuousMonitor(targetAddr, strings.ToLower(*protoFlag), interval)
-		return
-	}
-	if *runTestFlag {
-		output.Banner()
-		intel.ExecuteValidationSuite("http://"+cleanHost, *testModeFlag, *concurrencyFlag, *durationFlag)
-		return
+	cleanHost := strings.TrimPrefix(strings.TrimPrefix(*targetFlag, "https://"), "http://")
+	if idx := strings.Index(cleanHost, "/"); idx != -1 {
+		cleanHost = cleanHost[:idx]
 	}
 
-	// RECON ENGINE
-	var target string
-	var targetType models.TargetType
-	if emailRegex.MatchString(rawInput) {
-		target = rawInput
-		targetType = models.TypeEmailTarget
-	} else if phoneRegex.MatchString(rawInput) {
-		target = rawInput
-		targetType = models.TypePhoneTarget
-	} else {
-		target = cleanHost
-		targetType = models.TypeNetworkTarget
-	}
+	targetAddr := fmt.Sprintf("%s:%d", cleanHost, *portFlag)
 
-	intelCache, _ := cache.NewResponseCache()
-	var payload models.IntelPayload
-	var cacheHit = false
-	if intelCache != nil {
-		if cachedData, found := intelCache.Get(target); found {
-			json.Unmarshal(cachedData, &payload)
-			cacheHit = true
-		}
-	}
+	// 1. Deep OSINT & Origin Unmasking Mode
+	if *osintFlag {
+		fmt.Printf("[+] LAUNCHING DEEP OSINT & PROXY-BYPASS INTEL SCAN: %s\n", cleanHost)
+		results := intel.DiscoverOriginAndOSINT(cleanHost)
 
-	if !cacheHit {
-		payload = models.IntelPayload{Target: target, Type: targetType, ScanTime: time.Now()}
+		fmt.Println("\n╔═══════════════════════════════════════════════════════════════╗")
+		fmt.Println("║               CYPH3R DEEP OSINT FIELD INTELLIGENCE          ║")
+		fmt.Println("╚═══════════════════════════════════════════════════════════════╝")
 		
-		if targetType == models.TypeNetworkTarget {
-			fmt.Printf("[+] Analyzing: %s\n", target)
-			
-			// Call the engine with the exact 10 return values
-			ip, geo, asn, owner, created, ports, banners, vulns, leaks, sql := intel.ResolveNetworkElite(target, 0, "")
-			
-			// Map results to the updated struct
-			payload.TargetIP = ip
-			payload.Geo = geo
-			payload.ASN = asn
-			payload.OwnerName = owner
-			payload.CreatedDate = created
-			payload.OpenPorts = ports
-			payload.Banners = banners
-			payload.Vulnerabilities = vulns
-			payload.ExposedLeaks = leaks
-			payload.SQLMetrics = sql
+		fmt.Println("\n[ UNMASKED REAL ORIGIN NODES ]")
+		if len(results.RealIPs) > 0 {
+			for _, ip := range results.RealIPs {
+				fmt.Printf("  ↳ %s\n", ip)
+			}
+		} else {
+			fmt.Println("  ↳ No unmasked origin IPs detected (Strict CDN edge encapsulation active).")
 		}
+
+		fmt.Println("\n[ HARVESTED EMAILS ]")
+		if len(results.Emails) > 0 {
+			for _, email := range results.Emails {
+				fmt.Printf("  ↳ %s\n", email)
+			}
+		} else {
+			fmt.Println("  ↳ None exposed in public records.")
+		}
+
+		fmt.Println("\n[ EXTRACTED PHONE VECTORS ]")
+		if len(results.PhoneNumbers) > 0 {
+			for _, phone := range results.PhoneNumbers {
+				fmt.Printf("  ↳ %s\n", phone)
+			}
+		} else {
+			fmt.Println("  ↳ None detected.")
+		}
+
+		fmt.Println("\n[ LEAKED SOCIAL MEDIA REFERENCES ]")
+		if len(results.SocialHandles) > 0 {
+			for _, soc := range results.SocialHandles {
+				fmt.Printf("  ↳ https://%s\n", soc)
+			}
+		} else {
+			fmt.Println("  ↳ None mapped.")
+		}
+		return
 	}
-	
-	if *jsonFlag {
-		encoder := json.NewEncoder(os.Stdout)
-		encoder.SetIndent("", " ")
-		encoder.Encode(payload)
-	} else {
-		output.Render(&payload)
+
+	// 2. Continuous Stress / Hulk Mode
+	if *hulkFlag {
+		stress.ExecuteContinuousStress(targetAddr, *concurrencyFlag, *durationFlag)
+		return
 	}
+
+	// 3. Live HUD Monitor Mode
+	if *monitorFlag {
+		fmt.Printf("[+] LAUNCHING PERSISTENT HUD MONITOR METRICS FEED\n • ROUTE TARGET: %s\n", targetAddr)
+		probes.ExecuteContinuousMonitor(targetAddr, strings.ToLower(*protoFlag), *intervalFlag)
+		return
+	}
+
+	fmt.Printf("[+] Target specified: %s. Use --osint, --monitor, or --hulk to engage modules.\n", targetAddr)
 }
