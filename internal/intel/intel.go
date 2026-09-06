@@ -1,6 +1,8 @@
 package intel
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,58 +11,72 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/AnonPhoenix420/cyph3r/internal/models"
+	"github.com/nyaruka/phonenumbers"
 )
 
 type CrtShEntry struct {
 	NameValue string `json:"name_value"`
 }
 
-type ExtractedIntel struct {
-	RealIPs       []string
-	Emails        []string
-	PhoneNumbers  []string
-	SocialHandles []string
-	Subdomains    []string
-}
-
-// DiscoverOriginAndOSINT performs deep extraction across CT logs, DNS records, and asset fields
-func DiscoverOriginAndOSINT(targetDomain string) ExtractedIntel {
-	var intel ExtractedIntel
+func DiscoverOriginAndOSINT(targetDomain string) models.ExtractedIntel {
+	var intel models.ExtractedIntel
 	subMap := make(map[string]bool)
 
-	// 1. Query Certificate Transparency Logs
+	// 1. Query Certificate Transparency Logs with better error visibility
 	url := fmt.Sprintf("https://crt.sh/?q=%%.%s&output=json", targetDomain)
-	client := &http.Client{Timeout: 8 * time.Second}
+	client := &http.Client{Timeout: 12 * time.Second}
+	
+	fmt.Printf("[*] Querying Certificate Transparency logs for %s...\n", targetDomain)
 	resp, err := client.Get(url)
-	if err == nil {
+	if err != nil {
+		fmt.Printf("[!] Warning: CT log query failed: %v\n", err)
+	} else {
 		defer resp.Body.Close()
 		body, _ := io.ReadAll(resp.Body)
-		var entries []CrtShEntry
-		if json.Unmarshal(body, &entries) == nil {
-			for _, entry := range entries {
-				for _, sub := range strings.Split(entry.NameValue, "\n") {
-					sub = strings.TrimSpace(sub)
-					if sub != "" && !strings.HasPrefix(sub, "*") && !subMap[sub] {
-						subMap[sub] = true
-						intel.Subdomains = append(intel.Subdomains, sub)
+		
+		if resp.StatusCode != http.StatusOK {
+			fmt.Printf("[!] Warning: crt.sh returned HTTP status %d (Target may be rate-limiting or too large)\n", resp.StatusCode)
+		} else {
+			var entries []CrtShEntry
+			if err := json.Unmarshal(body, &entries); err == nil {
+				for _, entry := range entries {
+					for _, sub := range strings.Split(entry.NameValue, "\n") {
+						sub = strings.TrimSpace(sub)
+						sub = strings.TrimPrefix(sub, "*.") // Strip wildcards
+						if sub != "" && !subMap[sub] {
+							subMap[sub] = true
+							intel.Subdomains = append(intel.Subdomains, sub)
+						}
 					}
 				}
+				fmt.Printf("[+] Discovered %d unique subdomains from CT logs.\n", len(intel.Subdomains))
+			} else {
+				fmt.Printf("[!] Warning: Failed to parse CT JSON response: %v\n", err)
 			}
 		}
 	}
 
-	// 2. Resolve Subdomains and Filter out Cloudflare/CDN Edge Nodes to find Real IP
+	// 2. Fetch Favicon and Compute Hash
+	intel.FaviconHash = fetchFaviconHash(targetDomain, client)
+
+	// 3. Resolve Subdomains and Filter CDN Edge Nodes
 	ipMap := make(map[string]bool)
-	for _, sub := range intel.Subdomains {
+	// Limit resolution loop to first 100 subdomains to prevent hanging on massive domains
+	limit := len(intel.Subdomains)
+	if limit > 100 {
+		limit = 100
+		fmt.Println("[*] Throttling DNS resolution to first 100 subdomains for speed.")
+	}
+
+	for i := 0; i < limit; i++ {
+		sub := intel.Subdomains[i]
 		ips, err := net.LookupIP(sub)
 		if err == nil {
 			for _, ip := range ips {
 				ipStr := ip.String()
-				// Filter out common Cloudflare/CDN blocks to isolate true backend origin
-				if !strings.HasPrefix(ipStr, "104.") && 
-				   !strings.HasPrefix(ipStr, "172.64.") && 
-				   !strings.HasPrefix(ipStr, "173.245.") && 
-				   !strings.HasPrefix(ipStr, "192.254.") && !ipMap[ipStr] {
+				if !isCDNEdge(ipStr) && !ipMap[ipStr] {
 					ipMap[ipStr] = true
 					intel.RealIPs = append(intel.RealIPs, fmt.Sprintf("%s (%s)", ipStr, sub))
 				}
@@ -68,15 +84,9 @@ func DiscoverOriginAndOSINT(targetDomain string) ExtractedIntel {
 		}
 	}
 
-	// 3. Extract Deep OSINT Fields (Emails, Phones, Socials from TXT/MX/SPF records)
+	// 4. Extract Deep OSINT Fields from TXT records
 	txtRecords, _ := net.LookupTXT(targetDomain)
-	rawText := strings.Join(txtRecordStrings(txtRecords), " ")
-	
-	// Also check SPF squash records if present
-	spfSquash, err := net.LookupTXT("spfsquash." + targetDomain)
-	if err == nil {
-		rawText += " " + strings.Join(txtRecordStrings(spfSquash), " ")
-	}
+	rawText := strings.Join(txtRecords, " ")
 
 	intel.Emails = extractEmails(rawText)
 	intel.PhoneNumbers = extractPhones(rawText)
@@ -85,8 +95,30 @@ func DiscoverOriginAndOSINT(targetDomain string) ExtractedIntel {
 	return intel
 }
 
-func txtRecordStrings(records []string) []string {
-	return records
+func fetchFaviconHash(domain string, client *http.Client) string {
+	resp, err := client.Get(fmt.Sprintf("https://%s/favicon.ico", domain))
+	if err != nil {
+		resp, err = client.Get(fmt.Sprintf("http://%s/favicon.ico", domain))
+		if err != nil {
+			return "Unavailable"
+		}
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil || len(body) == 0 {
+		return "Unavailable"
+	}
+	hash := md5.Sum(body)
+	return hex.EncodeToString(hash[:])
+}
+
+func isCDNEdge(ip string) bool {
+	return strings.HasPrefix(ip, "104.") ||
+		strings.HasPrefix(ip, "172.64.") ||
+		strings.HasPrefix(ip, "173.245.") ||
+		strings.HasPrefix(ip, "192.254.") ||
+		strings.HasPrefix(ip, "13.32.") ||
+		strings.HasPrefix(ip, "151.101.")
 }
 
 func extractEmails(text string) []string {
@@ -98,7 +130,16 @@ func extractEmails(text string) []string {
 func extractPhones(text string) []string {
 	re := regexp.MustCompile(`(?:\+\d{1,3}\s?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}`)
 	matches := re.FindAllString(text, -1)
-	return uniqueStrings(matches)
+	var validatedPhones []string
+	for _, m := range matches {
+		num, err := phonenumbers.Parse(m, "US")
+		if err == nil && phonenumbers.IsValidNumber(num) {
+			validatedPhones = append(validatedPhones, phonenumbers.Format(num, phonenumbers.INTERNATIONAL))
+		} else {
+			validatedPhones = append(validatedPhones, m)
+		}
+	}
+	return uniqueStrings(validatedPhones)
 }
 
 func extractSocials(text string) []string {
