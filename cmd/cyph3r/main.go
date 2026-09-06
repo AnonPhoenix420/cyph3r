@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"cyph3r/internal/intel"
-	"cyph3r/internal/probes"
-	"cyph3r/internal/stress"
+	"github.com/AnonPhoenix420/cyph3r/internal/intel"
+	"github.com/AnonPhoenix420/cyph3r/internal/output"
+	"github.com/AnonPhoenix420/cyph3r/internal/probes"
+	"github.com/AnonPhoenix420/cyph3r/internal/stress
 )
 
 func main() {
