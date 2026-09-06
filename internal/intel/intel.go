@@ -1,3 +1,4 @@
+cat << 'EOF' > internal/intel/intel.go
 package intel
 
 import (
@@ -27,7 +28,7 @@ func DiscoverOriginAndOSINT(targetDomain string) models.ExtractedIntel {
 	// 1. Query Certificate Transparency Logs with better error visibility
 	url := fmt.Sprintf("https://crt.sh/?q=%%.%s&output=json", targetDomain)
 	client := &http.Client{Timeout: 12 * time.Second}
-	
+
 	fmt.Printf("[*] Querying Certificate Transparency logs for %s...\n", targetDomain)
 	resp, err := client.Get(url)
 	if err != nil {
@@ -35,7 +36,7 @@ func DiscoverOriginAndOSINT(targetDomain string) models.ExtractedIntel {
 	} else {
 		defer resp.Body.Close()
 		body, _ := io.ReadAll(resp.Body)
-		
+
 		if resp.StatusCode != http.StatusOK {
 			fmt.Printf("[!] Warning: crt.sh returned HTTP status %d (Target may be rate-limiting or too large)\n", resp.StatusCode)
 		} else {
@@ -69,7 +70,6 @@ func DiscoverOriginAndOSINT(targetDomain string) models.ExtractedIntel {
 		limit = 100
 		fmt.Println("[*] Throttling DNS resolution to first 100 subdomains for speed.")
 	}
-
 	for i := 0; i < limit; i++ {
 		sub := intel.Subdomains[i]
 		ips, err := net.LookupIP(sub)
@@ -159,3 +159,4 @@ func uniqueStrings(input []string) []string {
 	}
 	return list
 }
+EOF
