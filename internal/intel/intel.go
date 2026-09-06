@@ -24,6 +24,7 @@ func DiscoverOriginAndOSINT(targetDomain string) models.ExtractedIntel {
 	var intel models.ExtractedIntel
 	subMap := make(map[string]bool)
 
+	// 1. Passive CT Log Query via crt.sh
 	url := fmt.Sprintf("https://crt.sh/?q=%%.%s&output=json", targetDomain)
 	client := &http.Client{Timeout: 12 * time.Second}
 
@@ -50,12 +51,34 @@ func DiscoverOriginAndOSINT(targetDomain string) models.ExtractedIntel {
 						}
 					}
 				}
-				fmt.Printf("[+] Discovered %d unique subdomains from CT logs.\n", len(intel.Subdomains))
 			} else {
 				fmt.Printf("[!] Warning: Failed to parse CT JSON response: %v\n", err)
 			}
 		}
 	}
+
+	// 2. Active Fallback Probe (Triggers if CT logs are blocked/empty)
+	if len(intel.Subdomains) == 0 {
+		fmt.Printf("[*] CT logs rate-limited or empty. Engaging active infrastructure probe for %s...\n", targetDomain)
+		commonSubs := []string{
+			"www", "mail", "webmail", "ns1", "ns2", "dns", "api", "portal", 
+			"secure", "admin", "vpn", "remote", "autodiscover", "exchange", 
+			"login", "auth", "support", "status", "cloud", "dev", "staging", 
+			"test", "shop", "store", "erp", "internal", "gateway", "proxy",
+			"cdn", "app", "dashboard", "jenkins", "git", "metrics",
+		}
+
+		for _, prefix := range commonSubs {
+			sub := fmt.Sprintf("%s.%s", prefix, targetDomain)
+			ips, err := net.LookupIP(sub)
+			if err == nil && len(ips) > 0 && !subMap[sub] {
+				subMap[sub] = true
+				intel.Subdomains = append(intel.Subdomains, sub)
+			}
+		}
+	}
+
+	fmt.Printf("[+] Discovered %d unique validated subdomains.\n", len(intel.Subdomains))
 
 	intel.FaviconHash = fetchFaviconHash(targetDomain, client)
 
