@@ -1,4 +1,4 @@
-cat << 'EOF' > internal/intel/intel.go
+internal/intel/intel.go
 package intel
 
 import (
