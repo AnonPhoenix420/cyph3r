@@ -25,7 +25,6 @@ func DiscoverOriginAndOSINT(targetDomain string) models.ExtractedIntel {
 	var intel models.ExtractedIntel
 	subMap := make(map[string]bool)
 
-	// 1. Query Certificate Transparency Logs with better error visibility
 	url := fmt.Sprintf("https://crt.sh/?q=%%.%s&output=json", targetDomain)
 	client := &http.Client{Timeout: 12 * time.Second}
 
@@ -45,7 +44,7 @@ func DiscoverOriginAndOSINT(targetDomain string) models.ExtractedIntel {
 				for _, entry := range entries {
 					for _, sub := range strings.Split(entry.NameValue, "\n") {
 						sub = strings.TrimSpace(sub)
-						sub = strings.TrimPrefix(sub, "*.") // Strip wildcards
+						sub = strings.TrimPrefix(sub, "*.")
 						if sub != "" && !subMap[sub] {
 							subMap[sub] = true
 							intel.Subdomains = append(intel.Subdomains, sub)
@@ -59,12 +58,9 @@ func DiscoverOriginAndOSINT(targetDomain string) models.ExtractedIntel {
 		}
 	}
 
-	// 2. Fetch Favicon and Compute Hash
 	intel.FaviconHash = fetchFaviconHash(targetDomain, client)
 
-	// 3. Resolve Subdomains and Filter CDN Edge Nodes
 	ipMap := make(map[string]bool)
-	// Limit resolution loop to first 100 subdomains to prevent hanging on massive domains
 	limit := len(intel.Subdomains)
 	if limit > 100 {
 		limit = 100
@@ -84,7 +80,6 @@ func DiscoverOriginAndOSINT(targetDomain string) models.ExtractedIntel {
 		}
 	}
 
-	// 4. Extract Deep OSINT Fields from TXT records
 	txtRecords, _ := net.LookupTXT(targetDomain)
 	rawText := strings.Join(txtRecords, " ")
 
