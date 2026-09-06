@@ -1,4 +1,3 @@
-internal/intel/intel.go
 package intel
 
 import (
@@ -154,4 +153,3 @@ func uniqueStrings(input []string) []string {
 	}
 	return list
 }
-EOF
