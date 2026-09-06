@@ -15,6 +15,15 @@ const (
 	TypeNetworkTarget TargetType = "network"
 )
 
+type ExtractedIntel struct {
+	Subdomains    []string
+	RealIPs       []string
+	FaviconHash   string
+	Emails        []string
+	PhoneNumbers  []string
+	SocialHandles []string
+}
+
 type GeoData struct {
 	Latitude     string `json:"latitude"`
 	Longitude    string `json:"longitude"`
