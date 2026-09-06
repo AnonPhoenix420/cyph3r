@@ -1,3 +1,4 @@
+cat << 'EOF' > Makefile
 # ─── CYPH3R v2.6 SYSTEM MAINTENANCE MAKEFILE ──────────────────────────
 
 BINARY_NAME=cyph3r
@@ -7,6 +8,11 @@ all: build
 fix-imports:
 	@echo "[*] Normalizing module import paths..."
 	@find . -type f -name '*.go' -exec sed -i 's|"cyph3r/internal|"github.com/AnonPhoenix420/cyph3r/internal|g' {} +
+	@# Automatically strip stray 'cat' artifacts from files if present
+	@if [ -f internal/intel/intel.go ] && grep -q "^cat" internal/intel/intel.go; then \
+		echo "[*] Sanitizing stray shell artifact from internal/intel/intel.go..."; \
+		sed -i '1{/^cat/d}' internal/intel/intel.go; \
+	fi
 
 build: fix-imports
 	@echo "[*] Syncing dependencies..."
@@ -29,3 +35,4 @@ clean:
 	@echo "[✓] Project environment cleaned."
 
 .PHONY: all build repair clean fix-imports
+EOF
