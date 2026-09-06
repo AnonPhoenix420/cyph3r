@@ -1,7 +1,6 @@
 mkdir -p internal/models internal/intel internal/output internal/probes internal/stress cmd/cyph3r
 
-# 1. Models
-cat << 'EOF' > internal/models/models.go
+internal/models/models.go
 package models
 
 type ExtractedIntel struct {
