@@ -1,5 +1,5 @@
 ```
-  ______      ____  __  __ _____ ____ 
+   ______      ____  __  __ _____ ____ 
   / ____/_  __/ __ \/ / / /|__  // __ \
  / / / / / / / /_/ / /_/ /  /_ </ /_/ /
 / /___/ /_/ / ____/ __  / ___/ / _, _/ 
@@ -8,10 +8,11 @@
 
  ⚡ v2.6 [STABLE] // Wireframe HUD Edition
   ───────────────────────────────────────
+```
 ![Version](https://img.shields.io/badge/Version-2.6--STABLE-cyan?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-magenta?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-blue?style=for-the-badge)
-```
+
 
 🧠 Overview
 
