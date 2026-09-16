@@ -18,7 +18,7 @@
 
 CYPH3R is a professional-grade network reconnaissance, monitoring, and infrastructure resilience suite built in Go. It operates on a "Zero-Key" philosophy, providing deep OSINT (ISP, Geo, Metadata), multi-protocol connectivity testing, and an advanced 7-vector stress suite without requiring external API subscriptions.
 
-🚀 CORE CAPABILITIES
+# 🚀 CORE CAPABILITIES
 
 - **Node Intelligence:** Automated registrar, ISP, and geographic coordinate mapping.
 
@@ -32,7 +32,7 @@ CYPH3R is a professional-grade network reconnaissance, monitoring, and infrastru
 
 - **Go 1.23 Native:** Optimized for the stable Go 1.23 runtime with zero external binary dependencies.
 
-📂 Architecture Mapping
+# 📂 Architecture Mapping
 
 ```
 cyph3r/
@@ -64,7 +64,7 @@ CYPH3R uses a modular internal structure to ensure high-speed execution and zero
 * `internal/stress/`: The multi-vector resilience and benchmarking suite.
 
 
-🛠️ Installation & Self-Repair
+# 🛠️ Installation & Self-Repair
 
 CYPH3R includes a built-in Self-Repair and cross-compilation system via Makefile. This is the recommended way to install to ensure your go.sum and dependencies are perfectly synced.
 
@@ -84,7 +84,7 @@ bash
 This syncs dependencies, cleans caches, and builds the production binary.
 
 
-🛠️ CYPH3R Installation
+# 🛠️ CYPH3R Installation
 
 ```
 git clone https://github.com/AnonPhoenix420/cyph3r.git
@@ -95,8 +95,7 @@ go mod tidy
 go build -o cyph3r ./cmd/cyph3r
 ```
 
-🧹⚙️🗑️
-Advanced Maintenance (Makefile)
+# 🧹⚙️🗑️ Advanced Maintenance (Makefile)
 
 Self-Repair / Sync: make repair (Cleans cache and forces dependency sync)
 
@@ -203,7 +202,7 @@ The Pro Way: Install Chocolatey and run
 
 ```choco install make```
 
-🚀 Tool Usage Guide
+# 🚀 Tool Usage Guide
 
 CYPH3R contains multiple primary tools packed into a single binary. Here is how to use each.
 
@@ -290,7 +289,7 @@ UNINSTALL
 
 Since CYPH3R v2.6 is a modular Go tool, it doesn't scatter files all over your system like a standard installer might. However, to keep your workspace pristine, a dedicated uninstaller is included.
 
-🗑️ Uninstallation
+# 🗑️ Uninstallation
 
 To remove the binary, local distribution artifacts, and clean global pathways:
 
@@ -302,7 +301,7 @@ chmod +x uninstall.sh
 💻⌨️🧑‍💻 HAPPY HACKING 📀🖥️🖱️
 
 
-📜 MIT License
+# 📜 MIT License
 
 Copyright (c) 2026 AnonPhoenix420
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
@@ -312,9 +311,9 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 
 
-⚖️ Disclaimer
+# ⚖️ Disclaimer
 For authorized security testing and educational purposes only. Misuse of this tool is strictly the responsibility of the end user.
 
 
-READ POLICY.MD BEFORE USE !!
+# READ POLICY.MD BEFORE USE !!
 
