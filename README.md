@@ -34,6 +34,7 @@ CYPH3R is a professional-grade network reconnaissance, monitoring, and infrastru
 
 📂 Architecture Mapping
 
+```
 cyph3r/
 ├── go.mod
 ├── go.sum
@@ -48,14 +49,18 @@ cyph3r/
 │   ├── probes/ (probes.go, scanner.go)
 │   ├── stress/ (stress.go)
 │   └── output/ (banner.go, colors.go, pulse.go, render.go, status.go)
-
+```
 
 CYPH3R uses a modular internal structure to ensure high-speed execution and zero dependency clashing:
 
 * `cmd/cyph3r/`: The primary CLI entry point.
+
 * `internal/intel/`: OSINT logic for IP/Domain and Phone metadata.
+
 * `internal/output/`: The HUD system (Split into Banners, Colors, and Status).
+
 * `internal/probes/`: The network engine (TCP/UDP/HTTP/ACK socket logic).
+
 * `internal/stress/`: The multi-vector resilience and benchmarking suite.
 
 
@@ -74,21 +79,21 @@ Make: For automated building and cross-compilation.
 Open your terminal in the project root and run:
 bash
 
-make
+```make```
 
 This syncs dependencies, cleans caches, and builds the production binary.
 
 
 🛠️ CYPH3R Installation
 
-
+```
 git clone https://github.com/AnonPhoenix420/cyph3r.git
-
-cd cyph3r
-
+```
+```cd cyph3r```
+```
 go mod tidy
 go build -o cyph3r ./cmd/cyph3r
-
+```
 
 🧹⚙️🗑️
 Advanced Maintenance (Makefile)
@@ -102,10 +107,10 @@ Uninstall/Clean: make clean (Removes binaries, dist/ folder, and clears build ca
 
 Automated Install (Linux/macOS Only)
 
-
+```
 chmod +x install.sh
 ./install.sh
-
+```
 
 *SINGLE STEP INSTRUCTIONS
 
@@ -115,15 +120,17 @@ CYPH3R requires Go 1.23 or higher.
 
 Parrot 🦜 OS 🖥️ Termux 📱
 
-
+```
 wget https://go.dev/dl/go1.23.5.linux-arm64.tar.gz
-
+```
+```
 #tar -C /usr/local -xzf go1.23.5.linux-arm64.tar.gz
-
+```
+```
 #echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
 source ~/.bashrc
-
-go version
+```
+```go version```
 
 you should get :
 
@@ -133,8 +140,11 @@ For Linux (Ubuntu/Debian/Kali)
 
 Run these commands in your terminal:
 
-sudo apt update
+```sudo apt update```
+
+```
 sudo apt install golang -y
+```
 
 
 Verify with: go version
@@ -142,11 +152,11 @@ Verify with: go version
 For macOS
 If you have Homebrew:
 
-brew install go
+```brew install go```
 
 
 For Windows
-Download the MSI installer from go.dev/dl.
+Download the MSI installer from ```go.dev/dl```
 
 Run the installer and follow the prompts.
 
@@ -156,13 +166,15 @@ Verify the Version
 
 Once you have run the code above, type this to confirm it worked:
 
-go version
+```go version```
 
 Expected Output:
 
 go version go1.23.0 linux/amd64
 
-Install Build Tools
+
+Install Build Tools:
+
 CYPH3R uses a Makefile to handle automated building and cross-compilation.
 
 For Linux/macOS
@@ -170,11 +182,11 @@ Most systems have this, but if not:
 
 Linux:
 
-sudo apt install build-essential -y
+```sudo apt install build-essential -y```
 
 macOS:
 
-xcode-select --install
+```xcode-select --install```
 
 For Windows
 Windows doesn't have make by default. 
@@ -183,12 +195,13 @@ You have two choices:
 
 The Easy Way: Skip make and just run
 
+```
 go build -o cyph3r.exe ./cmd/cyph3r manually
-
+```
 
 The Pro Way: Install Chocolatey and run
 
-choco install make
+```choco install make```
 
 🚀 Tool Usage Guide
 
@@ -200,7 +213,7 @@ Retrieve ISP, Organization, City, Zip, and GPS coordinates for any IP or Domain.
 
 Command:
 
-./cyph3r --target <host>
+```./cyph3r --target <host>```
 
 Example: 
 
@@ -210,7 +223,7 @@ Full Reconnaissance (Intelligence + Port Scan)
 
 Command:
 
-./cyph3r --target google.com --scan
+```./cyph3r --target google.com --scan```
 
 
 📡 Tool 2: Continuous Monitor (HUD Feed)
@@ -218,7 +231,7 @@ Track the uptime and latency of a target over time. Perfect for stress testing o
 
 Command:
 
-./cyph3r --target <host> --proto <type> --monitor
+```./cyph3r --target <host> --proto <type> --monitor```
 
 Example:
 
@@ -232,7 +245,7 @@ Validate international phone numbers and retrieve regional/carrier metadata.
 
 Command:
 
-./cyph3r --phone <number>
+```./cyph3r --phone <number>```
 
 Example: 
 
@@ -245,31 +258,33 @@ Evaluate infrastructure resilience using 7 high-performance concurrency engines.
 
 HULK HTTP Flood:
 
-./cyph3r --target <host> --hulk
+```./cyph3r --target <host> --hulk```
 
 Slowloris Header Exhaustion: 
 
-./cyph3r --target <host> --slowloris
+```./cyph3r --target <host> --slowloris```
 
 Layer 4 SYN/State Flood: 
 
-./cyph3r --target <host> --synflood
+```./cyph3r --target <host> --synflood```
 
 Wrk-Style Benchmark (with RPS & Latency tracking):
 
+```
 ./cyph3r --target <host> --wrk -c 100 -d 30
+```
 
 RUDY Slow-POST Exhaustion:
 
-./cyph3r --target <host> --rudy
+```./cyph3r --target <host> --rudy```
 
 HTTP/2 Rapid Reset Multiplexing: 
 
-./cyph3r --target <host> --h2
+```./cyph3r --target <host> --h2```
 
 WebSocket Connection & Frame Pool Exhaustion: 
 
-./cyph3r --target <host> --ws
+```./cyph3r --target <host> --ws```
 
 UNINSTALL
 
@@ -279,9 +294,10 @@ Since CYPH3R v2.6 is a modular Go tool, it doesn't scatter files all over your s
 
 To remove the binary, local distribution artifacts, and clean global pathways:
 
+```
 chmod +x uninstall.sh
 ./uninstall.sh
-
+```
 
 💻⌨️🧑‍💻 HAPPY HACKING 📀🖥️🖱️
 
