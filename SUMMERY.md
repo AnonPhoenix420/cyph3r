@@ -1,6 +1,6 @@
-# CYPH3R: Tactical Network Intelligence System
+# CYPH3R: Tactical Network Intelligence & Resilience Suite
 
-**CYPH3R** is a high-performance reconnaissance engine built in Go, designed for deep intelligence gathering and tactical server testing. It focuses exclusively on remote target transparency while maintaining complete local host privacy.
+**CYPH3R** is a high-performance reconnaissance, performance benchmarking, and infrastructure resilience suite built in Go, designed for deep intelligence gathering and tactical server testing. It focuses exclusively on remote target transparency while maintaining complete local host privacy.
 
 ---
 
@@ -12,10 +12,11 @@
 * **Recursive DNS Spidering:** Maps authoritative name servers and resolves their specific IP addresses in real-time.
 * **Geo-Intelligence:** Pulls granular geographic data including Organization/ISP, City, State, Country Code, and Postal Code.
 
-### 🛡️ Tactical Probing
+### 🛡️ Tactical Probing & Stress Suite
 * **Signal Identification:** Scans for open ports with active [ACK/SYN] signaling verification.
 * **Protocol Fingerprinting:** Automatically identifies standard service protocols (SSH, HTTP, HTTPS, DNS, MySQL, etc.).
-* **Speed-Optimized:** Utilizes 1.5s dial timeouts for efficient scanning without triggering basic rate-limiters.
+* **Multi-Vector Stress Suite:** 7 integrated resilience engines (HULK, Slowloris, SYN Flood, Wrk Benchmarking, RUDY, HTTP/2 Rapid Reset, WebSocket Exhaustion).
+* **Phone Decryption:** Metadata lookup for international phone vectors.
 
 ---
 
@@ -23,46 +24,54 @@
 
 ```text
 cyph3r/
-├── bin/              # Compiled binary artifacts
+├── go.mod
+├── go.sum
+├── Makefile
+├── Dockerfile
+├── POLICY.md
+├── install.sh
+├── uninstall.sh
 ├── cmd/
 │   └── cyph3r/       # Entry point (main.go)
-├── internal/
-│   ├── intel/        # DNS and Geo-API logic
-│   ├── models/       # Data structures and type definitions
-│   ├── output/       # HUD rendering and UI status logic
-│   └── probes/       # Tactical port scanning and protocol detection
-├── Makefile          # Build, repair, and install automation
-└── Dockerfile        # Multi-stage containerization
+└── internal/
+    ├── intel/        # DNS, Geo, and Phone metadata logic
+    ├── models/       # Data structures and type definitions
+    ├── output/       # HUD rendering, banners, and status logic
+    ├── probes/       # Tactical port scanning and protocol detection
+    └── stress/       # Multi-vector resilience and benchmarking engines
 ```
 
-🚀 Deployment & Usage
-​Fast Install
-```
-make install
-```
+# 🚀 Deployment & Usage
+
+Fast Build & Sync
+
+```make```
 
 Basic Recon
+
+```cyph3r --target google.com```
+
+Full Recon & Port Scan
+
+```cyph3r --target google.com --scan```
+
+Multi-Vector Resilience Testing
+
 ```
-cyph3r -target google.com
-```
-Reverse IP Recon
-```
-cyph3r -target 8.8.4.4
-```
-
-🛠️ Maintenance Commands
-
-```text
-Command Action
-
-*make repair Forces a deep-clean of Go caches and resets modules.
-
-*make build Compiles a fresh binary to the ./bin directory.
-
-*make backup Creates a timestamped .tar.gz archive of the source code.
-
-*make docker Builds a minimal Alpine-based Docker image.
+cyph3r --target <host> --wrk -c 100 -d 30
 ```
 
-🔐 Privacy & Security Policy
-CYPH3R is hard-coded to ignore local system information. It does not gather, print, or transmit your hostname, local interface IPs, or internal network topology. All output is strictly limited to the specified remote target.
+# 🛠️ Maintenance & Cross-Compilation Commands
+
+
+
+make — Syncs dependencies (go mod tidy), cleans caches, and builds the production binary.
+
+make cross-compile — Builds standalone binaries for Linux, Windows, and macOS into the dist/ directory.
+
+make clean — Completely wipes out binaries, dist/ folder, and Go build caches.
+
+
+# 🔐 Privacy, Security & Legal Policy
+
+Use of this software is strictly governed by the Acceptable Use Policy (POLICY.md). CYPH3R is hard-coded to ignore local system information. It does not gather, print, or transmit your hostname, local interface IPs, or internal network topology. All output is strictly limited to authorized remote targets.
