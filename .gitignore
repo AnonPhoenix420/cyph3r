@@ -12,10 +12,9 @@ out/
 # Go modules
 vendor/
 
-# Go build cache
+# Go build cache & test files
 *.test
 *.out
-go.sum
 *.exe
 *.exe\~
 *.dll
