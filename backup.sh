@@ -8,14 +8,17 @@ mkdir -p $BACKUP_DIR
 
 echo -e "\033[38;5;198m[*] Initializing Source Archive...\033[0m"
 
-# Archive the core logic and command structure
+# Archive core logic, configuration, legal policy, and installation scripts
 tar -czf "$BACKUP_DIR/cyph3r_backup_$TIMESTAMP.tar.gz" \
     cmd/ \
     internal/ \
     go.mod \
     go.sum \
     Makefile \
-    Dockerfile
+    Dockerfile \
+    POLICY.md \
+    install.sh \
+    uninstall.sh
 
 if [ $? -eq 0 ]; then
     echo -e "\033[38;5;82m[+] Backup Successful: $BACKUP_DIR/cyph3r_backup_$TIMESTAMP.tar.gz\033[0m"
