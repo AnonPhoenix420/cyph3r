@@ -3,6 +3,7 @@ package output
 import (
 	"fmt"
 	"strings"
+
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 )
 
@@ -24,6 +25,74 @@ func Render(payload *models.IntelPayload) {
 	}
 }
 
+// RenderOSINTResults formats and prints the ExtractedIntel fields into the terminal HUD
+func RenderOSINTResults(target string, intel models.ExtractedIntel) {
+	fmt.Println()
+	fmt.Printf("%s╔═══════════════════════════════════════════════════════════════╗\n", NeonPink)
+	visibleText := fmt.Sprintf("[!] TARGET_NODE: %s", target)
+	width := 59 
+	padding := width - len(visibleText)
+	if padding < {
+		padding = 0
+	}
+	fmt.Printf("║ %s[!] TARGET_NODE: %s%s%s %s║\n", Cyan, NeonYellow, target, strings.Repeat(" ", padding), NeonPink)
+	fmt.Printf("╚═══════════════════════════════════════════════════════════════%s\n", Reset)
+	fmt.Println()
+
+	// Unmasked Origin Nodes
+	fmt.Printf("%s[ UNMASKED REAL ORIGIN NODES ]%s\n", NeonGreen, Reset)
+	if len(intel.RealIPs) > 0 {
+		for _, ip := range intel.RealIPs {
+			fmt.Printf("  ↳ %s\n", ip)
+		}
+	} else {
+		fmt.Println("  ↳ No unmasked origin IPs detected (Strict CDN edge encapsulation active).")
+	}
+	fmt.Println()
+
+	// Favicon Fingerprint
+	fmt.Printf("%s[ FAVICON FINGERPRINT ]%s\n", NeonBlue, Reset)
+	if intel.FaviconHash != "" && intel.FaviconHash != "Unavailable" {
+		fmt.Printf("  ↳ MD5: %s\n", intel.FaviconHash)
+	} else {
+		fmt.Println("  ↳ Unavailable")
+	}
+	fmt.Println()
+
+	// Harvested Emails & Registry Contacts
+	fmt.Printf("%s[ HARVESTED EMAILS & REGISTRY CONTACTS ]%s\n", NeonYellow, Reset)
+	if len(intel.Emails) > 0 {
+		for _, email := range intel.Emails {
+			fmt.Printf("  ↳ %s\n", email)
+		}
+	} else {
+		fmt.Println("  ↳ None exposed in public records.")
+	}
+	fmt.Println()
+
+	// Extracted Phone Vectors
+	fmt.Printf("%s[ EXTRACTED PHONE VECTORS ]%s\n", Cyan, Reset)
+	if len(intel.PhoneNumbers) > 0 {
+		for _, phone := range intel.PhoneNumbers {
+			fmt.Printf("  ↳ %s\n", phone)
+		}
+	} else {
+		fmt.Println("  ↳ None detected.")
+	}
+	fmt.Println()
+
+	// Leaked Social Media References
+	fmt.Printf("%s[ LEAKED SOCIAL MEDIA REFERENCES ]%s\n", Red, Reset)
+	if len(intel.SocialHandles) > 0 {
+		for _, social := range intel.SocialHandles {
+			fmt.Printf("  ↳ %s\n", social)
+		}
+	} else {
+		fmt.Println("  ↳ None mapped.")
+	}
+	fmt.Println()
+}
+
 func renderEmailLayout(payload *models.IntelPayload) {
 	fmt.Printf("%s╔═══════════════════════════════════════════════════════════════╗", NeonPink)
 	visibleText := fmt.Sprintf("[!] TARGET_IDENTITY: %s", payload.Target)
@@ -31,7 +100,7 @@ func renderEmailLayout(payload *models.IntelPayload) {
 	padding := width - len(visibleText)
 	if padding < 0 { padding = 0 }
 	fmt.Printf("\n║ %s[!] TARGET_IDENTITY: %s%s%s %s║", Cyan, NeonYellow, payload.Target, strings.Repeat(" ", padding), NeonPink)
-	fmt.Printf("\n╚═══════════════════════════════════════════════════════════════╝%s\n", Reset)
+	fmt.Printf("\n╚═══════════════════════════════════════════════════════════════%s\n", Reset)
 
 	fmt.Printf("\n%s[ IDENTITY PROFILE VECTOR ]%s\n", NeonGreen, Reset)
 	parts := strings.Split(payload.Target, "@")
@@ -53,7 +122,6 @@ func renderPhoneLayout(payload *models.IntelPayload) {
 	fmt.Printf("\n%s[+] TELEPHONY INTELLIGENCE VECTOR: %s%s", NeonGreen, payload.Target, Reset)
 	fmt.Printf("\n%s[-] TARGET MATRIX CLASSIFICATION: CEL_TRACKING_REPORT%s\n", NeonPink, Reset)
 	
-	// FIXED: Handled phone raw data strings directly to align perfectly with your model schemas
 	displayInfo := payload.Phone
 	if displayInfo == "" {
 		displayInfo = "Active Subscriber Line (Metadata Masked)"
@@ -81,7 +149,7 @@ func renderInfrastructureLayout(payload *models.IntelPayload) {
 	padding := width - len(visibleText)
 	if padding < 0 { padding = 0 }
 	fmt.Printf("\n║ %s[!] TARGET_NODE: %s%s%s %s║", Cyan, NeonPink, payload.Target, strings.Repeat(" ", padding), NeonBlue)
-	fmt.Printf("\n╚═══════════════════════════════════════════════════════════════╝%s\n", Reset)
+	fmt.Printf("\n╚═══════════════════════════════════════════════════════════════%s\n", Reset)
 
 	fmt.Printf("\n%s[ REGISTRATION INTEL ]%s\n", NeonYellow, Reset)
 	fmt.Printf(" • %-18s %s%s\n", "ENTITY OWNER:", NeonGreen, payload.OwnerName)
