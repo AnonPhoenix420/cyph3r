@@ -102,12 +102,30 @@ func DiscoverOriginAndOSINT(targetDomain string) models.ExtractedIntel {
 		}
 	}
 
-	// 3. Harvest DNS TXT Records & Global RDAP Registry Telemetry
+	// 3. Harvest DNS Records (TXT, MX, NS) & Global RDAP Registry Telemetry
+	var dnsBuilder strings.Builder
+
 	txtRecords, _ := net.LookupTXT(targetDomain)
-	rawText := strings.Join(txtRecords, " ")
+	for _, txt := range txtRecords {
+		dnsBuilder.WriteString(txt + " ")
+	}
+
+	mxRecords, err := net.LookupMX(targetDomain)
+	if err == nil {
+		for _, mx := range mxRecords {
+			dnsBuilder.WriteString(mx.Host + " ")
+		}
+	}
+
+	nsRecords, err := net.LookupNS(targetDomain)
+	if err == nil {
+		for _, ns := range nsRecords {
+			dnsBuilder.WriteString(ns.Host + " ")
+		}
+	}
 
 	rdapText := fetchRDAPRegistryData(targetDomain, client)
-	combinedText := rawText + " " + rdapText
+	combinedText := dnsBuilder.String() + " " + rdapText
 
 	intel.Emails = extractEmails(combinedText)
 	intel.PhoneNumbers = extractPhones(combinedText)
