@@ -28,6 +28,7 @@ func main() {
 	wsFlag := flag.Bool("ws", false, "Engage WebSocket connection & frame exhaustion engine")
 
 	osintFlag := flag.Bool("osint", false, "Extract unmasked origin IPs, emails, phones, and social footprints")
+	scanFlag := flag.Bool("scan", false, "Engage accelerated TCP port scanner and service probes")
 	
 	// Control & Timing Flags (with intelligent defaults)
 	concurrencyFlag := flag.Int("c", 500, "Concurrency pool size (Default: 500 sockets/workers)")
@@ -52,7 +53,6 @@ func main() {
 
 	// Ensure scheme exists for URL parsing fallback
 	if !strings.HasPrefix(rawTarget, "http://") && !strings.HasPrefix(rawTarget, "https://") && !strings.HasPrefix(rawTarget, "ws://") && !strings.HasPrefix(rawTarget, "wss://") {
-		// If no scheme, check if user specified port or if it's HTTPS by default
 		if *portFlag == 443 || strings.Contains(rawTarget, ":443") {
 			rawTarget = "https://" + rawTarget
 		} else {
@@ -62,14 +62,12 @@ func main() {
 
 	parsedURL, err := url.Parse(rawTarget)
 	if err != nil {
-		// Fallback manual parse for raw IP/domain strings
 		targetHost = rawTarget
 		isTLS = strings.HasPrefix(rawTarget, "https") || strings.HasPrefix(rawTarget, "wss")
 	} else {
 		targetHost = parsedURL.Hostname()
 		isTLS = parsedURL.Scheme == "https" || parsedURL.Scheme == "wss"
 		
-		// Extract port from URL if present
 		if parsedURL.Port() != "" {
 			fmt.Sscanf(parsedURL.Port(), "%d", &targetPort)
 		}
@@ -77,9 +75,8 @@ func main() {
 
 	// Apply Port Fallback Logic
 	if *portFlag > 0 {
-		targetPort = *portFlag // Explicit flag takes priority
+		targetPort = *portFlag
 	} else if targetPort == 0 {
-		// Default port fallback based on protocol scheme
 		if isTLS {
 			targetPort = 443
 		} else {
@@ -87,7 +84,7 @@ func main() {
 		}
 	}
 
-	// Construct standardized targets for both HTTP clients and L4 TCP engines
+	// Construct standardized targets
 	if strings.HasPrefix(rawTarget, "ws://") || strings.HasPrefix(rawTarget, "wss://") {
 		finalURL = rawTarget
 	} else {
@@ -151,7 +148,14 @@ func main() {
 		return
 	}
 
-	// 2. Stress & Benchmarking Engines (using fully resolved URLs & Addresses)
+	// 2. Accelerated Tactical Port Scan Mode
+	if *scanFlag {
+		fmt.Printf("[+] LAUNCHING ACCELERATED PORT SCANNER & SERVICE PROBES: %s\n", targetAddr)
+		probes.RunPortScan(targetAddr)
+		return
+	}
+
+	// 3. Stress & Benchmarking Engines
 	if *hulkFlag {
 		stress.ExecuteContinuousStress(finalURL, *concurrencyFlag, *durationFlag)
 		return
@@ -181,12 +185,12 @@ func main() {
 		return
 	}
 
-	// 3. Live HUD Monitor Mode
+	// 4. Live HUD Monitor Mode
 	if *monitorFlag {
 		fmt.Printf("[+] LAUNCHING PERSISTENT HUD MONITOR METRICS FEED\n • ROUTE TARGET: %s\n", targetAddr)
 		probes.ExecuteContinuousMonitor(targetAddr, strings.ToLower(*protoFlag), *intervalFlag)
 		return
 	}
 
-	fmt.Printf("[+] Target resolved: %s (Port: %d). Use --osint, --monitor, --hulk, --slowloris, --synflood, --wrk, --rudy, --h2, or --ws to engage modules.\n", targetHost, targetPort)
+	fmt.Printf("[+] Target resolved: %s (Port: %d). Use --osint, --scan, --monitor, --hulk, --slowloris, --synflood, --wrk, --rudy, --h2, or --ws to engage modules.\n", targetHost, targetPort)
 }
