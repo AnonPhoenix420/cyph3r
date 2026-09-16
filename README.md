@@ -13,6 +13,8 @@
 ![License](https://img.shields.io/badge/License-MIT-magenta?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-blue?style=for-the-badge)
 
+ ⚠️ **IMPORTANT LEGAL NOTICE:** Use of this software is strictly governed by the [Acceptable Use Policy (POLICY.md)](./POLICY.md). By cloning, building, or running CYPH3R, you agree to use this tool exclusively for authorized auditing, resilience testing, and educational purposes on systems you own or have explicit written permission to test. Unauthorized usage violates federal and international law.
+
 
 # 🧠 Overview
 
