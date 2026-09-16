@@ -102,14 +102,33 @@ func DiscoverOriginAndOSINT(targetDomain string) models.ExtractedIntel {
 		}
 	}
 
+	// 3. Harvest DNS TXT Records & Global RDAP Registry Telemetry
 	txtRecords, _ := net.LookupTXT(targetDomain)
 	rawText := strings.Join(txtRecords, " ")
 
-	intel.Emails = extractEmails(rawText)
-	intel.PhoneNumbers = extractPhones(rawText)
-	intel.SocialHandles = extractSocials(rawText)
+	rdapText := fetchRDAPRegistryData(targetDomain, client)
+	combinedText := rawText + " " + rdapText
+
+	intel.Emails = extractEmails(combinedText)
+	intel.PhoneNumbers = extractPhones(combinedText)
+	intel.SocialHandles = extractSocials(combinedText)
 
 	return intel
+}
+
+func fetchRDAPRegistryData(domain string, client *http.Client) string {
+	fmt.Printf("[*] Querying global RDAP registry databases for %s...\n", domain)
+	rdapURL := fmt.Sprintf("https://rdap.org/domain/%s", domain)
+	resp, err := client.Get(rdapURL)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return ""
+	}
+	return string(body)
 }
 
 func fetchFaviconHash(domain string, client *http.Client) string {
