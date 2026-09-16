@@ -150,8 +150,8 @@ func main() {
 
 	// 2. Accelerated Tactical Port Scan Mode
 	if *scanFlag {
-		fmt.Printf("[+] LAUNCHING ACCELERATED PORT SCANNER & SERVICE PROBES: %s\n", targetAddr)
-		probes.RunPortScan(targetAddr)
+		fmt.Printf("[+] LAUNCHING ACCELERATED PORT SCANNER & SERVICE PROBES: %s\n", targetHost)
+		probes.ExecutePortScan(targetHost)
 		return
 	}
 
