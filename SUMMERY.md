@@ -65,7 +65,8 @@ cyph3r --target <host> --wrk -c 100 -d 30
 
 
 
-```make``` — Syncs dependencies (go mod tidy), cleans caches, and builds the production binary.
+```make``` — Syncs dependencies 
+(```go mod tidy```), cleans caches, and builds the production binary.
 
 ```make cross-compile``` — Builds standalone binaries for Linux, Windows, and macOS into the dist/ directory.
 
