@@ -15,7 +15,15 @@ if ! command -v go &> /dev/null; then
     exit 1
 fi
 
-# 2. Run the modern package layout build command
+# 2. Sync module dependencies
+echo -e "${NeonBlue}[*] Syncing module dependencies...${Reset}"
+go mod tidy
+if [ $? -ne 0 ]; then
+    echo -e "${Red}[-] Dependency synchronization failed.${Reset}"
+    exit 1
+fi
+
+# 3. Run the modern package layout build command
 echo -e "${NeonBlue}[*] Compiling core dependencies and layout modules...${Reset}"
 go build -o cyph3r ./cmd/cyph3r
 
@@ -24,10 +32,10 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# 3. Grant local execution permissions
+# 4. Grant local execution permissions
 chmod +x cyph3r
 
-# 4. Attempt to move binary to global system path for seamless execution
+# 5. Attempt to move binary to global system path for seamless execution
 echo -e "${NeonBlue}[*] Copying binary matrix to global system path (/usr/local/bin/)...${Reset}"
 if [ "$EUID" -ne 0 ]; then
     # If not running as root, attempt sudo
