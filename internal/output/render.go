@@ -32,7 +32,7 @@ func RenderOSINTResults(target string, intel models.ExtractedIntel) {
 	visibleText := fmt.Sprintf("[!] TARGET_NODE: %s", target)
 	width := 59 
 	padding := width - len(visibleText)
-	if padding < { 0
+	if padding < 0 {
 		padding = 0
 	}
 	fmt.Printf("║ %s[!] TARGET_NODE: %s%s%s %s║\n", Cyan, NeonYellow, target, strings.Repeat(" ", padding), NeonPink)
