@@ -46,9 +46,9 @@ LABEL org.opencontainers.image.title="CYPH3R" \
       org.opencontainers.image.version="2.6" \
       org.opencontainers.image.authors="AnonPhoenix420"
 
-# Healthcheck (optional but recommended)
+# Healthcheck
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s \
-  CMD ./cyph3r --target 8.8.8.8 --full || exit 1
+  CMD ./cyph3r --target 8.8.8.8 || exit 1
 
 # Default command
 ENTRYPOINT ["./cyph3r"]
