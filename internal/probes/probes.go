@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/AnonPhoenix420/cyph3r/internal/intel"
 	"github.com/AnonPhoenix420/cyph3r/internal/output"
 )
 
@@ -80,12 +81,10 @@ func hasPort(host string) bool {
 	return err == nil
 }
 
-// ExecutePortScan performs a full port scan (used by --full dox)
+// ExecutePortScan performs a full port scan across common tactical vectors
 func ExecutePortScan(target string) []string {
-	// Placeholder - expand with your full port scanning logic
-	fmt.Printf("%s[*] Starting port scan on %s...%s\n", output.Cyan, target, output.Reset)
+	fmt.Printf("%s[*] Starting tactical port sweep on %s...%s\n", output.Cyan, target, output.Reset)
 	
-	// Example common ports (expand as needed)
 	commonPorts := []int{21, 22, 23, 25, 53, 80, 443, 445, 1433, 3306, 3389, 5432, 5900, 8080}
 	openPorts := []string{}
 
@@ -93,10 +92,37 @@ func ExecutePortScan(target string) []string {
 		address := fmt.Sprintf("%s:%d", target, port)
 		conn, err := net.DialTimeout("tcp", address, 800*time.Millisecond)
 		if err == nil {
-			openPorts = append(openPorts, fmt.Sprintf("%d (OPEN)", port))
+			openPorts = append(openPorts, fmt.Sprintf("Port %d (OPEN)", port))
 			conn.Close()
 		}
 	}
 
 	return openPorts
+}
+
+// ExecuteUnifiedRecon chains passive RDAP/OSINT harvesting with active port sweeping
+func ExecuteUnifiedRecon(target string) {
+	fmt.Printf("\n%s╔═══════════════════════════════════════════════════════════════╗%s\n", output.NeonBlue, output.Reset)
+	fmt.Printf("%s║           CYPH3R UNIFIED RECONNAISSANCE ENGINE              ║%s\n", output.NeonBlue, output.Reset)
+	fmt.Printf("%s╚═══════════════════════════════════════════════════════════════╝%s\n\n", output.NeonBlue, output.Reset)
+
+	// 1. Run the passive OSINT & RDAP extraction module
+	extractedIntel := intel.DiscoverOriginAndOSINT(target)
+
+	// 2. Render the harvested intel using the UI module
+	output.RenderOSINTResults(target, extractedIntel)
+
+	// 3. Chain into active infrastructure port sweeping
+	fmt.Printf("\n%s[ ACTIVE INFRASTRUCTURE AUDIT ]%s\n", output.NeonGreen, output.Reset)
+	openPorts := ExecutePortScan(target)
+
+	if len(openPorts) > 0 {
+		fmt.Printf("\n%s[+] Verified Open Listeners:%s\n", output.NeonGreen, output.Reset)
+		for _, portInfo := range openPorts {
+			fmt.Printf("  ↳ %s\n", portInfo)
+		}
+	} else {
+		fmt.Printf("\n%s[-] No open listening ports detected on standard profiles.%s\n", output.Red, output.Reset)
+	}
+	fmt.Println()
 }
