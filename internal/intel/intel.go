@@ -20,6 +20,18 @@ type CrtShEntry struct {
 	NameValue string `json:"name_value"`
 }
 
+type GeoAPIResponse struct {
+	Status      string  `json:"status"`
+	Country     string  `json:"country"`
+	CountryCode string  `json:"countryCode"`
+	RegionName  string  `json:"regionName"`
+	City        string  `json:"city"`
+	Zip         string  `json:"zip"`
+	Lat         float64 `json:"lat"`
+	Lon         float64 `json:"lon"`
+	Timezone    string  `json:"timezone"`
+}
+
 func DiscoverOriginAndOSINT(targetDomain string) models.ExtractedIntel {
 	var intel models.ExtractedIntel
 	subMap := make(map[string]bool)
@@ -144,6 +156,9 @@ func ExecuteComprehensiveReport(targetDomain string) models.ComprehensiveReport 
 		primaryIP = ips[0].String()
 	}
 
+	client := &http.Client{Timeout: 5 * time.Second}
+	locData := fetchGeoLocation(primaryIP, client)
+
 	report := models.ComprehensiveReport{
 		Target:     targetDomain,
 		TargetType: models.TargetDomain,
@@ -151,13 +166,7 @@ func ExecuteComprehensiveReport(targetDomain string) models.ComprehensiveReport 
 		Timestamp:  time.Now(),
 		RiskScore:  65,
 
-		Location: models.LocationData{
-			Country:     "United States",
-			CountryCode: "US",
-			City:        "Edge Infrastructure",
-			Coordinates: "N/A",
-			RadiusKM:    0.0,
-		},
+		Location: locData,
 
 		Associated: rawIntel.RealIPs,
 
@@ -185,6 +194,52 @@ func ExecuteComprehensiveReport(targetDomain string) models.ComprehensiveReport 
 	}
 
 	return report
+}
+
+func fetchGeoLocation(ip string, client *http.Client) models.LocationData {
+	defaultLoc := models.LocationData{
+		Country:     "Unknown",
+		CountryCode: "XX",
+		City:        "Edge Infrastructure",
+		Coordinates: "N/A",
+		RadiusKM:    0.0,
+	}
+
+	if ip == "" || strings.HasPrefix(ip, "127.") || strings.HasPrefix(ip, "10.") {
+		return defaultLoc
+	}
+
+	geoURL := fmt.Sprintf("http://ip-api.com/json/%s", ip)
+	resp, err := client.Get(geoURL)
+	if err != nil {
+		return defaultLoc
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return defaultLoc
+	}
+
+	var geo GeoAPIResponse
+	if err := json.Unmarshal(body, &geo); err != nil || geo.Status != "success" {
+		return defaultLoc
+	}
+
+	coords := fmt.Sprintf("%.4f° N, %.4f° E", geo.Lat, geo.Lon)
+	if geo.Lat < 0 {
+		coords = fmt.Sprintf("%.4f° S, %.4f° E", -geo.Lat, geo.Lon)
+	}
+
+	return models.LocationData{
+		Country:     geo.Country,
+		CountryCode: geo.CountryCode,
+		State:       geo.RegionName,
+		City:        geo.City,
+		ZIP:         geo.Zip,
+		Coordinates: coords,
+		RadiusKM:    15.0,
+	}
 }
 
 func fetchRDAPRegistryData(domain string, client *http.Client) string {
