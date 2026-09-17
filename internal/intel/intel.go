@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
@@ -30,6 +31,34 @@ type GeoAPIResponse struct {
 	Lat         float64 `json:"lat"`
 	Lon         float64 `json:"lon"`
 	Timezone    string  `json:"timezone"`
+}
+
+// CommonServicePorts defines a robust dictionary of high-value target ports
+var CommonServicePorts = map[int]string{
+	21:    "FTP",
+	22:    "SSH",
+	23:    "Telnet",
+	25:    "SMTP",
+	53:    "DNS",
+	80:    "HTTP",
+	110:   "POP3",
+	135:   "MSRPC",
+	139:   "NetBIOS",
+	143:   "IMAP",
+	443:   "HTTPS",
+	445:   "SMB",
+	993:   "IMAPS",
+	995:   "POP3S",
+	1433:  "MS-SQL",
+	1521:  "Oracle",
+	3306:  "MySQL",
+	3389:  "RDP",
+	5432:  "PostgreSQL",
+	5900:  "VNC",
+	6379:  "Redis",
+	8080:  "HTTP-Proxy",
+	8443:  "HTTPS-Alt",
+	27017: "MongoDB",
 }
 
 func DiscoverOriginAndOSINT(targetDomain string) models.ExtractedIntel {
@@ -168,8 +197,8 @@ func ExecuteComprehensiveReport(targetDomain string) models.ComprehensiveReport 
 
 		Location:   locData,
 		Associated: rawIntel.RealIPs,
-		Emails:     rawIntel.Emails,       // Directly mapped to models.ComprehensiveReport
-		Phones:     rawIntel.PhoneNumbers, // Directly mapped to models.ComprehensiveReport
+		Emails:     rawIntel.Emails,
+		Phones:     rawIntel.PhoneNumbers,
 
 		SQLCheck: models.SQLExposure{
 			Exposed:   false,
@@ -188,6 +217,42 @@ func ExecuteComprehensiveReport(targetDomain string) models.ComprehensiveReport 
 	}
 
 	return report
+}
+
+// ExecutePortScan performs a concurrent TCP port sweep across the service dictionary
+func ExecutePortScan(targetHost string) []string {
+	fmt.Printf("[*] Starting tactical port sweep on %s across %d common service vectors...\n", targetHost, len(CommonServicePorts))
+
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var openPorts []string
+
+	// Concurrency control channel to limit simultaneous socket dials
+	semaphore := make(chan struct{}, 100)
+
+	for port, service := range CommonServicePorts {
+		wg.Add(1)
+		go func(p int, svc string) {
+			defer wg.Done()
+			semaphore <- struct{}{}        // Acquire token
+			defer func() { <-semaphore }() // Release token
+
+			address := fmt.Sprintf("%s:%d", targetHost, p)
+			conn, err := net.DialTimeout("tcp", address, 1500*time.Millisecond)
+			if err == nil {
+				if conn != nil {
+					conn.Close()
+				}
+				resultStr := fmt.Sprintf("Port %d (%s) - OPEN", p, svc)
+				mu.Lock()
+				openPorts = append(openPorts, resultStr)
+				mu.Unlock()
+			}
+		}(port, service)
+	}
+
+	wg.Wait()
+	return openPorts
 }
 
 func fetchGeoLocation(ip string, client *http.Client) models.LocationData {
