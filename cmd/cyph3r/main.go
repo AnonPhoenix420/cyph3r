@@ -151,7 +151,16 @@ func main() {
 	// 2. Accelerated Tactical Port Scan Mode
 	if *scanFlag {
 		fmt.Printf("[+] LAUNCHING ACCELERATED PORT SCANNER & SERVICE PROBES: %s\n", targetHost)
-		probes.ExecutePortScan(targetHost)
+		openPorts := probes.ExecutePortScan(targetHost)
+		
+		if len(openPorts) > 0 {
+			fmt.Printf("\n[+] Verified Open Listeners:\n")
+			for _, portInfo := range openPorts {
+				fmt.Printf("  ↳ %s\n", portInfo)
+			}
+		} else {
+			fmt.Printf("\n[-] No open listening ports detected on standard profiles.\n")
+		}
 		return
 	}
 
