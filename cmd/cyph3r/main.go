@@ -130,6 +130,24 @@ func main() {
 			fmt.Println("  ↳ No auxiliary nodes mapped.")
 		}
 
+		fmt.Printf("\n[ HARVESTED EMAILS ]\n")
+		if len(report.Emails) > 0 {
+			for _, email := range report.Emails {
+				fmt.Printf("  ↳ %s\n", email)
+			}
+		} else {
+			fmt.Println("  ↳ None exposed.")
+		}
+
+		fmt.Printf("\n[ EXTRACTED PHONE VECTORS ]\n")
+		if len(report.Phones) > 0 {
+			for _, phone := range report.Phones {
+				fmt.Printf("  ↳ %s\n", phone)
+			}
+		} else {
+			fmt.Println("  ↳ None detected.")
+		}
+
 		fmt.Printf("\n[ DATABASE EXPOSURE METRICS ]\n")
 		fmt.Printf("  ↳ SQL Exposed: %t (Risk: %s)\n", report.SQLCheck.Exposed, report.SQLCheck.RiskLevel)
 
