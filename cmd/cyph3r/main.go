@@ -27,7 +27,7 @@ func main() {
 	h2Flag := flag.Bool("h2", false, "Engage HTTP/2 rapid reset stream engine")
 	wsFlag := flag.Bool("ws", false, "Engage WebSocket connection & frame exhaustion engine")
 
-	osintFlag := flag.Bool("osint", false, "Extract unmasked origin IPs, emails, phones, and social footprints")
+	osintFlag := flag.Bool("osint", false, "Extract comprehensive intelligence report, unmasked IPs, and digital footprints")
 	scanFlag := flag.Bool("scan", false, "Engage accelerated TCP port scanner and service probes")
 	
 	// Control & Timing Flags (with intelligent defaults)
@@ -101,46 +101,42 @@ func main() {
 
 	targetAddr := fmt.Sprintf("%s:%d", targetHost, targetPort)
 
-	// 1. Deep OSINT & Origin Unmasking Mode
+	// 1. Deep OSINT & Comprehensive Intelligence Report Mode
 	if *osintFlag {
-		fmt.Printf("[+] LAUNCHING DEEP OSINT & PROXY-BYPASS INTEL SCAN: %s\n", targetHost)
-		results := intel.DiscoverOriginAndOSINT(targetHost)
+		fmt.Printf("[+] LAUNCHING FULL-STACK COMPREHENSIVE INTEL SCAN: %s\n", targetHost)
+		report := intel.ExecuteComprehensiveReport(targetHost)
 
 		fmt.Println("\n╔═══════════════════════════════════════════════════════════════╗")
-		fmt.Println("║               CYPH3R DEEP OSINT FIELD INTELLIGENCE          ║")
+		fmt.Println("║         CYPH3R COMPREHENSIVE INTELLIGENCE FIELD REPORT        ║")
 		fmt.Println("╚═══════════════════════════════════════════════════════════════╝")
 		
-		fmt.Println("\n[ UNMASKED REAL ORIGIN NODES ]")
-		if len(results.RealIPs) > 0 {
-			for _, ip := range results.RealIPs {
-				fmt.Printf("  ↳ %s\n", ip)
+		fmt.Printf("\n[ TARGET METADATA ]\n")
+		fmt.Printf("  ↳ Target:     %s\n", report.Target)
+		fmt.Printf("  ↳ Type:       %s\n", report.TargetType)
+		fmt.Printf("  ↳ Primary IP: %s\n", report.ReverseDNS)
+		fmt.Printf("  ↳ Risk Score: %d/100\n", report.RiskScore)
+		fmt.Printf("  ↳ Timestamp:  %s\n", report.Timestamp.Format(time.RFC3339))
+
+		fmt.Printf("\n[ GEOLOCATION TELEMETRY ]\n")
+		fmt.Printf("  ↳ Location:    %s, %s (%s)\n", report.Location.City, report.Location.Country, report.Location.CountryCode)
+		fmt.Printf("  ↳ Coordinates: %s\n", report.Location.Coordinates)
+
+		fmt.Printf("\n[ UNMASKED NODES & ASSOCIATED ASSETS ]\n")
+		if len(report.Associated) > 0 {
+			for _, asset := range report.Associated {
+				fmt.Printf("  ↳ %s\n", asset)
 			}
 		} else {
-			fmt.Println("  ↳ No unmasked origin IPs detected (Strict CDN edge encapsulation active).")
+			fmt.Println("  ↳ No auxiliary nodes mapped.")
 		}
 
-		fmt.Println("\n[ HARVESTED EMAILS ]")
-		if len(results.Emails) > 0 {
-			for _, email := range results.Emails {
-				fmt.Printf("  ↳ %s\n", email)
-			}
-		} else {
-			fmt.Println("  ↳ None exposed in public records.")
-		}
+		fmt.Printf("\n[ DATABASE EXPOSURE METRICS ]\n")
+		fmt.Printf("  ↳ SQL Exposed: %t (Risk: %s)\n", report.SQLCheck.Exposed, report.SQLCheck.RiskLevel)
 
-		fmt.Println("\n[ EXTRACTED PHONE VECTORS ]")
-		if len(results.PhoneNumbers) > 0 {
-			for _, phone := range results.PhoneNumbers {
-				fmt.Printf("  ↳ %s\n", phone)
-			}
-		} else {
-			fmt.Println("  ↳ None detected.")
-		}
-
-		fmt.Println("\n[ LEAKED SOCIAL MEDIA REFERENCES ]")
-		if len(results.SocialHandles) > 0 {
-			for _, soc := range results.SocialHandles {
-				fmt.Printf("  ↳ https://%s\n", soc)
+		fmt.Printf("\n[ MAPPED DIGITAL FOOTPRINTS ]\n")
+		if len(report.SocialProfiles) > 0 {
+			for _, profile := range report.SocialProfiles {
+				fmt.Printf("  ↳ [%s] %s (Confidence: %d%%)\n", profile.Platform, profile.ProfileURL, profile.Confidence)
 			}
 		} else {
 			fmt.Println("  ↳ None mapped.")
