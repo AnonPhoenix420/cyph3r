@@ -166,22 +166,16 @@ func ExecuteComprehensiveReport(targetDomain string) models.ComprehensiveReport 
 		Timestamp:  time.Now(),
 		RiskScore:  65,
 
-		Location: locData,
-
+		Location:   locData,
 		Associated: rawIntel.RealIPs,
+		Emails:     rawIntel.Emails,       // Directly mapped to models.ComprehensiveReport
+		Phones:     rawIntel.PhoneNumbers, // Directly mapped to models.ComprehensiveReport
 
 		SQLCheck: models.SQLExposure{
 			Exposed:   false,
 			Ports:     []int{},
 			RiskLevel: "LOW",
 		},
-	}
-
-	for _, email := range rawIntel.Emails {
-		report.Associated = append(report.Associated, "Email Vector: "+email)
-	}
-	for _, phone := range rawIntel.PhoneNumbers {
-		report.Associated = append(report.Associated, "Phone Vector: "+phone)
 	}
 
 	for _, handle := range rawIntel.SocialHandles {
