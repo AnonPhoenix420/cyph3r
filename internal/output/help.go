@@ -18,29 +18,36 @@ func DisplayHelp() {
 [!] USAGE: cyph3r --target <host> [options]
 
 [+] OPERATIONAL VECTORS:
-  --target      Set target URL/IP (e.g. 192.168.1.1)
-  -p            Set target port (default 80)
-  --method      Verb (GET/POST) for tests
-  -c            Concurrency level (threads/streams)
-  -d            Duration of operations in seconds
+  --target      Set target URL, domain, or IP (e.g. example.com, 192.168.1.1)
+  -p            Set target port (Auto-detected from URL or defaults to 80/443)
+  -c            Concurrency pool size (Default: 500 sockets/workers)
+  -d            Test duration in seconds (Default: 0 for infinite/continuous)
+  --interval    HUD monitor ping interval (Default: 2s)
 
-[+] INTELLIGENCE / RECON:
-  --monitor     Engage HUD monitor loop
-  --phone       Execute standalone telephony lookup
-  --test-integrity Engage validation suite
-  --json        Format output as raw JSON matrix
+[+] INTELLIGENCE & RECON:
+  --osint       Extract comprehensive intelligence report, unmasked IPs, & footprints
+  --scan        Engage accelerated TCP port scanner and service probes
+  --monitor     Engage live HUD connection monitor loop
+  --phone       Execute standalone international phone metadata lookup
 
-[+] RESILIENCE / STRESS TESTING:
-  --hulk        Engage extreme resilience stress testing
-  --proto       Protocol mode: tcp, udp, or http
-  
+[+] STRESS & BENCHMARKING SUITE:
+  --hulk        Engage continuous resilience HULK stress engine
+  --slowloris   Engage Slowloris slow-rate exhaustion engine
+  --synflood    Engage Layer 4 TCP state/SYN flood engine
+  --wrk         Engage Wrk-style high-performance benchmarking engine
+  --rudy        Engage RUDY slow-POST exhaustion engine
+  --h2          Engage HTTP/2 rapid reset stream engine
+  --ws          Engage WebSocket connection & frame exhaustion engine
+  --proto       Wire protocol mode: tcp or udp (for monitor)
+
 [+] SYSTEM:
-  -v            Enable full logging debug tracing
   --help        Display this menu
 
 [!] EXAMPLES:
-  Recon: ./cyph3r --target google.com
-  Stress: ./cyph3r --target 192.168.1.50 -p 443 --hulk --proto tcp -c 500 -d 30
+  OSINT Recon:  ./cyph3r --target google.com --osint
+  Port Scan:    ./cyph3r --target google.com --scan
+  Phone Lookup: ./cyph3r --phone +14155552671
+  Stress Test:  ./cyph3r --target 192.168.1.50 --hulk -c 500 -d 30
 `)
 	os.Exit(0)
 }
