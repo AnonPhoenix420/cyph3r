@@ -102,6 +102,8 @@ type ComprehensiveReport struct {
 	ReverseDNS     string          `json:"reverse_dns"`
 	Location       LocationData    `json:"location"`
 	Associated     []string        `json:"associated"`
+	Emails         []string        `json:"emails"`
+	Phones         []string        `json:"phones"`
 	SocialProfiles []SocialProfile `json:"social_profiles"`
 	Ports          []PortInfo      `json:"ports"`
 	SQLCheck       SQLExposure     `json:"sql_check"`
