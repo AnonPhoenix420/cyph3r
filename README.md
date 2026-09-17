@@ -211,9 +211,9 @@ CYPH3R contains multiple primary tools packed into a single binary. Here is how 
 Extract comprehensive intelligence reports, unmasked real IPs, discovered subdomains, harvested emails, phone vectors, and digital footprints.
 
 Command:
-
+```
 ./cyph3r --target <host> --osint
-
+```
 Example:
 
 ./cyph3r --target google.com --osint
@@ -221,9 +221,9 @@ Example:
 Accelerated Tactical Port Scan
 
 Command:
-
+```
 ./cyph3r --target <host> --scan
-
+```
 Example:
 
 ./cyph3r --target google.com --scan
@@ -232,9 +232,9 @@ Example:
 Track the uptime and latency of a target over time. Perfect for stress testing or uptime verification.
 
 Command:
-
+```
 ./cyph3r --target <host> --proto <type> --monitor
-
+```
 Example:
 
 ./cyph3r --target google.com --proto https --monitor --interval 5s
@@ -245,9 +245,9 @@ Protocols supported: tcp, udp, http, https, ack, ping.
 Validate international phone numbers and retrieve regional/carrier metadata.
 
 Command:
-
+```
 ./cyph3r --phone <number>
-
+```
 Example:
 
 ./cyph3r --phone +14155552671
@@ -256,26 +256,33 @@ Example:
 Evaluate infrastructure resilience using 7 high-performance concurrency engines.
 
 HULK HTTP Flood:
+```
 ./cyph3r --target <host> --hulk
-
+```
 Slowloris Header Exhaustion:
+```
 ./cyph3r --target <host> --slowloris
-
+```
 Layer 4 SYN/State Flood:
+```
 ./cyph3r --target <host> --synflood
-
+```
 Wrk-Style Benchmark (with RPS & Latency tracking):
+```
 ./cyph3r --target <host> --wrk -c 100 -d 30
-
+```
 RUDY Slow-POST Exhaustion:
+```
 ./cyph3r --target <host> --rudy
-
+```
 HTTP/2 Rapid Reset Multiplexing:
+```
 ./cyph3r --target <host> --h2
-
+```
 WebSocket Connection & Frame Pool Exhaustion:
+```
 ./cyph3r --target <host> --ws
-
+```
 
 
 
