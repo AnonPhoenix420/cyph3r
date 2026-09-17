@@ -14,6 +14,7 @@ import (
 
 func main() {
 	targetFlag := flag.String("target", "", "Target domain, IPv4 address, or full URL (e.g., 192.168.1.50, example.com, https://target.com:8443)")
+	phoneFlag := flag.String("phone", "", "Target international phone number for metadata and carrier lookup")
 	portFlag := flag.Int("p", 0, "Target port (Optional: auto-detected from URL or defaults to 80/443)")
 	protoFlag := flag.String("proto", "tcp", "Wire protocol (tcp/udp)")
 	monitorFlag := flag.Bool("monitor", false, "Engage live HUD connection monitor loop")
@@ -37,8 +38,27 @@ func main() {
 
 	flag.Parse()
 
+	// 1. Handle Dedicated Phone Intelligence Mode First
+	if *phoneFlag != "" {
+		fmt.Printf("[+] LAUNCHING PHONE METADATA DECRYPTION: %s\n", *phoneFlag)
+		metrics := intel.GetPhoneMetrics(*phoneFlag)
+
+		fmt.Println("\n╔═══════════════════════════════════════════════════════════════╗")
+		fmt.Println("║               CYPH3R PHONE INTELLIGENCE REPORT                ║")
+		fmt.Println("╚═══════════════════════════════════════════════════════════════╝")
+		fmt.Printf("  ↳ Number:          %s\n", *phoneFlag)
+		fmt.Printf("  ↳ Line Status:     %s\n", metrics.LineStatus)
+		fmt.Printf("  ↳ Carrier:         %s\n", metrics.Carrier)
+		fmt.Printf("  ↳ Locale / Region: %s\n", metrics.Locale)
+		fmt.Printf("  ↳ Country Code:    +%d\n", metrics.CountryCode)
+		fmt.Printf("  ↳ National Format: %d\n", metrics.NationalNumber)
+		fmt.Printf("  ↳ Is Mobile:       %t\n", metrics.IsMobile)
+		fmt.Printf("  ↳ Risk Score:      %d/100\n", metrics.Risk)
+		return
+	}
+
 	if *targetFlag == "" {
-		fmt.Println("[!] Error: --target parameter is required (e.g., --target 192.168.1.100 or --target https://example.com:8080).")
+		fmt.Println("[!] Error: --target or --phone parameter is required (e.g., --target 192.168.1.100 or --phone +14155552671).")
 		return
 	}
 
@@ -101,7 +121,7 @@ func main() {
 
 	targetAddr := fmt.Sprintf("%s:%d", targetHost, targetPort)
 
-	// 1. Deep OSINT & Comprehensive Intelligence Report Mode
+	// 2. Deep OSINT & Comprehensive Intelligence Report Mode
 	if *osintFlag {
 		fmt.Printf("[+] LAUNCHING FULL-STACK COMPREHENSIVE INTEL SCAN: %s\n", targetHost)
 		report := intel.ExecuteComprehensiveReport(targetHost)
@@ -162,7 +182,7 @@ func main() {
 		return
 	}
 
-	// 2. Accelerated Tactical Port Scan Mode
+	// 3. Accelerated Tactical Port Scan Mode
 	if *scanFlag {
 		fmt.Printf("[+] LAUNCHING ACCELERATED PORT SCANNER & SERVICE PROBES: %s\n", targetHost)
 		openPorts := probes.ExecutePortScan(targetHost)
@@ -178,7 +198,7 @@ func main() {
 		return
 	}
 
-	// 3. Stress & Benchmarking Engines
+	// 4. Stress & Benchmarking Engines
 	if *hulkFlag {
 		stress.ExecuteContinuousStress(finalURL, *concurrencyFlag, *durationFlag)
 		return
@@ -208,12 +228,12 @@ func main() {
 		return
 	}
 
-	// 4. Live HUD Monitor Mode
+	// 5. Live HUD Monitor Mode
 	if *monitorFlag {
 		fmt.Printf("[+] LAUNCHING PERSISTENT HUD MONITOR METRICS FEED\n • ROUTE TARGET: %s\n", targetAddr)
 		probes.ExecuteContinuousMonitor(targetAddr, strings.ToLower(*protoFlag), *intervalFlag)
 		return
 	}
 
-	fmt.Printf("[+] Target resolved: %s (Port: %d). Use --osint, --scan, --monitor, --hulk, --slowloris, --synflood, --wrk, --rudy, --h2, or --ws to engage modules.\n", targetHost, targetPort)
+	fmt.Printf("[+] Target resolved: %s (Port: %d). Use --osint, --scan, --monitor, --phone, or stress engines to engage modules.\n", targetHost, targetPort)
 }
