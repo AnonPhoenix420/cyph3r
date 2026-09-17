@@ -205,34 +205,35 @@ The Pro Way: Install Chocolatey and run
 ```choco install make```
 
 # 🚀 Tool Usage Guide
-
 CYPH3R contains multiple primary tools packed into a single binary. Here is how to use each.
 
-
-🛡️ Tool 1: Target Intelligence (OSINT)
-Retrieve ISP, Organization, City, Zip, and GPS coordinates for any IP or Domain.
-
-Command:
-
-```./cyph3r --target <host>```
-
-Example: 
-
-./cyph3r --target 8.8.8.8
-
-Full Reconnaissance (Intelligence + Port Scan)
+🛡️ Tool 1: Target Intelligence & OSINT Reconnaissance
+Extract comprehensive intelligence reports, unmasked real IPs, discovered subdomains, harvested emails, phone vectors, and digital footprints.
 
 Command:
 
-```./cyph3r --target google.com --scan```
+./cyph3r --target <host> --osint
 
+Example:
 
-📡 Tool 2: Continuous Monitor (HUD Feed)
+./cyph3r --target google.com --osint
+
+Accelerated Tactical Port Scan
+
+Command:
+
+./cyph3r --target <host> --scan
+
+Example:
+
+./cyph3r --target google.com --scan
+
+📡 Tool 2: Continuous Monitor (HUD Feed) 
 Track the uptime and latency of a target over time. Perfect for stress testing or uptime verification.
 
 Command:
 
-```./cyph3r --target <host> --proto <type> --monitor```
+./cyph3r --target <host> --proto <type> --monitor
 
 Example:
 
@@ -240,34 +241,43 @@ Example:
 
 Protocols supported: tcp, udp, http, https, ack, ping.
 
-
-📱 Tool 3: Phone Metadata Lookup
+📱 Tool 3: Phone Metadata Lookup 
 Validate international phone numbers and retrieve regional/carrier metadata.
 
 Command:
 
-```./cyph3r --phone <number>```
+./cyph3r --phone <number>
 
-Example: 
+Example:
 
 ./cyph3r --phone +14155552671
 
 ⚡ Tool 4: Multi-Vector Stress & Benchmarking Suite
-
 Evaluate infrastructure resilience using 7 high-performance concurrency engines.
 
-
 HULK HTTP Flood:
+./cyph3r --target <host> --hulk
 
-```./cyph3r --target <host> --hulk```
+Slowloris Header Exhaustion:
+./cyph3r --target <host> --slowloris
 
-Slowloris Header Exhaustion: 
+Layer 4 SYN/State Flood:
+./cyph3r --target <host> --synflood
 
-```./cyph3r --target <host> --slowloris```
+Wrk-Style Benchmark (with RPS & Latency tracking):
+./cyph3r --target <host> --wrk -c 100 -d 30
 
-Layer 4 SYN/State Flood: 
+RUDY Slow-POST Exhaustion:
+./cyph3r --target <host> --rudy
 
-```./cyph3r --target <host> --synflood```
+HTTP/2 Rapid Reset Multiplexing:
+./cyph3r --target <host> --h2
+
+WebSocket Connection & Frame Pool Exhaustion:
+./cyph3r --target <host> --ws
+
+
+
 
 Wrk-Style Benchmark (with RPS & Latency tracking):
 
