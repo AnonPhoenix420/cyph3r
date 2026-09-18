@@ -18,11 +18,11 @@
 
 # 🧠 Overview
 
-# 🛡️ Cyph3r
-
-CYPH3R is a professional-grade network reconnaissance, monitoring, and infrastructure resilience suite built in Go. It operates on a "Zero-Key" philosophy, providing deep OSINT (ISP, Geo, Metadata), multi-protocol connectivity testing, and an advanced 7-vector stress suite without requiring external API subscriptions.
+🛡️ CYPH3R is a professional-grade network reconnaissance, monitoring, and infrastructure resilience suite built in Go. It operates on a "Zero-Key" philosophy, providing deep OSINT (ISP, Geo, Metadata), multi-protocol connectivity testing, stealth tunneling via Tor, and an advanced 7-vector stress suite without requiring external API subscriptions.
 
 # 🚀 CORE CAPABILITIES
+
+- **Ghost Mode Stealth:** Seamless SOCKS5/Tor tunneling (127.0.0.1:9050) for all outbound HTTP requests, benchmarks, OSINT queries, and port sweeps, complete with built-in safety guardrails.
 
 - **Node Intelligence:** Automated registrar, ISP, and geographic coordinate mapping.
 
@@ -49,6 +49,7 @@ cyph3r/
 ├── cmd/cyph3r/main.go
 ├── internal/
 │   ├── models/models.go
+│   ├── ghost/ (ghost.go)
 │   ├── intel/ (intel.go, dns.go)
 │   ├── probes/ (probes.go, scanner.go)
 │   ├── stress/ (stress.go)
@@ -58,6 +59,8 @@ cyph3r/
 CYPH3R uses a modular internal structure to ensure high-speed execution and zero dependency clashing:
 
 * `cmd/cyph3r/`: The primary CLI entry point.
+
+* `internal/ghost/`: SOCKS5/Tor transport layer, stealth tunneling, and jitter/timeout controls.
 
 * `internal/intel/`: OSINT logic for IP/Domain and Phone metadata.
 
@@ -209,6 +212,12 @@ The Pro Way: Install Chocolatey and run
 # 🚀 Tool Usage Guide
 CYPH3R contains multiple primary tools packed into a single binary. Here is how to use each.
 
+
+👻 Global Flag: Ghost Mode (`--ghost`)
+Route all traffic securely through Tor/SOCKS5 (`127.0.0.1:9050`) by appending --ghost to any command.
+(Note: Incompatible with `--synflood` due to raw socket constraints).
+
+
 🛡️ Tool 1: Target Intelligence & OSINT Reconnaissance
 Extract comprehensive intelligence reports, unmasked real IPs, discovered subdomains, harvested emails, phone vectors, and digital footprints.
 
@@ -218,7 +227,8 @@ Command:
 ```
 Example:
 
-./cyph3r --target google.com --osint
+Example (with Ghost Mode):
+./cyph3r --target google.com --ghost --osint
 
 Accelerated Tactical Port Scan
 
@@ -228,7 +238,8 @@ Command:
 ```
 Example:
 
-./cyph3r --target google.com --scan
+Example (with Ghost Mode):
+./cyph3r --target google.com --ghost --scan
 
 📡 Tool 2: Continuous Monitor (HUD Feed) 
 Track the uptime and latency of a target over time. Perfect for stress testing or uptime verification.
@@ -239,7 +250,8 @@ Command:
 ```
 Example:
 
-./cyph3r --target google.com --proto https --monitor --interval 5s
+./cyph3r --target google.com --proto https --monitor --interval 5s 
+( `-i` also works for `interval` flag )
 
 Protocols supported: tcp, udp, http, https, ack, ping.
 
@@ -256,14 +268,15 @@ Example:
 
 ⚡ Tool 4: Multi-Vector Stress & Benchmarking Suite
 Evaluate infrastructure resilience using 7 high-performance concurrency engines.
+(compatible with --ghost where applicable).
 
 HULK HTTP Flood:
 ```
-./cyph3r --target <host> --hulk
+./cyph3r --target <host> --hulk --ghost
 ```
 Slowloris Header Exhaustion:
 ```
-./cyph3r --target <host> --slowloris
+./cyph3r --target <host> --slowloris --ghost
 ```
 Layer 4 SYN/State Flood:
 ```
@@ -271,42 +284,22 @@ Layer 4 SYN/State Flood:
 ```
 Wrk-Style Benchmark (with RPS & Latency tracking):
 ```
-./cyph3r --target <host> --wrk -c 100 -d 30
+./cyph3r --target <host> --wrk -c 100 -d 30 --ghost
 ```
 RUDY Slow-POST Exhaustion:
 ```
-./cyph3r --target <host> --rudy
+./cyph3r --target <host> --rudy --ghost
 ```
 HTTP/2 Rapid Reset Multiplexing:
 ```
-./cyph3r --target <host> --h2
+./cyph3r --target <host> --h2 --ghost
 ```
 WebSocket Connection & Frame Pool Exhaustion:
 ```
-./cyph3r --target <host> --ws
+./cyph3r --target <host> --ws --ghost
 ```
 
-
-
-Wrk-Style Benchmark (with RPS & Latency tracking):
-
-```
-./cyph3r --target <host> --wrk -c 100 -d 30
-```
-
-RUDY Slow-POST Exhaustion:
-
-```./cyph3r --target <host> --rudy```
-
-HTTP/2 Rapid Reset Multiplexing: 
-
-```./cyph3r --target <host> --h2```
-
-WebSocket Connection & Frame Pool Exhaustion: 
-
-```./cyph3r --target <host> --ws```
-
-UNINSTALL
+⚠️ UNINSTALL
 
 Since CYPH3R v2.6 is a modular Go tool, it doesn't scatter files all over your system like a standard installer might. However, to keep your workspace pristine, a dedicated uninstaller is included.
 
