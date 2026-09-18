@@ -100,14 +100,14 @@ func ExecutePortScan(target string) []string {
 	return openPorts
 }
 
-// ExecuteUnifiedRecon chains passive RDAP/OSINT harvesting with active port sweeping
-func ExecuteUnifiedRecon(target string) {
+// ExecuteUnifiedRecon chains passive RDAP/OSINT harvesting with active port sweeping (Ghost-Compatible)
+func ExecuteUnifiedRecon(target string, useGhost bool) {
 	fmt.Printf("\n%s╔═══════════════════════════════════════════════════════════════╗%s\n", output.NeonBlue, output.Reset)
 	fmt.Printf("%s║           CYPH3R UNIFIED RECONNAISSANCE ENGINE              ║%s\n", output.NeonBlue, output.Reset)
 	fmt.Printf("%s╚═══════════════════════════════════════════════════════════════╝%s\n\n", output.NeonBlue, output.Reset)
 
-	// 1. Run the passive OSINT & RDAP extraction module
-	extractedIntel := intel.DiscoverOriginAndOSINT(target)
+	// 1. Run the passive OSINT & RDAP extraction module with Ghost Mode support
+	extractedIntel := intel.DiscoverOriginAndOSINT(target, useGhost)
 
 	// 2. Render the harvested intel using the UI module
 	output.RenderOSINTResults(target, extractedIntel)
