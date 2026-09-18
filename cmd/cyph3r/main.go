@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AnonPhoenix420/cyph3r/internal/ghost"
 	"github.com/AnonPhoenix420/cyph3r/internal/intel"
 	"github.com/AnonPhoenix420/cyph3r/internal/probes"
 	"github.com/AnonPhoenix420/cyph3r/internal/stress"
@@ -18,7 +19,10 @@ func main() {
 	portFlag := flag.Int("p", 0, "Target port (Optional: auto-detected from URL or defaults to 80/443)")
 	protoFlag := flag.String("proto", "tcp", "Wire protocol (tcp/udp)")
 	monitorFlag := flag.Bool("monitor", false, "Engage live HUD connection monitor loop")
-	
+
+	// Stealth & Ghost Mode Flags
+	ghostFlag := flag.Bool("ghost", false, "Engage Ghost Mode (SOCKS5/Tor stealth tunneling with jitter & timeout controls)")
+
 	// Stress & Benchmarking Flags
 	hulkFlag := flag.Bool("hulk", false, "Engage continuous resilience HULK stress engine")
 	slowlorisFlag := flag.Bool("slowloris", false, "Engage Slowloris slow-rate exhaustion engine")
@@ -27,33 +31,45 @@ func main() {
 	rudyFlag := flag.Bool("rudy", false, "Engage RUDY slow-POST exhaustion engine")
 	h2Flag := flag.Bool("h2", false, "Engage HTTP/2 rapid reset stream engine")
 	wsFlag := flag.Bool("ws", false, "Engage WebSocket connection & frame exhaustion engine")
-
 	osintFlag := flag.Bool("osint", false, "Extract comprehensive intelligence report, unmasked IPs, and digital footprints")
 	scanFlag := flag.Bool("scan", false, "Engage accelerated TCP port scanner and service probes")
-	
-	// Control & Timing Flags (with intelligent defaults)
+
+	// Control & Timing Flags (with intelligent defaults & -i integer support)
 	concurrencyFlag := flag.Int("c", 500, "Concurrency pool size (Default: 500 sockets/workers)")
 	durationFlag := flag.Int("d", 0, "Test duration in seconds (Default: 0 for infinite/continuous until stopped)")
+	intervalIntFlag := flag.Int("i", 2, "Loop/monitor interval in seconds (Default: 2s)")
 	intervalFlag := flag.Duration("interval", 2*time.Second, "HUD monitor ping interval")
-
+	
 	flag.Parse()
+
+	// 0. Validate Ghost Mode Compatibility Rules
+	if *ghostFlag {
+		if *synFloodFlag {
+			fmt.Println("[!] Error: --synflood (Layer 4 raw sockets/SOCK_RAW) is fundamentally incompatible with --ghost (SOCKS5/Tor tunneling).")
+			return
+		}
+		fmt.Println("[+] GHOST MODE ENGAGED: Routing traffic through SOCKS5/Tor (127.0.0.1:9050)")
+		_, err := ghost.NewGhostTransport("")
+		if err != nil {
+			fmt.Printf("[!] Warning: Ghost transport initialization notice: %v\n", err)
+		}
+	}
 
 	// 1. Handle Dedicated Phone Intelligence Mode First
 	if *phoneFlag != "" {
 		fmt.Printf("[+] LAUNCHING PHONE METADATA DECRYPTION: %s\n", *phoneFlag)
 		metrics := intel.GetPhoneMetrics(*phoneFlag)
-
 		fmt.Println("\n╔═══════════════════════════════════════════════════════════════╗")
 		fmt.Println("║               CYPH3R PHONE INTELLIGENCE REPORT                ║")
 		fmt.Println("╚═══════════════════════════════════════════════════════════════╝")
-		fmt.Printf("  ↳ Number:          %s\n", *phoneFlag)
-		fmt.Printf("  ↳ Line Status:     %s\n", metrics.LineStatus)
-		fmt.Printf("  ↳ Carrier:         %s\n", metrics.Carrier)
-		fmt.Printf("  ↳ Locale / Region: %s\n", metrics.Locale)
-		fmt.Printf("  ↳ Country Code:    +%d\n", metrics.CountryCode)
-		fmt.Printf("  ↳ National Format: %d\n", metrics.NationalNumber)
-		fmt.Printf("  ↳ Is Mobile:       %t\n", metrics.IsMobile)
-		fmt.Printf("  ↳ Risk Score:      %d/100\n", metrics.Risk)
+		fmt.Printf(" ↳ Number: %s\n", *phoneFlag)
+		fmt.Printf(" ↳ Line Status: %s\n", metrics.LineStatus)
+		fmt.Printf(" ↳ Carrier: %s\n", metrics.Carrier)
+		fmt.Printf(" ↳ Locale / Region: %s\n", metrics.Locale)
+		fmt.Printf(" ↳ Country Code: +%d\n", metrics.CountryCode)
+		fmt.Printf(" ↳ National Format: %d\n", metrics.NationalNumber)
+		fmt.Printf(" ↳ Is Mobile: %t\n", metrics.IsMobile)
+		fmt.Printf(" ↳ Risk Score: %d/100\n", metrics.Risk)
 		return
 	}
 
@@ -118,71 +134,63 @@ func main() {
 			finalURL = fmt.Sprintf("%s://%s:%d", scheme, targetHost, targetPort)
 		}
 	}
-
 	targetAddr := fmt.Sprintf("%s:%d", targetHost, targetPort)
 
 	// 2. Deep OSINT & Comprehensive Intelligence Report Mode
 	if *osintFlag {
 		fmt.Printf("[+] LAUNCHING FULL-STACK COMPREHENSIVE INTEL SCAN: %s\n", targetHost)
 		report := intel.ExecuteComprehensiveReport(targetHost)
-
 		fmt.Println("\n╔═══════════════════════════════════════════════════════════════╗")
-		fmt.Println("║         CYPH3R COMPREHENSIVE INTELLIGENCE FIELD REPORT        ║")
+		fmt.Println("║        CYPH3R COMPREHENSIVE INTELLIGENCE FIELD REPORT         ║")
 		fmt.Println("╚═══════════════════════════════════════════════════════════════╝")
 		
 		fmt.Printf("\n[ TARGET METADATA ]\n")
-		fmt.Printf("  ↳ Target:     %s\n", report.Target)
-		fmt.Printf("  ↳ Type:       %s\n", report.TargetType)
-		fmt.Printf("  ↳ Primary IP: %s\n", report.ReverseDNS)
-		fmt.Printf("  ↳ Risk Score: %d/100\n", report.RiskScore)
-		fmt.Printf("  ↳ Timestamp:  %s\n", report.Timestamp.Format(time.RFC3339))
-
+		fmt.Printf(" ↳ Target: %s\n", report.Target)
+		fmt.Printf(" ↳ Type: %s\n", report.TargetType)
+		fmt.Printf(" ↳ Primary IP: %s\n", report.ReverseDNS)
+		fmt.Printf(" ↳ Risk Score: %d/100\n", report.RiskScore)
+		fmt.Printf(" ↳ Timestamp: %s\n", report.Timestamp.Format(time.RFC3339))
 		fmt.Printf("\n[ GEOLOCATION TELEMETRY ]\n")
-		fmt.Printf("  ↳ Location:    %s, %s (%s)\n", report.Location.City, report.Location.Country, report.Location.CountryCode)
-		fmt.Printf("  ↳ Coordinates: %s\n", report.Location.Coordinates)
-
+		fmt.Printf(" ↳ Location: %s, %s (%s)\n", report.Location.City, report.Location.Country, report.Location.CountryCode)
+		fmt.Printf(" ↳ Coordinates: %s\n", report.Location.Coordinates)
 		fmt.Printf("\n[ UNMASKED NODES & ASSOCIATED ASSETS ]\n")
 		if len(report.Associated) > 0 {
 			for _, asset := range report.Associated {
-				fmt.Printf("  ↳ %s\n", asset)
+				fmt.Printf(" ↳ %s\n", asset)
 			}
 		} else {
-			fmt.Println("  ↳ No auxiliary nodes mapped.")
+			fmt.Println(" ↳ No auxiliary nodes mapped.")
 		}
-
 		fmt.Printf("\n[ HARVESTED EMAILS ]\n")
 		if len(report.Emails) > 0 {
 			for _, email := range report.Emails {
-				fmt.Printf("  ↳ %s\n", email)
+				fmt.Printf(" ↳ %s\n", email)
 			}
 		} else {
-			fmt.Println("  ↳ None exposed.")
+			fmt.Println(" ↳ None exposed.")
 		}
-
 		fmt.Printf("\n[ EXTRACTED PHONE VECTORS ]\n")
 		if len(report.Phones) > 0 {
 			for _, phone := range report.Phones {
-				fmt.Printf("  ↳ %s\n", phone)
+				fmt.Printf(" ↳ %s\n", phone)
 			}
 		} else {
-			fmt.Println("  ↳ None detected.")
+			fmt.Println(" ↳ None detected.")
 		}
-
 		fmt.Printf("\n[ DATABASE EXPOSURE METRICS ]\n")
-		fmt.Printf("  ↳ SQL Exposed: %t (Risk: %s)\n", report.SQLCheck.Exposed, report.SQLCheck.RiskLevel)
-
+		fmt.Printf(" ↳ SQL Exposed: %t (Risk: %s)\n", report.SQLCheck.Exposed, report.SQLCheck.RiskLevel)
 		fmt.Printf("\n[ MAPPED DIGITAL FOOTPRINTS ]\n")
 		if len(report.SocialProfiles) > 0 {
 			for _, profile := range report.SocialProfiles {
-				fmt.Printf("  ↳ [%s] %s (Confidence: %d%%)\n", profile.Platform, profile.ProfileURL, profile.Confidence)
+				fmt.Printf(" ↳ [%s] %s (Confidence: %d%%)\n", profile.Platform, profile.ProfileURL, profile.Confidence)
 			}
 		} else {
-			fmt.Println("  ↳ None mapped.")
+			fmt.Println(" ↳ None mapped.")
 		}
 		return
 	}
 
-	// 3. Accelerated Tactical Port Scan Mode
+	// 3. Accelerated Tactical Port Scan Mode (Ghost-Compatible via TCP Connect Scans)
 	if *scanFlag {
 		fmt.Printf("[+] LAUNCHING ACCELERATED PORT SCANNER & SERVICE PROBES: %s\n", targetHost)
 		openPorts := probes.ExecutePortScan(targetHost)
@@ -190,7 +198,7 @@ func main() {
 		if len(openPorts) > 0 {
 			fmt.Printf("\n[+] Verified Open Listeners:\n")
 			for _, portInfo := range openPorts {
-				fmt.Printf("  ↳ %s\n", portInfo)
+				fmt.Printf(" ↳ %s\n", portInfo)
 			}
 		} else {
 			fmt.Printf("\n[-] No open listening ports detected on standard profiles.\n")
@@ -198,33 +206,53 @@ func main() {
 		return
 	}
 
-	// 4. Stress & Benchmarking Engines
+	// Helper for continuous loop execution (-d 0 or --monitor)
+	runWithLoop := func(engineName string, execute func(dur int)) {
+		loopInterval := time.Duration(*intervalIntFlag) * time.Second
+		isContinuous := (*durationFlag == 0 || *monitorFlag)
+
+		if isContinuous {
+			fmt.Printf("[+] ENGAGING CONTINUOUS %s LOOP (Interval: %ds, Infinite/Monitor Mode)\n", engineName, *intervalIntFlag)
+			for {
+				batchDur := *durationFlag
+				if batchDur <= 0 {
+					batchDur = 10 // default batch duration slice when running infinite loops
+				}
+				execute(batchDur)
+				time.Sleep(loopInterval)
+			}
+		} else {
+			execute(*durationFlag)
+		}
+	}
+
+	// 4. Stress & Benchmarking Engines with Continuous Loop Support
 	if *hulkFlag {
-		stress.ExecuteContinuousStress(finalURL, *concurrencyFlag, *durationFlag)
+		runWithLoop("HULK", func(d int) { stress.ExecuteContinuousStress(finalURL, *concurrencyFlag, d) })
 		return
 	}
 	if *slowlorisFlag {
-		stress.ExecuteSlowRateStress(finalURL, *concurrencyFlag, *durationFlag)
+		runWithLoop("Slowloris", func(d int) { stress.ExecuteSlowRateStress(finalURL, *concurrencyFlag, d) })
 		return
 	}
 	if *synFloodFlag {
-		stress.ExecuteTransportSynFlood(targetAddr, *concurrencyFlag, *durationFlag)
+		runWithLoop("SYN Flood", func(d int) { stress.ExecuteTransportSynFlood(targetAddr, *concurrencyFlag, d) })
 		return
 	}
 	if *wrkFlag {
-		stress.ExecuteWrkBenchmark(finalURL, *concurrencyFlag, *durationFlag)
+		runWithLoop("Wrk Benchmark", func(d int) { stress.ExecuteWrkBenchmark(finalURL, *concurrencyFlag, d) })
 		return
 	}
 	if *rudyFlag {
-		stress.ExecuteRudyStress(finalURL, *concurrencyFlag, *durationFlag)
+		runWithLoop("RUDY", func(d int) { stress.ExecuteRudyStress(finalURL, *concurrencyFlag, d) })
 		return
 	}
 	if *h2Flag {
-		stress.ExecuteH2RapidResetStress(finalURL, *concurrencyFlag, *durationFlag)
+		runWithLoop("HTTP/2 Rapid Reset", func(d int) { stress.ExecuteH2RapidResetStress(finalURL, *concurrencyFlag, d) })
 		return
 	}
 	if *wsFlag {
-		stress.ExecuteWebSocketStress(finalURL, *concurrencyFlag, *durationFlag)
+		runWithLoop("WebSocket Exhaustion", func(d int) { stress.ExecuteWebSocketStress(finalURL, *concurrencyFlag, d) })
 		return
 	}
 
