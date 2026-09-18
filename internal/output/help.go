@@ -23,6 +23,7 @@ func DisplayHelp() {
   -c            Concurrency pool size (Default: 500 sockets/workers)
   -d            Test duration in seconds (Default: 0 for infinite/continuous)
   --interval    HUD monitor ping interval (Default: 2s)
+  --ghost       Engage Ghost Mode (SOCKS5/Tor stealth tunneling with jitter & timeout controls)
 
 [+] INTELLIGENCE & RECON:
   --osint       Extract comprehensive intelligence report, unmasked IPs, & footprints
@@ -44,10 +45,10 @@ func DisplayHelp() {
   --help        Display this menu
 
 [!] EXAMPLES:
-  OSINT Recon:  ./cyph3r --target google.com --osint
-  Port Scan:    ./cyph3r --target google.com --scan
+  OSINT Recon:  ./cyph3r --target google.com --ghost --osint
+  Port Scan:    ./cyph3r --target google.com --ghost --scan
   Phone Lookup: ./cyph3r --phone +14155552671
-  Stress Test:  ./cyph3r --target 192.168.1.50 --hulk -c 500 -d 30
+  Stress Test:  ./cyph3r --target 192.168.1.50 --ghost --hulk -c 500 -d 30
 `)
 	os.Exit(0)
 }
