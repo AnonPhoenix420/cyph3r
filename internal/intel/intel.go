@@ -13,8 +13,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/AnonPhoenix420/cyph3r/internal/ghost"
 	"github.com/AnonPhoenix420/cyph3r/internal/models"
 	"github.com/nyaruka/phonenumbers"
+	"golang.org/x/net/proxy"
 )
 
 type CrtShEntry struct {
@@ -61,15 +63,38 @@ var CommonServicePorts = map[int]string{
 	27017: "MongoDB",
 }
 
-func DiscoverOriginAndOSINT(targetDomain string) models.ExtractedIntel {
+// getClient builds an HTTP client with Ghost transport support if enabled
+func getClient(useGhost bool, timeout time.Duration) *http.Client {
+	var tr *http.Transport
+	if useGhost {
+		tr = ghost.GetTransport(true)
+	}
+	if tr == nil {
+		tr = &http.Transport{
+			MaxIdleConns:        50,
+			IdleConnTimeout:     30 * time.Second,
+		}
+	}
+	return &http.Client{
+		Transport: tr,
+		Timeout:   timeout,
+	}
+}
+
+func DiscoverOriginAndOSINT(targetDomain string, useGhost bool) models.ExtractedIntel {
 	var intel models.ExtractedIntel
 	subMap := make(map[string]bool)
 
+	modeLabel := "Direct"
+	if useGhost {
+		modeLabel = "Ghost Mode (Tor/SOCKS5)"
+	}
+
 	// 1. Passive CT Log Query via crt.sh
 	url := fmt.Sprintf("https://crt.sh/?q=%%.%s&output=json", targetDomain)
-	client := &http.Client{Timeout: 12 * time.Second}
+	client := getClient(useGhost, 15*time.Second)
 
-	fmt.Printf("[*] Querying Certificate Transparency logs for %s...\n", targetDomain)
+	fmt.Printf("[*] Querying Certificate Transparency logs for %s [%s]...\n", targetDomain, modeLabel)
 	resp, err := client.Get(url)
 	if err != nil {
 		fmt.Printf("[!] Warning: CT log query failed: %v\n", err)
@@ -176,8 +201,8 @@ func DiscoverOriginAndOSINT(targetDomain string) models.ExtractedIntel {
 }
 
 // ExecuteComprehensiveReport builds the full structured report from core telemetry
-func ExecuteComprehensiveReport(targetDomain string) models.ComprehensiveReport {
-	rawIntel := DiscoverOriginAndOSINT(targetDomain)
+func ExecuteComprehensiveReport(targetDomain string, useGhost bool) models.ComprehensiveReport {
+	rawIntel := DiscoverOriginAndOSINT(targetDomain, useGhost)
 
 	var primaryIP string
 	ips, err := net.LookupIP(targetDomain)
@@ -185,7 +210,7 @@ func ExecuteComprehensiveReport(targetDomain string) models.ComprehensiveReport 
 		primaryIP = ips[0].String()
 	}
 
-	client := &http.Client{Timeout: 5 * time.Second}
+	client := getClient(useGhost, 6*time.Second)
 	locData := fetchGeoLocation(primaryIP, client)
 
 	report := models.ComprehensiveReport{
@@ -219,30 +244,64 @@ func ExecuteComprehensiveReport(targetDomain string) models.ComprehensiveReport 
 	return report
 }
 
-// ExecutePortScan performs a concurrent TCP port sweep across the service dictionary
-func ExecutePortScan(targetHost string) []string {
-	fmt.Printf("[*] Starting tactical port sweep on %s across %d common service vectors...\n", targetHost, len(CommonServicePorts))
+// ExecutePortScan performs a concurrent TCP port sweep across the service dictionary with Ghost support
+func ExecutePortScan(targetHost string, useGhost bool) []string {
+	modeLabel := "Direct"
+	if useGhost {
+		modeLabel = "Ghost Mode (Tor/SOCKS5)"
+	}
+	fmt.Printf("[*] Starting tactical port sweep on %s [%s] across %d common service vectors...\n", targetHost, modeLabel, len(CommonServicePorts))
 
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	var openPorts []string
 
-	// Concurrency control channel to limit simultaneous socket dials
 	semaphore := make(chan struct{}, 100)
+
+	var proxyDialer proxy.Dialer
+	if useGhost {
+		var err error
+		proxyDialer, err = proxy.SOCKS5("tcp", "127.0.0.1:9050", nil, proxy.Direct)
+		if err != nil {
+			fmt.Printf("[!] Warning: SOCKS5 dialer init failed for port sweep: %v\n", err)
+		}
+	}
 
 	for port, service := range CommonServicePorts {
 		wg.Add(1)
 		go func(p int, svc string) {
 			defer wg.Done()
-			semaphore <- struct{}{}        // Acquire token
-			defer func() { <-semaphore }() // Release token
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
 
 			address := fmt.Sprintf("%s:%d", targetHost, p)
-			conn, err := net.DialTimeout("tcp", address, 1500*time.Millisecond)
-			if err == nil {
-				if conn != nil {
-					conn.Close()
+			var conn net.Conn
+			var err error
+
+			if useGhost && proxyDialer != nil {
+				ch := make(chan struct {
+					c net.Conn
+					e error
+				}, 1)
+				go func() {
+					c, e := proxyDialer.Dial("tcp", address)
+					ch <- struct {
+						c net.Conn
+						e error
+					}{c, e}
+				}()
+				select {
+				case <-time.After(2 * time.Second):
+					err = fmt.Errorf("timeout")
+				case res := <-ch:
+					conn, err = res.c, res.e
 				}
+			} else {
+				conn, err = net.DialTimeout("tcp", address, 1500*time.Millisecond)
+			}
+
+			if err == nil && conn != nil {
+				conn.Close()
 				resultStr := fmt.Sprintf("Port %d (%s) - OPEN", p, svc)
 				mu.Lock()
 				openPorts = append(openPorts, resultStr)
